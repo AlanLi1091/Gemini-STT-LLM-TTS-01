@@ -1,0 +1,6 @@
+{
+  "name": "Roleplay Chatbot Playground",
+  "description": "Web playground for roleplay chatbot with STT-LLM-TTS voice and text architecture.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
