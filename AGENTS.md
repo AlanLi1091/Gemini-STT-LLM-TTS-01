@@ -36,7 +36,7 @@
 
 ## 1. 当前授权
 - **授权任务**：无（Task 1 已完成）
-- **最近 commit**：8a59453 test: setup vitest, testing-library and jsdom test infrastructure (Task 1)
+- **最近 commit**：b00e428 docs: update AGENTS.md workflow to require pushing to GitHub on each step
 - **越权处理**：凡不在当前授权范围内的文件改动，一律回滚，并记录到 §7 风险区。
 
 ## 2. 项目阶段
