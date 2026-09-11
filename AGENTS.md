@@ -35,8 +35,8 @@
 - **约束声明**：愿景仅用于技术决策对齐（接口预留、目录结构等），不构成任何执行授权（见铁律 3）。
 
 ## 1. 当前授权
-- **授权任务**：无（Task 1 已完成）
-- **最近 commit**：b00e428 docs: update AGENTS.md workflow to require pushing to GitHub on each step
+- **授权任务**：无（Task 1 已完成；AGENTS.md push 规范更新已完成）
+- **最近 commit**：498f577 docs: sync AGENTS.md recent commit reference
 - **越权处理**：凡不在当前授权范围内的文件改动，一律回滚，并记录到 §7 风险区。
 
 ## 2. 项目阶段
