@@ -6,8 +6,9 @@
 1. **只做当前被指派的事**：仅执行用户本轮消息明确授权的任务，完成后立即停下汇报，等待下一条指令。
 2. **Backlog ≠ 授权**：待办清单只是规划。未经指派不得开工；即使某事看起来是"显然的下一步"，也只能写进 Backlog 并提议。
 3. **愿景 ≠ 授权**：项目愿景（§0）仅用于架构决策参考，不得据此提前实现未来阶段功能（包括 Discord、语音、多模型、后端）。
-4. **先计划后动手**：任何文件创建或修改前，必须先列出将涉及的文件与步骤，经用户确认后才能执行。
+4. **先计划后动手**：任何文件创建或修改前，先在聊天区提交计划，经用户确认后执行。计划的合法形态 = 将修改的文件清单 + 每步一句话说明（可选：接口签名或 ≤10 行示意片段）。计划中禁止出现完整实现代码。
 5. **单步闭环**：每步完成后依次执行：测试通过 → Git commit → 推送至 GitHub（git push） → 更新本文档状态区，然后停止。
+6. **代码的唯一去处是文件**：所有交付代码必须通过文件写入落盘。聊天区仅承载四类内容：计划、结果摘要、提问、提议。任何仅存在于聊天区的代码视为未交付，等同于没有干活。汇报时结论先行，不逐步外化推理过程；解释理由不超过 3 句，除非用户要求展开。
 
 ## 会话启动协议
 每次新会话的第一步，依次执行：
@@ -22,6 +23,7 @@
 2. `git status` 干净，不存在授权范围外的未跟踪文件或改动。
 3. 全部测试通过，改动已有对应语义化 commit 并已推送至 GitHub 远端。
 4. 当前授权（§1）已标记完成或明确遗留。
+5. 完成汇报只包含：已修改文件列表 / 测试结果摘要（通过数与总数）/ commit hash 与 message / 遗留问题。
 
 ---
 
@@ -35,13 +37,13 @@
 - **约束声明**：愿景仅用于技术决策对齐（接口预留、目录结构等），不构成任何执行授权（见铁律 3）。
 
 ## 1. 当前授权
-- **授权任务**：无（Task 1 已完成；AGENTS.md push 规范更新已完成）
-- **最近 commit**：498f577 docs: sync AGENTS.md recent commit reference
+- **授权任务**：Task 7（GeminiChatAdapter.send 非流式、role 映射、错误分类、usage 提取）已完成，待指派 Task 8
+- **最近 commit**：f1722d5 feat(adapter): implement GeminiChatAdapter send, role mapping, error classification, and usage extraction (task 7)
 - **越权处理**：凡不在当前授权范围内的文件改动，一律回滚，并记录到 §7 风险区。
 
 ## 2. 项目阶段
-- **当前阶段**：Phase 1 —— Web Playground MVP（开发中）
-- **当前目标**：完成本地 Mock 对话闭环（Task 1–5），建立测试基建。
+- **当前阶段**：Phase 2 —— LLM 接入与 ChatAdapter 落地（开发中）
+- **当前目标**：落地 ChatAdapter 架构并接入 Gemini 模型（Task 6–10），支持流式与用量展示。
 
 ## 3. 项目规划
 ### 3.1 产品设计（Phase 1 范围）
@@ -56,7 +58,7 @@
 | Phase | 目标 | 退出条件 |
 | :--- | :--- | :--- |
 | **1（当前）** | Web Playground MVP（纯前端 Mock） | Task 1–5 完成，Mock 闭环可用，测试全绿 |
-| **2** | LLM 接入 | ChatAdapter 接口落地；Gemini adapter 通过测试；Playground 可切换真实模型 |
+| **2** | LLM 接入 | ChatAdapter 接口（含流式签名）落地；Gemini adapter 流式/非流式通过测试；Playground 可切换真实模型；用量记录可见 |
 | **3** | 后端服务化 | Node.js 服务承载领域内核；Playground 改连后端；会话持久化；密钥管理落地 |
 | **4** | Discord 文字接入 | discord.js 网关稳定在线；文字对话闭环；限流与错误处理 |
 | **5** | 角色扮演系统 | 角色配置（人设 Prompt / 开场白 / 记忆）可用；Character Card 兼容评估完成 |
@@ -79,23 +81,36 @@
 - [x] 编写 AGENTS.md v1（状态跟踪 / ADR / 风险 / DoD）
 - [x] AGENTS.md v2 重构：铁律、启动/收尾协议、当前授权、项目愿景与 Phase 1–7 路线图（ADR-003 / ADR-004）
 - [x] **Task 1**: 搭建单元测试基建（Vitest、Testing Library、运行脚本，commit: 8a59453）
+- [x] **Task 2**: 聊天界面骨架构建（标题栏、消息容器、底部输入栏，commit: 98a3f11）
+- [x] **Task 3**: 用户输入与消息派发逻辑（状态管理、消息追加、表单清空与校验，commit: 96a62be）
+- [x] **Task 4**: Mock 机器人响应引擎（思考态加载动画、延时回复策略，commit: b432acf）
+- [x] **Task 5**: 交互细节与体验优化（智能触底滚动、auto-expanding textarea、IME 防误发、清空对话、无障碍适配，commit: 10c0bbc）
+- [x] **Task 6**: ChatAdapter 接口定义与契约测试套件，Mock 重构为 MockChatAdapter（commit: 0998e94）
+- [x] **Task 7**: GeminiChatAdapter.send（非流式实现、role 映射、错误分类、Token 用量提取，单测 100% Mock 网络层，commit: f1722d5）
 
 ## 5. 待办事项
 所有任务默认未授权。执行任何任务前，须由用户在 §1 指派。
 
-### Phase 1（当前阶段）
+### Phase 1（已完成）
 - [x] **Task 1**: 搭建单元测试基建（Vitest、Testing Library、运行脚本）
-- [ ] **Task 2**: 聊天界面骨架构建（标题栏、消息容器、底部输入栏）
-- [ ] **Task 3**: 用户输入与消息派发逻辑（状态管理、消息追加、表单清空与校验）
-- [ ] **Task 4**: Mock 机器人响应引擎（思考态加载动画、延时回复策略）
-- [ ] **Task 5**: 交互细节与体验优化（自动触底滚动、键盘快捷键）
+- [x] **Task 2**: 聊天界面骨架构建（标题栏、消息容器、底部输入栏）
+- [x] **Task 3**: 用户输入与消息派发逻辑（状态管理、消息追加、表单清空与校验）
+- [x] **Task 4**: Mock 机器人响应引擎（思考态加载动画、延时回复策略）
+- [x] **Task 5**: 交互细节与体验优化（自动触底滚动、键盘快捷键、IME防误发、清空对话）
+
+### Phase 2（已规划，全部未授权）
+- [x] **Task 6**: ChatAdapter 接口定义（send + stream 签名）+ 契约测试套件 + Mock 重构为 MockChatAdapter（同时实现 send/stream，行为不变，Phase 1 测试全绿）
+- [x] **Task 7**: GeminiChatAdapter.send（非流式）：role 映射、错误分类、usage 提取；单测全 mock 网络层
+- [ ] **Task 8**: 设置面板与模型切换：key 输入与 localStorage 持久化、模型选择、默认 Mock
+- [ ] **Task 9**: 错误展示与用量记录 UI
+- [ ] **Task 10**: GeminiChatAdapter.stream + 中断（AbortController）+ 打字机 UI + stream 契约测试扩展（Mock/Gemini 同跑，Mock 流式可在无 key 下演示）
 
 ### 后续阶段预研（未授权，仅规划）
-- [ ] **Task 6 (Phase 2)**: ChatAdapter 接口设计草案与 Gemini adapter 方案
-- [ ] **Task 7 (Phase 3)**: 后端框架与部署方案调研（Cloud Run / VPS）
-- [ ] **Task 8 (Phase 4)**: discord.js 选型验证与最小网关 Demo
-- [ ] **Task 9 (Phase 5)**: 角色数据格式调研（自定义 schema vs Character Card V2）
-- [ ] **Task 10 (Phase 6)**: 语音链路方案对比（Gemini 原生音频 vs Whisper+TTS；Web 麦克风 vs Discord 语音频道）
+- [ ] **Task 11 (Phase 3)**: 后端框架与部署方案调研（Cloud Run / VPS）
+- [ ] **Task 12 (Phase 4)**: discord.js 选型验证与最小网关 Demo
+- [ ] **Task 13 (Phase 5)**: 角色数据格式调研（自定义 schema vs Character Card V2）
+- [ ] **消息重发/重生成与分支导航（基于 ADR-005 消息树模型）** (Phase 5)
+- [ ] **Task 14 (Phase 6)**: 语音链路方案对比（Gemini 原生音频 vs Whisper+TTS；Web 麦克风 vs Discord 语音频道）
 
 ## 6. 技术决策记录
 - **ADR-001: MVP 采用纯前端 Mock 机制**
@@ -114,6 +129,24 @@
   - **背景**：首次会话中 agent 出现越权行为（未建文档、未完成指派的 Git 初始化即开始前后端编码）。
   - **决策**：以铁律 + 启动/收尾协议 + 当前授权字段构成事前闸门，git status 审计作为事后兜底。
   - **影响**：越权可发现、可回滚；规范本身变更需单独 commit。
+- **ADR-005: 消息标识与会话日志不可变约束**
+  - **背景**：同类项目（DeepSeek Harness）中观察到重发消息导致状态污染（原消息丢失、回复残留、顺序错乱）。
+  - **决策**：
+    1. 每条消息持有生成时分配的稳定唯一 ID（UUID），禁止以内容或数组下标作为身份标识；
+    2. 会话日志为仅追加的有序数组，React 渲染 key 一律使用消息 ID；
+    3. 任何"编辑后重发/重新生成"统一定义为：截断目标消息之后的所有消息 + 追加新消息，禁止原地修改；
+    4. 未来多版本分支预留为消息树模型（节点含 parent 指针），当前阶段不实现。
+  - **影响**：从数据结构上消除整类状态污染 bug；Phase 3 持久化与 Phase 5 重生成直接复用。
+- **ADR-006: 浏览器端直连与本地密钥管理**
+  - **背景**：Phase 2 核心目标为低门槛验证真实 LLM 交互与流式体验，暂无独立后端服务。
+  - **决策**：采用方案 A（前端直连 Gemini API）；API Key 通过设置面板输入、存 localStorage、不入 git 不进构建产物；仅限本地 Playground 调试，公开部署禁止，Phase 3 服务端化后替代。
+  - **影响**：零后端依赖快速推进 Phase 2；用户自主掌控 key 安全边界。
+- **ADR-007: 流式响应统一纳入 ChatAdapter 契约**
+  - **背景**：LLM 对话打字机体验必须依赖流式传输，且需要支持用户中途打断。
+  - **决策**：
+    1. adapter 统一 `stream(): AsyncIterable<ChatChunk>` + `AbortSignal` 中断；
+    2. 注明 ADR-005“禁止原地修改”限定于编辑重发场景，流式中末条消息 content 逐 chunk 更新不违反，日志数组仍仅追加。
+  - **影响**：统一 Mock 与真实模型的流式协议；打字机动效与 token 统计接口规范化。
 
 ## 7. 风险与阻塞
 - **风险 0（已发生，已缓解）**：agent 完成偏置导致越权执行
@@ -131,6 +164,11 @@
   - **应对**：依赖 discord.js 内置限流处理；设计消息频率上限。
 - **风险 6**: token 与 TTS 成本
   - **应对**：Phase 2 起记录用量；Playground 默认 Mock / 低成本模型。
+- **风险 7**: 沙箱无凭证导致 GitHub 远端 Push 校验中断
+  - **事件**：容器沙箱未预置 GitHub 交互式凭证/PAT，非交互执行 `git push` 报 `could not read Username`。
+  - **应对**：确保本地具备完整语义化 commit 链路；待环境配置 PAT 或由用户在设置中授权同步。
+- **风险 8**: @google/genai 浏览器兼容与版本变动
+  - **应对**：锁定版本、SDK 类型不泄漏进领域内核。
 
 ## 8. 质量与交付验收标准
 ### 通用 DoD（所有 Phase 适用）
