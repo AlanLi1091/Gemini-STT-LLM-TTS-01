@@ -69,3 +69,22 @@ export interface ChatAdapter {
   send(messages: Message[], options?: ChatAdapterOptions): Promise<ChatResponse>;
   stream(messages: Message[], options?: ChatAdapterOptions): AsyncIterable<ChatChunk>;
 }
+
+export type ProviderType = 'mock' | 'gemini';
+
+export interface AppSettings {
+  provider: ProviderType;
+  geminiApiKey: string;
+  geminiModel: string;
+}
+
+export const AVAILABLE_GEMINI_MODELS = [
+  { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (快速 & 推荐)' },
+  { id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro (深度推理)' },
+] as const;
+
+export const DEFAULT_SETTINGS: Readonly<AppSettings> = Object.freeze({
+  provider: 'mock',
+  geminiApiKey: '',
+  geminiModel: 'gemini-2.5-flash',
+});
