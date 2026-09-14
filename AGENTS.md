@@ -38,8 +38,8 @@
 - **约束声明**：愿景仅用于技术决策对齐（接口预留、目录结构等），不构成任何执行授权（见铁律 3）。
 
 ## 1. 当前授权
-- **授权任务**：Task 8 第 2 步：设置弹窗组件与顶栏入口构建（SettingsModal.tsx、Header.tsx 设置入口，已授权推进）
-- **最近 commit**：6e43820 feat(settings): add AppSettings type, storage module with defensive parsing, and unit tests (task 8 step 1)
+- **授权任务**：Task 8 第 3 步：应用层组装与组件级全量测试（已完成），待下一任务指派
+- **最近 commit**：fab6ecb feat(settings): create SettingsModal component and mount settings entry button in Header (task 8 step 2)
 - **越权处理**：凡不在当前授权范围内的文件改动，一律回滚，并记录到 §7 风险区。
 
 ## 2. 项目阶段
@@ -88,6 +88,7 @@
 - [x] **Task 5**: 交互细节与体验优化（智能触底滚动、auto-expanding textarea、IME 防误发、清空对话、无障碍适配，commit: 10c0bbc）
 - [x] **Task 6**: ChatAdapter 接口定义与契约测试套件，Mock 重构为 MockChatAdapter（commit: 0998e94）
 - [x] **Task 7**: GeminiChatAdapter.send（非流式实现、role 映射、错误分类、Token 用量提取，单测 100% Mock 网络层，commit: f1722d5）
+- [x] **Task 8**: 设置面板与模型切换（localStorage 持久化、草稿确认交互、掩码切换、动态 Adapter 注入与全量测试）
 
 ## 5. 待办事项
 所有任务默认未授权。执行任何任务前，须由用户在 §1 指派。
@@ -102,7 +103,7 @@
 ### Phase 2（已规划，全部未授权）
 - [x] **Task 6**: ChatAdapter 接口定义（send + stream 签名）+ 契约测试套件 + Mock 重构为 MockChatAdapter（同时实现 send/stream，行为不变，Phase 1 测试全绿）
 - [x] **Task 7**: GeminiChatAdapter.send（非流式）：role 映射、错误分类、usage 提取；单测全 mock 网络层
-- [ ] **Task 8**: 设置面板与模型切换：key 输入与 localStorage 持久化、模型选择、默认 Mock
+- [x] **Task 8**: 设置面板与模型切换：key 输入与 localStorage 持久化、模型选择、默认 Mock
 - [ ] **Task 9**: 错误展示与用量记录 UI
 - [ ] **Task 10**: GeminiChatAdapter.stream + 中断（AbortController）+ 打字机 UI + stream 契约测试扩展（Mock/Gemini 同跑，Mock 流式可在无 key 下演示）
 

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Message, ChatAdapter } from '../types';
 import { defaultMockAdapter, createAssistantMessage } from '../services/mockChatService';
 
@@ -22,6 +22,12 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [inputText, setInputText] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // 用 ref 保持最新 adapter 引用，避免切换 adapter 时导致进行中请求被打断或引用滞后
+  const adapterRef = useRef<ChatAdapter>(adapter);
+  useEffect(() => {
+    adapterRef.current = adapter;
+  }, [adapter]);
 
   const sendMessage = useCallback(async (customContent?: string): Promise<boolean> => {
     // 思考中禁止重复触发
@@ -50,7 +56,8 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     setIsLoading(true);
 
     try {
-      const response = await adapter.send(nextMessages, { delayMs: mockDelayMs });
+      const activeAdapter = adapterRef.current;
+      const response = await activeAdapter.send(nextMessages, { delayMs: mockDelayMs });
       const assistantMessage = createAssistantMessage(response.content);
       setMessages((prev) => [...prev, assistantMessage]);
       return true;
@@ -62,7 +69,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [adapter, inputText, isLoading, messages, mockDelayMs]);
+  }, [inputText, isLoading, messages, mockDelayMs]);
 
   const clearMessages = useCallback(() => {
     setMessages([]);
