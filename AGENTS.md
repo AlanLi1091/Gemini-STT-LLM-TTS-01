@@ -38,8 +38,8 @@
 - **约束声明**：愿景仅用于技术决策对齐（接口预留、目录结构等），不构成任何执行授权（见铁律 3）。
 
 ## 1. 当前授权
-- **授权任务**：Task 8 第 1 步：设置与存储内核纯函数模块（types、settings.ts 及单测，已授权推进）
-- **最近 commit**：a2ad093 docs(agents): restrict default push target to test branch and update sync status
+- **授权任务**：Task 8 第 2 步：设置弹窗组件与顶栏入口构建（SettingsModal.tsx、Header.tsx 设置入口，已授权推进）
+- **最近 commit**：6e43820 feat(settings): add AppSettings type, storage module with defensive parsing, and unit tests (task 8 step 1)
 - **越权处理**：凡不在当前授权范围内的文件改动，一律回滚，并记录到 §7 风险区。
 
 ## 2. 项目阶段
