@@ -28,12 +28,13 @@ export async function generateMockReply(
   return response.content;
 }
 
-export function createAssistantMessage(content: string): Message {
+export function createAssistantMessage(content: string, usage?: Message['usage']): Message {
   return {
     id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     role: 'assistant',
     content,
     createdAt: Date.now(),
+    ...(usage ? { usage } : {}),
   };
 }
 

@@ -5,6 +5,8 @@ export interface Message {
   role: MessageRole;
   content: string;
   createdAt: number;
+  /** 单次回复消耗的 Token 用量（Task 10 流式完成时回填于此字段，与 ADR-007 语义保持一致） */
+  usage?: ChatUsage;
 }
 
 export interface ChatUsage {
