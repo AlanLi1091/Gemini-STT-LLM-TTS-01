@@ -132,6 +132,24 @@ describe('GeminiChatAdapter Unit Tests (Task 7)', () => {
       });
     });
 
+    it('当 apiKey 仅含空白字符时，send 抛出 AUTH_ERROR 且不发请求', async () => {
+      const adapter = new GeminiChatAdapter({ apiKey: '    ' });
+      await expect(
+        adapter.send([{ id: '1', role: 'user', content: 'test', createdAt: 1 }])
+      ).rejects.toMatchObject({
+        code: 'AUTH_ERROR',
+      });
+      expect(mockGenerateContent).not.toHaveBeenCalled();
+    });
+
+    it('当未配置 apiKey 时，stream 迭代抛出 AUTH_ERROR 类型的 ChatError', async () => {
+      const adapter = new GeminiChatAdapter({ apiKey: '   ' });
+      const streamGen = adapter.stream([{ id: '1', role: 'user', content: 'test', createdAt: 1 }]);
+      await expect(streamGen.next()).rejects.toMatchObject({
+        code: 'AUTH_ERROR',
+      });
+    });
+
     it('当传入已 aborted 的 signal 时，抛出 ABORTED 类型的 ChatError', async () => {
       const adapter = new GeminiChatAdapter({ apiKey: 'valid-key' });
       const controller = new AbortController();

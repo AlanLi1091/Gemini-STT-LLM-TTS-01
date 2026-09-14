@@ -80,6 +80,20 @@ describe('Settings persistence and sanitization (ADR-006, Task 8)', () => {
       expect(localStorage.getItem(SETTINGS_STORAGE_KEY)).toBe(JSON.stringify(newSettings));
     });
 
+    it('带首尾空白的 key 在 saveSettings 存入前与 loadSettings 读取后均保持干净 trim', () => {
+      saveSettings({
+        provider: 'gemini',
+        geminiApiKey: '   AIzaSyKeyWithSpaces   ',
+        geminiModel: 'gemini-2.5-flash',
+      });
+
+      const loaded = loadSettings();
+      expect(loaded.geminiApiKey).toBe('AIzaSyKeyWithSpaces');
+      expect(JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY)!).geminiApiKey).toBe(
+        'AIzaSyKeyWithSpaces'
+      );
+    });
+
     it('localStorage 存有损坏的 JSON 字符串时，优雅捕获并回退默认设置', () => {
       localStorage.setItem(SETTINGS_STORAGE_KEY, '{ invalid_json: ... corrupt');
       const settings = loadSettings();

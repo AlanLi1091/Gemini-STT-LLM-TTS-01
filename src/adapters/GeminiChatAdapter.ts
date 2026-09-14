@@ -155,7 +155,8 @@ export class GeminiChatAdapter implements ChatAdapter {
       throw new ChatError('The operation was aborted.', 'ABORTED');
     }
 
-    if (!this.apiKey) {
+    const key = this.apiKey.trim();
+    if (!key) {
       throw new ChatError(
         'Gemini API key is required. Please configure your API key.',
         'AUTH_ERROR'
@@ -170,7 +171,7 @@ export class GeminiChatAdapter implements ChatAdapter {
     const systemInstruction = resolveSystemInstruction(messages, this.systemInstruction);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: this.apiKey });
+      const ai = new GoogleGenAI({ apiKey: key });
 
       const response = await ai.models.generateContent({
         model: this.model,
@@ -210,6 +211,13 @@ export class GeminiChatAdapter implements ChatAdapter {
     const { signal } = options;
     if (signal?.aborted) {
       throw new ChatError('The operation was aborted.', 'ABORTED');
+    }
+    const key = this.apiKey.trim();
+    if (!key) {
+      throw new ChatError(
+        'Gemini API key is required. Please configure your API key.',
+        'AUTH_ERROR'
+      );
     }
     throw new Error('GeminiChatAdapter stream is not yet implemented (scheduled for Task 10)');
   }

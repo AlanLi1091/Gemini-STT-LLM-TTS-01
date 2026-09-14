@@ -152,4 +152,37 @@ describe('Task 8: 设置面板与模型切换组件行为测试', () => {
     expect(dialog).toHaveAttribute('aria-labelledby', 'settings-modal-title');
     expect(document.getElementById('settings-modal-title')).toHaveTextContent('模型与调试设置');
   });
+
+  it('⑦ settings 变更后 activeAdapter 依据 settings.provider / geminiApiKey / geminiModel 重新实例化', async () => {
+    render(<App />);
+
+    // 初始状态为 Mock
+    expect(screen.getByText('Web Mock MVP')).toBeInTheDocument();
+
+    // 打开设置并切换为 Gemini
+    fireEvent.click(screen.getByRole('button', { name: /设置/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Google Gemini API/i }));
+    fireEvent.change(screen.getByPlaceholderText('AIzaSy...'), {
+      target: { value: '  AIzaSyFreshKey123  ' },
+    });
+    fireEvent.change(screen.getByLabelText(/Gemini 模型版本/i), {
+      target: { value: 'gemini-2.5-flash' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /保存配置/i }));
+
+    // 确认顶栏展示更新为 Gemini (gemini-2.5-flash)
+    await waitFor(() => {
+      expect(screen.getByText('Gemini (gemini-2.5-flash)')).toBeInTheDocument();
+    });
+
+    // 再次打开并切回 Mock
+    fireEvent.click(screen.getByRole('button', { name: /设置/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Mock 模拟引擎/i }));
+    fireEvent.click(screen.getByRole('button', { name: /保存配置/i }));
+
+    // 确认顶栏展示恢复为 Web Mock MVP，adapter 正确切换重建
+    await waitFor(() => {
+      expect(screen.getByText('Web Mock MVP')).toBeInTheDocument();
+    });
+  });
 });

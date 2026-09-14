@@ -46,7 +46,11 @@ export function loadSettings(storage: Storage = window.localStorage): AppSetting
       return { ...DEFAULT_SETTINGS };
     }
     const parsed = JSON.parse(rawValue);
-    return sanitizeSettings(parsed);
+    const sanitized = sanitizeSettings(parsed);
+    return {
+      ...sanitized,
+      geminiApiKey: sanitized.geminiApiKey.trim(),
+    };
   } catch {
     // JSON 解析失败或 storage 访问受阻，回退默认配置
     return { ...DEFAULT_SETTINGS };
@@ -58,7 +62,10 @@ export function loadSettings(storage: Storage = window.localStorage): AppSetting
  */
 export function saveSettings(settings: AppSettings, storage: Storage = window.localStorage): void {
   try {
-    const sanitized = sanitizeSettings(settings);
+    const sanitized = sanitizeSettings({
+      ...settings,
+      geminiApiKey: typeof settings?.geminiApiKey === 'string' ? settings.geminiApiKey.trim() : '',
+    });
     storage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(sanitized));
   } catch (error) {
     console.error('Failed to save app settings to storage:', error);
