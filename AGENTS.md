@@ -38,8 +38,8 @@
 - **约束声明**：愿景仅用于技术决策对齐（接口预留、目录结构等），不构成任何执行授权（见铁律 3）。
 
 ## 1. 当前授权
-- **授权任务**：同步 Task 8 实施台账与 Task 9 分步规划至 AGENTS.md，待授权执行 Task 9 Step 1
-- **最近 commit**：a9b0187 feat(settings): connect settings state, useMemo adapter factory, and component tests (task 8 step 3)
+- **授权任务**：同步 Task 9 实施台账至 AGENTS.md，待授权执行 Task 10（GeminiChatAdapter.stream 与打字机体验）
+- **最近 commit**：a5fecf9 feat(ui): integrate ChatErrorBanner and TokenUsageBadge into App and MessageList with integration tests (task 9 step 3)
 - **越权处理**：凡不在当前授权范围内的文件改动，一律回滚，并记录到 §7 风险区。
 
 ## 2. 项目阶段
@@ -92,6 +92,10 @@
   - [x] **Step 1（存储与校验）**：定义 `AppSettings`、`settings.ts` 防御性存储与草稿模式校验（commit: 6e43820）
   - [x] **Step 2（设置弹窗与入口）**：构建 `SettingsModal` 弹窗（Provider/模型选择、密码框显隐切换、无障碍）并在 `Header` 挂载入口按钮（commit: fab6ecb）
   - [x] **Step 3（状态集成与单测）**：在 `App` 接入设置状态、动态 `useMemo` Adapter 工厂与组件级集成单测（commit: a9b0187）
+- [x] **Task 9**: 错误展示与用量记录 UI
+  - [x] **Step 1（模型扩展与 Hook 状态）**：`Message.usage?: ChatUsage`；`useChat` 捕获 `ChatError`、透传 `lastError`、零截断重试 `retryFailedSend`、Hook 单元测试（commit: 20e77ec）
+  - [x] **Step 2（纯展示组件构建）**：`TokenUsageBadge`（Zap 图标/条件渲染/ARIA）与 `ChatErrorBanner`（6 种错误码+default兜底/重试与设置入口/alert），组件单元测试（commit: d14d0ce）
+  - [x] **Step 3（挂载组装与全量回归）**：在 `MessageList` 挂载 Token 徽章，在 `App` 挂载错误横幅并联动设置弹窗，完成端到端集成测试与全量测试回归（commit: a5fecf9）
 
 ## 5. 待办事项
 所有任务默认未授权。执行任何任务前，须由用户在 §1 指派。
@@ -107,10 +111,7 @@
 - [x] **Task 6**: ChatAdapter 接口定义（send + stream 签名）+ 契约测试套件 + Mock 重构为 MockChatAdapter（同时实现 send/stream，行为不变，Phase 1 测试全绿）
 - [x] **Task 7**: GeminiChatAdapter.send（非流式）：role 映射、错误分类、usage 提取；单测全 mock 网络层
 - [x] **Task 8**: 设置面板与模型切换（Step 1 存储/校验 + Step 2 弹窗/入口 + Step 3 状态集成/单测全量完成）
-- [ ] **Task 9**: 错误展示与用量记录 UI
-  - [ ] **Step 1（模型扩展与 Hook 状态）**：`Message.usage?: ChatUsage`（复用既有类型，预留流式语义）；`useChat` 捕获既有 `ChatError`、透传 `lastError`（含清除时机生命周期）；实现限定失败场景且零截断的 `retryFailedSend()`；完成 hook 单元测试
-  - [ ] **Step 2（纯展示组件构建）**：新建 `TokenUsageBadge`（Lucide Zap 图标、aria-label、条件渲染）与 `ChatErrorBanner`（全覆盖 6 种 `ChatErrorCode` + default 兜底、重试与设置入口、role="alert"）；完成组件单元测试
-  - [ ] **Step 3（挂载组装与全量回归）**：在 `MessageList` 挂载 Token 徽章，在 `App` 挂载错误横幅并接入状态；完成端到端集成测试与全量回归测试（DoD: 100% 通过）；推送到 GitHub 远端
+- [x] **Task 9**: 错误展示与用量记录 UI（Step 1 模型与Hook + Step 2 纯展示组件 + Step 3 挂载组装与集成测试全量完成）
 - [ ] **Task 10**: GeminiChatAdapter.stream + 中断（AbortController）+ 打字机 UI + stream 契约测试扩展（Mock/Gemini 同跑，Mock 流式可在无 key 下演示）
 
 ### 后续阶段预研（未授权，仅规划）
