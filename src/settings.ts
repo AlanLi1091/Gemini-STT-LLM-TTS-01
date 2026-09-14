@@ -16,8 +16,11 @@ export function sanitizeSettings(raw: unknown): AppSettings {
   // 校验 provider
   const provider = record.provider === 'gemini' ? 'gemini' : 'mock';
 
-  // 校验 apiKey
-  const geminiApiKey = typeof record.geminiApiKey === 'string' ? record.geminiApiKey.trim() : '';
+  // 校验 apiKey：去除首尾空白并剔除所有非 ASCII 字符（防止 Headers 抛出 non ISO-8859-1 code point 异常）
+  const geminiApiKey =
+    typeof record.geminiApiKey === 'string'
+      ? record.geminiApiKey.trim().replace(/[^\x20-\x7E]/g, '')
+      : '';
 
   // 校验 model 是否在支持列表中
   const validModelIds = AVAILABLE_GEMINI_MODELS.map((m) => m.id as string);

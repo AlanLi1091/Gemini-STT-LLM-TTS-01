@@ -205,6 +205,39 @@ describe('GeminiChatAdapter Unit Tests (Task 7)', () => {
       });
     });
 
+    it('当 SDK 抛出 403 / PERMISSION_DENIED 异常时，转译为 AUTH_ERROR 的 ChatError', async () => {
+      mockGenerateContent.mockRejectedValueOnce({
+        status: 403,
+        message: 'The caller does not have permission: PERMISSION_DENIED',
+      });
+
+      const adapter = new GeminiChatAdapter({ apiKey: 'denied-key' });
+
+      await expect(
+        adapter.send([{ id: '1', role: 'user', content: 'hi', createdAt: 1 }])
+      ).rejects.toSatisfy((err: unknown) => {
+        return err instanceof ChatError && err.code === 'AUTH_ERROR' && err.status === 403;
+      });
+    });
+
+    it('当发生 Headers non ISO-8859-1 code point 异常时，转译为友好的 AUTH_ERROR ChatError', async () => {
+      mockGenerateContent.mockRejectedValueOnce(
+        new TypeError("Failed to execute 'append' on 'Headers': String contains non ISO-8859-1 code point.")
+      );
+
+      const adapter = new GeminiChatAdapter({ apiKey: 'key-with-unicode' });
+
+      await expect(
+        adapter.send([{ id: '1', role: 'user', content: 'hi', createdAt: 1 }])
+      ).rejects.toSatisfy((err: unknown) => {
+        return (
+          err instanceof ChatError &&
+          err.code === 'AUTH_ERROR' &&
+          err.message.includes('不可见')
+        );
+      });
+    });
+
     it('当 SDK 抛出 429 配额异常时，转译为 RATE_LIMIT 的 ChatError', async () => {
       mockGenerateContent.mockRejectedValueOnce({
         status: 429,

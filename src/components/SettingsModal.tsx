@@ -58,8 +58,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   // 点击保存时执行校验
   const handleSave = () => {
+    const cleanedKey = draftApiKey.trim().replace(/[^\x20-\x7E]/g, '');
+
     // 校验规则：provider 切到 gemini 且 key 为空 → 行内提示 + 阻止保存
-    if (draftProvider === 'gemini' && !draftApiKey.trim()) {
+    if (draftProvider === 'gemini' && !cleanedKey) {
       setValidationError('切换为 Gemini 模型时，请输入有效的 API Key');
       return;
     }
@@ -67,7 +69,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     setValidationError(null);
     onSave({
       provider: draftProvider,
-      geminiApiKey: draftApiKey.trim(),
+      geminiApiKey: cleanedKey,
       geminiModel: draftModel,
     });
     onClose();

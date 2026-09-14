@@ -49,6 +49,14 @@ describe('Settings persistence and sanitization (ADR-006, Task 8)', () => {
       });
       expect(nonString.geminiApiKey).toBe('');
     });
+
+    it('剔除 apiKey 中的不可见字符与非 ASCII 字符（防止 Headers 抛出 non ISO-8859-1 code point 异常）', () => {
+      const sanitized = sanitizeSettings({
+        provider: 'gemini',
+        geminiApiKey: '  AIzaSy123\u200b\uFEFF\u3000key\u00A0  ',
+      });
+      expect(sanitized.geminiApiKey).toBe('AIzaSy123key');
+    });
   });
 
   describe('loadSettings & saveSettings', () => {
