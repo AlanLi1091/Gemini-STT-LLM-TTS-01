@@ -3,6 +3,7 @@ import { Header } from './components/Header';
 import { MessageList } from './components/MessageList';
 import { ChatInput, ChatInputHandle } from './components/ChatInput';
 import { SettingsModal } from './components/SettingsModal';
+import { ChatErrorBanner } from './components/ChatErrorBanner';
 import { useChat } from './hooks/useChat';
 import { loadSettings, saveSettings } from './settings';
 import { AppSettings, ChatAdapter } from './types';
@@ -25,7 +26,17 @@ export const App: React.FC = () => {
     return new MockChatAdapter();
   }, [settings.provider, settings.geminiApiKey, settings.geminiModel]);
 
-  const { messages, inputText, isLoading, setInputText, sendMessage, clearMessages } = useChat({
+  const {
+    messages,
+    inputText,
+    isLoading,
+    lastError,
+    setInputText,
+    sendMessage,
+    retryFailedSend,
+    dismissError,
+    clearMessages,
+  } = useChat({
     adapter: activeAdapter,
   });
 
@@ -55,6 +66,15 @@ export const App: React.FC = () => {
         onClear={handleClear}
         onOpenSettings={() => setIsSettingsOpen(true)}
         disabled={isLoading}
+      />
+
+      {/* 错误提示横幅 (Task 9) */}
+      <ChatErrorBanner
+        error={lastError}
+        onRetry={retryFailedSend}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onDismiss={dismissError}
+        isRetrying={isLoading}
       />
 
       {/* 中间可滚动消息区 */}

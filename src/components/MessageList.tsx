@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { MessageSquare, Bot, User, ArrowDown } from 'lucide-react';
 import { Message } from '../types';
 import { ThinkingIndicator } from './ThinkingIndicator';
+import { TokenUsageBadge } from './TokenUsageBadge';
 
 interface MessageListProps {
   messages?: Message[];
@@ -135,6 +136,11 @@ export const MessageList: React.FC<MessageListProps> = ({
                       }`}
                     >
                       <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                      {!isUser && msg.usage && (
+                        <div>
+                          <TokenUsageBadge usage={msg.usage} />
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
