@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Bot, Sparkles, Trash2, AlertCircle } from 'lucide-react';
+import { Bot, Sparkles, Trash2, AlertCircle, Settings } from 'lucide-react';
 
 interface HeaderProps {
   title?: string;
   subtitle?: string;
   messageCount?: number;
   onClear?: () => void;
+  onOpenSettings?: () => void;
   disabled?: boolean;
 }
 
@@ -14,6 +15,7 @@ export const Header: React.FC<HeaderProps> = ({
   subtitle = 'Web Mock MVP',
   messageCount = 0,
   onClear,
+  onOpenSettings,
   disabled = false,
 }) => {
   const [showConfirm, setShowConfirm] = useState(false);
@@ -56,6 +58,19 @@ export const Header: React.FC<HeaderProps> = ({
             <Sparkles className="w-3 h-3 text-emerald-600" aria-hidden="true" />
             <span>{subtitle}</span>
           </span>
+
+          {/* 设置入口按钮 */}
+          <button
+            id="settings-button"
+            type="button"
+            onClick={onOpenSettings}
+            aria-label="设置"
+            title="模型与调试设置"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100 border border-zinc-200 transition-all cursor-pointer"
+          >
+            <Settings className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">设置</span>
+          </button>
 
           {/* 清空对话按钮（带确认交互） */}
           {showConfirm ? (

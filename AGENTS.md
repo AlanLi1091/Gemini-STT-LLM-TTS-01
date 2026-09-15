@@ -8,6 +8,7 @@
 3. **愿景 ≠ 授权**：项目愿景（§0）仅用于架构决策参考，不得据此提前实现未来阶段功能（包括 Discord、语音、多模型、后端）。
 4. **先计划后动手**：任何文件创建或修改前，先在聊天区提交计划，经用户确认后执行。计划的合法形态 = 将修改的文件清单 + 每步一句话说明（可选：接口签名或 ≤10 行示意片段）。计划中禁止出现完整实现代码。
 5. **单步闭环**：每步完成后依次执行：测试通过 → Git commit → 推送至 GitHub（git push） → 更新本文档状态区，然后停止。
+   - **分支约束（最高级别）**：在未经用户明确书面授权合并或指定其他目标分支的情况下，**所有 `git push` 操作默认且仅限推送到 `test` 分支（即 `origin test`）**，严禁未经指令直接向 `main` 分支推送。
 6. **代码的唯一去处是文件**：所有交付代码必须通过文件写入落盘。聊天区仅承载四类内容：计划、结果摘要、提问、提议。任何仅存在于聊天区的代码视为未交付，等同于没有干活。汇报时结论先行，不逐步外化推理过程；解释理由不超过 3 句，除非用户要求展开。
 
 ## 会话启动协议
@@ -37,8 +38,8 @@
 - **约束声明**：愿景仅用于技术决策对齐（接口预留、目录结构等），不构成任何执行授权（见铁律 3）。
 
 ## 1. 当前授权
-- **授权任务**：Task 7（GeminiChatAdapter.send 非流式、role 映射、错误分类、usage 提取）已完成，待指派 Task 8
-- **最近 commit**：f1722d5 feat(adapter): implement GeminiChatAdapter send, role mapping, error classification, and usage extraction (task 7)
+- **授权任务**：将默认与可选 Gemini 模型升级为 Google 官方当前支持的 3.8/3.6/3.1 系列（gemini-3.8-flash / gemini-3.6-flash / gemini-3.1-pro），并完成 Git 本地提交与 GitHub push（已完成）；待授权执行 Task 10（GeminiChatAdapter.stream 与打字机体验）
+- **最近 commit**：14b72bb feat(models): upgrade Gemini models to 3.8-flash, 3.6-flash and 3.1-pro
 - **越权处理**：凡不在当前授权范围内的文件改动，一律回滚，并记录到 §7 风险区。
 
 ## 2. 项目阶段
@@ -87,6 +88,14 @@
 - [x] **Task 5**: 交互细节与体验优化（智能触底滚动、auto-expanding textarea、IME 防误发、清空对话、无障碍适配，commit: 10c0bbc）
 - [x] **Task 6**: ChatAdapter 接口定义与契约测试套件，Mock 重构为 MockChatAdapter（commit: 0998e94）
 - [x] **Task 7**: GeminiChatAdapter.send（非流式实现、role 映射、错误分类、Token 用量提取，单测 100% Mock 网络层，commit: f1722d5）
+- [x] **Task 8**: 设置面板与模型切换
+  - [x] **Step 1（存储与校验）**：定义 `AppSettings`、`settings.ts` 防御性存储与草稿模式校验（commit: 6e43820）
+  - [x] **Step 2（设置弹窗与入口）**：构建 `SettingsModal` 弹窗（Provider/模型选择、密码框显隐切换、无障碍）并在 `Header` 挂载入口按钮（commit: fab6ecb）
+  - [x] **Step 3（状态集成与单测）**：在 `App` 接入设置状态、动态 `useMemo` Adapter 工厂与组件级集成单测（commit: a9b0187）
+- [x] **Task 9**: 错误展示与用量记录 UI
+  - [x] **Step 1（模型扩展与 Hook 状态）**：`Message.usage?: ChatUsage`；`useChat` 捕获 `ChatError`、透传 `lastError`、零截断重试 `retryFailedSend`、Hook 单元测试（commit: 20e77ec）
+  - [x] **Step 2（纯展示组件构建）**：`TokenUsageBadge`（Zap 图标/条件渲染/ARIA）与 `ChatErrorBanner`（6 种错误码+default兜底/重试与设置入口/alert），组件单元测试（commit: d14d0ce）
+  - [x] **Step 3（挂载组装与全量回归）**：在 `MessageList` 挂载 Token 徽章，在 `App` 挂载错误横幅并联动设置弹窗，完成端到端集成测试与全量测试回归（commit: a5fecf9）
 
 ## 5. 待办事项
 所有任务默认未授权。执行任何任务前，须由用户在 §1 指派。
@@ -101,8 +110,8 @@
 ### Phase 2（已规划，全部未授权）
 - [x] **Task 6**: ChatAdapter 接口定义（send + stream 签名）+ 契约测试套件 + Mock 重构为 MockChatAdapter（同时实现 send/stream，行为不变，Phase 1 测试全绿）
 - [x] **Task 7**: GeminiChatAdapter.send（非流式）：role 映射、错误分类、usage 提取；单测全 mock 网络层
-- [ ] **Task 8**: 设置面板与模型切换：key 输入与 localStorage 持久化、模型选择、默认 Mock
-- [ ] **Task 9**: 错误展示与用量记录 UI
+- [x] **Task 8**: 设置面板与模型切换（Step 1 存储/校验 + Step 2 弹窗/入口 + Step 3 状态集成/单测全量完成）
+- [x] **Task 9**: 错误展示与用量记录 UI（Step 1 模型与Hook + Step 2 纯展示组件 + Step 3 挂载组装与集成测试全量完成）
 - [ ] **Task 10**: GeminiChatAdapter.stream + 中断（AbortController）+ 打字机 UI + stream 契约测试扩展（Mock/Gemini 同跑，Mock 流式可在无 key 下演示）
 
 ### 后续阶段预研（未授权，仅规划）

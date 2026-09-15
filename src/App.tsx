@@ -1,17 +1,58 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { Header } from './components/Header';
 import { MessageList } from './components/MessageList';
 import { ChatInput, ChatInputHandle } from './components/ChatInput';
+import { SettingsModal } from './components/SettingsModal';
+import { ChatErrorBanner } from './components/ChatErrorBanner';
 import { useChat } from './hooks/useChat';
+import { loadSettings, saveSettings } from './settings';
+import { AppSettings, ChatAdapter } from './types';
+import { MockChatAdapter } from './adapters/MockChatAdapter';
+import { GeminiChatAdapter } from './adapters/GeminiChatAdapter';
 
 export const App: React.FC = () => {
-  const { messages, inputText, isLoading, setInputText, sendMessage, clearMessages } = useChat();
+  // 设置状态管理与弹窗显隐控制 (ADR-006, Task 8)
+  const [settings, setSettings] = useState<AppSettings>(() => loadSettings());
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+
+  // 根据当前 settings 动态创建对应的 ChatAdapter（UI 绑定层负责实例化，内核不感知 AppSettings）
+  const activeAdapter = useMemo<ChatAdapter>(() => {
+    if (settings.provider === 'gemini' && settings.geminiApiKey.trim()) {
+      return new GeminiChatAdapter({
+        apiKey: settings.geminiApiKey.trim(),
+        model: settings.geminiModel,
+      });
+    }
+    return new MockChatAdapter();
+  }, [settings.provider, settings.geminiApiKey, settings.geminiModel]);
+
+  const {
+    messages,
+    inputText,
+    isLoading,
+    lastError,
+    setInputText,
+    sendMessage,
+    retryFailedSend,
+    dismissError,
+    clearMessages,
+  } = useChat({
+    adapter: activeAdapter,
+  });
+
   const inputRef = useRef<ChatInputHandle>(null);
 
   const handleClear = () => {
     clearMessages();
     inputRef.current?.focus();
   };
+
+  const handleSaveSettings = (newSettings: AppSettings) => {
+    setSettings(newSettings);
+    saveSettings(newSettings);
+  };
+
+  const subtitle = settings.provider === 'gemini' ? `Gemini (${settings.geminiModel})` : 'Web Mock MVP';
 
   return (
     <div
@@ -20,9 +61,20 @@ export const App: React.FC = () => {
     >
       {/* 顶部标题栏 */}
       <Header
+        subtitle={subtitle}
         messageCount={messages.length}
         onClear={handleClear}
+        onOpenSettings={() => setIsSettingsOpen(true)}
         disabled={isLoading}
+      />
+
+      {/* 错误提示横幅 (Task 9) */}
+      <ChatErrorBanner
+        error={lastError}
+        onRetry={retryFailedSend}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onDismiss={dismissError}
+        isRetrying={isLoading}
       />
 
       {/* 中间可滚动消息区 */}
@@ -35,6 +87,14 @@ export const App: React.FC = () => {
         disabled={isLoading}
         onChange={(e) => setInputText(e.target.value)}
         onSubmit={() => sendMessage()}
+      />
+
+      {/* 设置弹窗 (草稿-确认模式，仅在点击保存时落地) */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        settings={settings}
+        onSave={handleSaveSettings}
       />
     </div>
   );

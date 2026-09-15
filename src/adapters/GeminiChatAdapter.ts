@@ -73,17 +73,22 @@ export function classifyGeminiError(error: unknown, signal?: AbortSignal): ChatE
   const message = errObj.message || String(error);
   const lowerMsg = message.toLowerCase();
 
-  // 1. 鉴权与 API Key 错误
+  // 1. 鉴权与 API Key 错误（含 PERMISSION_DENIED 与 Headers 非法字符）
   if (
     status === 401 ||
     status === 403 ||
+    lowerMsg.includes('permission_denied') ||
+    lowerMsg.includes('permission denied') ||
     lowerMsg.includes('api_key_invalid') ||
     lowerMsg.includes('api key not valid') ||
     lowerMsg.includes('unauthenticated') ||
-    lowerMsg.includes('permission denied') ||
-    lowerMsg.includes('invalid api key')
+    lowerMsg.includes('invalid api key') ||
+    lowerMsg.includes('iso-8859-1')
   ) {
-    return new ChatError(message, 'AUTH_ERROR', { status, originalError: error });
+    const hint = lowerMsg.includes('iso-8859-1')
+      ? 'API Key 中包含不可见的非法字符，请重新复制粘贴。'
+      : message;
+    return new ChatError(hint, 'AUTH_ERROR', { status: status || 403, originalError: error });
   }
 
   // 2. 限流 / 配额耗尽
@@ -133,7 +138,7 @@ export class GeminiChatAdapter implements ChatAdapter {
   private systemInstruction?: string;
 
   constructor(config: GeminiAdapterConfig) {
-    this.apiKey = config.apiKey?.trim() || '';
+    this.apiKey = (config.apiKey || '').trim().replace(/[^\x20-\x7E]/g, '');
     this.model = config.model?.trim() || 'gemini-3.8-flash';
     this.systemInstruction = config.systemInstruction;
     this.id = `gemini-${this.model}`;
@@ -150,7 +155,8 @@ export class GeminiChatAdapter implements ChatAdapter {
       throw new ChatError('The operation was aborted.', 'ABORTED');
     }
 
-    if (!this.apiKey) {
+    const key = this.apiKey.trim();
+    if (!key) {
       throw new ChatError(
         'Gemini API key is required. Please configure your API key.',
         'AUTH_ERROR'
@@ -165,7 +171,7 @@ export class GeminiChatAdapter implements ChatAdapter {
     const systemInstruction = resolveSystemInstruction(messages, this.systemInstruction);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: this.apiKey });
+      const ai = new GoogleGenAI({ apiKey: key });
 
       const response = await ai.models.generateContent({
         model: this.model,
@@ -205,6 +211,13 @@ export class GeminiChatAdapter implements ChatAdapter {
     const { signal } = options;
     if (signal?.aborted) {
       throw new ChatError('The operation was aborted.', 'ABORTED');
+    }
+    const key = this.apiKey.trim();
+    if (!key) {
+      throw new ChatError(
+        'Gemini API key is required. Please configure your API key.',
+        'AUTH_ERROR'
+      );
     }
     throw new Error('GeminiChatAdapter stream is not yet implemented (scheduled for Task 10)');
   }

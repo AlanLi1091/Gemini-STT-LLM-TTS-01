@@ -132,6 +132,24 @@ describe('GeminiChatAdapter Unit Tests (Task 7)', () => {
       });
     });
 
+    it('当 apiKey 仅含空白字符时，send 抛出 AUTH_ERROR 且不发请求', async () => {
+      const adapter = new GeminiChatAdapter({ apiKey: '    ' });
+      await expect(
+        adapter.send([{ id: '1', role: 'user', content: 'test', createdAt: 1 }])
+      ).rejects.toMatchObject({
+        code: 'AUTH_ERROR',
+      });
+      expect(mockGenerateContent).not.toHaveBeenCalled();
+    });
+
+    it('当未配置 apiKey 时，stream 迭代抛出 AUTH_ERROR 类型的 ChatError', async () => {
+      const adapter = new GeminiChatAdapter({ apiKey: '   ' });
+      const streamGen = adapter.stream([{ id: '1', role: 'user', content: 'test', createdAt: 1 }]);
+      await expect(streamGen.next()).rejects.toMatchObject({
+        code: 'AUTH_ERROR',
+      });
+    });
+
     it('当传入已 aborted 的 signal 时，抛出 ABORTED 类型的 ChatError', async () => {
       const adapter = new GeminiChatAdapter({ apiKey: 'valid-key' });
       const controller = new AbortController();
@@ -202,6 +220,39 @@ describe('GeminiChatAdapter Unit Tests (Task 7)', () => {
         adapter.send([{ id: '1', role: 'user', content: 'hi', createdAt: 1 }])
       ).rejects.toSatisfy((err: unknown) => {
         return err instanceof ChatError && err.code === 'AUTH_ERROR' && err.status === 401;
+      });
+    });
+
+    it('当 SDK 抛出 403 / PERMISSION_DENIED 异常时，转译为 AUTH_ERROR 的 ChatError', async () => {
+      mockGenerateContent.mockRejectedValueOnce({
+        status: 403,
+        message: 'The caller does not have permission: PERMISSION_DENIED',
+      });
+
+      const adapter = new GeminiChatAdapter({ apiKey: 'denied-key' });
+
+      await expect(
+        adapter.send([{ id: '1', role: 'user', content: 'hi', createdAt: 1 }])
+      ).rejects.toSatisfy((err: unknown) => {
+        return err instanceof ChatError && err.code === 'AUTH_ERROR' && err.status === 403;
+      });
+    });
+
+    it('当发生 Headers non ISO-8859-1 code point 异常时，转译为友好的 AUTH_ERROR ChatError', async () => {
+      mockGenerateContent.mockRejectedValueOnce(
+        new TypeError("Failed to execute 'append' on 'Headers': String contains non ISO-8859-1 code point.")
+      );
+
+      const adapter = new GeminiChatAdapter({ apiKey: 'key-with-unicode' });
+
+      await expect(
+        adapter.send([{ id: '1', role: 'user', content: 'hi', createdAt: 1 }])
+      ).rejects.toSatisfy((err: unknown) => {
+        return (
+          err instanceof ChatError &&
+          err.code === 'AUTH_ERROR' &&
+          err.message.includes('不可见')
+        );
       });
     });
 
