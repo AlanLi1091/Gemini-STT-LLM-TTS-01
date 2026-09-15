@@ -34,12 +34,14 @@
   - 模型后端可插拔（Gemini / 其他 LLM），统一通过 ChatAdapter 接口接入
   - 内置角色扮演系统（人设配置、上下文与记忆管理）
   - 保留 Web Playground 作为长期调试与演示控制台
+- **使用场景（直播伴随）**：直播画面以主播自身内容为主（如游戏画面）；主播通过 Discord 语音通话唤醒 STT→LLM→TTS 全链路，bot 语音播给所有参与/观看直播的人；Discord 文字聊天仅启用 LLM 对话。直播时文字与语音同时需要，文字的具体承载方式（Discord 频道展示 / 画面 Overlay / 其他）待 Phase 6 预研确定。
 - **演进路径**：Web Mock MVP → LLM 接入 → 后端服务化 → Discord 文字接入 → 角色扮演系统 → 语音链路 → 多模型完善
+- **远期方向（纯愿景，不进入 Phase 路线图，不构成执行授权）**：bot 角色三阶段演进——①语音助手（回应主播）；②直播伴侣（回复观众弹幕/评论）；③自主行为能力（对直播画面发表看法）。仅作为 Phase 5 之后架构决策的参考坐标。
 - **约束声明**：愿景仅用于技术决策对齐（接口预留、目录结构等），不构成任何执行授权（见铁律 3）。
 
 ## 1. 当前授权
-- **授权任务**：同步 AGENTS.md 状态区、模型升级记录与 ADR-008 链路防御台账（已完成）；待授权执行 Task 10（GeminiChatAdapter.stream 与打字机体验）
-- **最近 commit**：2ff43a1 docs(agents): update recent commit to 14b72bb
+- **授权任务**：Task 10（GeminiChatAdapter.stream 与打字机体验）已授权、执行中（首步规划：Step 1 适配器流式与中断实现）
+- **最近 commit**：bddfc41 docs(agents): record model upgrade, ADR-008 and dynamic models backlog
 - **越权处理**：凡不在当前授权范围内的文件改动，一律回滚，并记录到 §7 风险区。
 
 ## 2. 项目阶段
@@ -63,7 +65,7 @@
 | **3** | 后端服务化 | Node.js 服务承载领域内核；Playground 改连后端；会话持久化；密钥管理落地 |
 | **4** | Discord 文字接入 | discord.js 网关稳定在线；文字对话闭环；限流与错误处理 |
 | **5** | 角色扮演系统 | 角色配置（人设 Prompt / 开场白 / 记忆）可用；Character Card 兼容评估完成 |
-| **6** | 语音链路 | STT→LLM→TTS 流式管道打通（优先 Web 麦克风；Discord 语音频道视预研结论） |
+| **6** | 语音链路 | STT→LLM→TTS 流式管道打通；主入口为 Discord 语音通话（直播场景），Web 麦克风保留为调试通道；直播场景文字+语音伴随输出可用（承载方式以预研结论为准） |
 | **7** | 多模型完善 | ≥2 个真实 provider 可切换，配置化选择 |
 
 ### 3.3 技术架构规划
@@ -124,7 +126,7 @@
 - [ ] **Task 12 (Phase 4)**: discord.js 选型验证与最小网关 Demo
 - [ ] **Task 13 (Phase 5)**: 角色数据格式调研（自定义 schema vs Character Card V2）
 - [ ] **消息重发/重生成与分支导航（基于 ADR-005 消息树模型）** (Phase 5)
-- [ ] **Task 14 (Phase 6)**: 语音链路方案对比（Gemini 原生音频 vs Whisper+TTS；Web 麦克风 vs Discord 语音频道）
+- [ ] **Task 14 (Phase 6)**: 语音链路方案对比（Gemini 原生音频 vs Whisper+TTS；Discord 语音通话作为直播主入口的可行性与端到端延迟验证；Web 麦克风降级为调试通道；直播文字伴随输出的承载方式选型）
 
 ## 6. 技术决策记录
 - **ADR-001: MVP 采用纯前端 Mock 机制**
