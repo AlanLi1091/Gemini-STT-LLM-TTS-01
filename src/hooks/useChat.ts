@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Message, ChatAdapter, ChatError, ChatUsage } from '../types';
-import { defaultMockAdapter } from '../services/mockChatService';
+import { Message, ChatAdapter, ChatError } from '../types';
+import { defaultMockAdapter, createAssistantMessage } from '../services/mockChatService';
 
 export interface UseChatOptions {
   initialMessages?: Message[];
@@ -16,8 +16,8 @@ export interface UseChatReturn {
   lastError: ChatError | null;
   setInputText: (text: string) => void;
   sendMessage: (content?: string) => Promise<boolean>;
-  stopGenerating: () => void;
   retryFailedSend: () => Promise<boolean>;
+  stopGenerating: () => void;
   dismissError: () => void;
   clearMessages: () => void;
 }
@@ -30,16 +30,16 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [lastError, setLastError] = useState<ChatError | null>(null);
 
+  // 维护当前活跃流式生成所关联的 AbortController 实例
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   // 用 ref 保持最新 adapter 引用，避免切换 adapter 时导致进行中请求被打断或引用滞后
   const adapterRef = useRef<ChatAdapter>(adapter);
   useEffect(() => {
     adapterRef.current = adapter;
   }, [adapter]);
 
-  // 控制当前进行中的流式中断控制器
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  // 组件卸载时安全中断进行中的请求
+  // 组件卸载时自动 abort 正在进行的请求，防止内存泄漏或无效回调
   useEffect(() => {
     return () => {
       if (abortControllerRef.current) {
@@ -54,6 +54,8 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
+    setIsGenerating(false);
+    setIsLoading(false);
   }, []);
 
   const dismissError = useCallback(() => {
@@ -66,129 +68,99 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     setLastError(null);
   }, [stopGenerating]);
 
-  const executeStream = useCallback(
+  const executeSend = useCallback(
     async (contextMessages: Message[]): Promise<boolean> => {
+      const activeAdapter = adapterRef.current;
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
       setIsLoading(true);
-      setIsGenerating(true);
+      setIsGenerating(false);
 
-      let accumulatedContent = '';
-      let latestUsage: ChatUsage | undefined;
-      let assistantMessageId: string | null = null;
+      // 创建一个尚未挂载的 assistant 占位消息对象
+      const assistantId = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      let assistantMounted = false;
 
       try {
-        const activeAdapter = adapterRef.current;
-        const streamIterable = activeAdapter.stream(contextMessages, {
-          signal: controller.signal,
+        // 优先尝试流式接口
+        if (typeof activeAdapter.stream === 'function') {
+          const streamIterable = activeAdapter.stream(contextMessages, {
+            delayMs: mockDelayMs,
+            signal: controller.signal,
+          });
+
+          for await (const chunk of streamIterable) {
+            // 第一个 chunk 到达：解除 initial loading 思考态，进入 generating 打字机态
+            if (!assistantMounted) {
+              assistantMounted = true;
+              setIsLoading(false);
+              setIsGenerating(true);
+              const initialAssistantMessage: Message = {
+                id: assistantId,
+                role: 'assistant',
+                content: chunk.accumulated,
+                createdAt: Date.now(),
+                ...(chunk.usage ? { usage: chunk.usage } : {}),
+              };
+              setMessages((prev) => [...prev, initialAssistantMessage]);
+            } else {
+              // 逐 chunk 更新最后一条 assistant 消息（ADR-007: 流式追加更新符合不可变约束）
+              setMessages((prev) => {
+                const lastIdx = prev.length - 1;
+                if (lastIdx < 0 || prev[lastIdx].id !== assistantId) {
+                  return prev;
+                }
+                const updated = [...prev];
+                updated[lastIdx] = {
+                  ...updated[lastIdx],
+                  content: chunk.accumulated,
+                  ...(chunk.usage ? { usage: chunk.usage } : {}),
+                };
+                return updated;
+              });
+            }
+          }
+
+          setIsGenerating(false);
+          return true;
+        }
+
+        // 降级非流式接口
+        const response = await activeAdapter.send(contextMessages, {
           delayMs: mockDelayMs,
+          signal: controller.signal,
         });
-
-        for await (const chunk of streamIterable) {
-          if (chunk.usage) {
-            latestUsage = chunk.usage;
-          }
-          if (chunk.accumulated !== undefined) {
-            accumulatedContent = chunk.accumulated;
-          } else if (chunk.delta) {
-            accumulatedContent += chunk.delta;
-          }
-
-          if (!assistantMessageId) {
-            assistantMessageId = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-            const newAssistantMsg: Message = {
-              id: assistantMessageId,
-              role: 'assistant',
-              content: accumulatedContent,
-              createdAt: Date.now(),
-              ...(latestUsage ? { usage: latestUsage } : {}),
-            };
-            setMessages((prev) => [...prev, newAssistantMsg]);
-          } else {
-            setMessages((prev) =>
-              prev.map((msg) =>
-                msg.id === assistantMessageId
-                  ? {
-                      ...msg,
-                      content: accumulatedContent,
-                      ...(latestUsage ? { usage: latestUsage } : {}),
-                    }
-                  : msg
-              )
-            );
-          }
-        }
-
-        // 若流未抛出异常但未分块产生且已有累积内容，兜底插入
-        if (!assistantMessageId && accumulatedContent) {
-          assistantMessageId = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-          const newAssistantMsg: Message = {
-            id: assistantMessageId,
-            role: 'assistant',
-            content: accumulatedContent,
-            createdAt: Date.now(),
-            ...(latestUsage ? { usage: latestUsage } : {}),
-          };
-          setMessages((prev) => [...prev, newAssistantMsg]);
-        }
-
+        const assistantMessage = createAssistantMessage(response.content, response.usage);
+        setMessages((prev) => [...prev, assistantMessage]);
         return true;
-      } catch (err: unknown) {
-        const isAborted =
+      } catch (err) {
+        // 检查是否是被主动中止（手动打断）
+        const isAbort =
           controller.signal.aborted ||
           (err instanceof ChatError && err.code === 'ABORTED') ||
-          (err as Error)?.name === 'AbortError';
+          (err instanceof Error && err.name === 'AbortError');
 
-        if (isAborted) {
-          // 用户主动停止生成
-          if (assistantMessageId) {
-            if (accumulatedContent.trim() === '') {
-              setMessages((prev) => prev.filter((m) => m.id !== assistantMessageId));
-            } else {
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === assistantMessageId
-                    ? { ...msg, content: accumulatedContent, aborted: true }
-                    : msg
-                )
-              );
-            }
-          }
-          return false;
-        } else {
-          // 外部调用故障
-          console.error('Failed to generate reply:', err);
-          const normalizedError =
-            err instanceof ChatError
-              ? err
-              : new ChatError(
-                  err instanceof Error ? err.message : 'Unknown chat error',
-                  'UNKNOWN'
-                );
-          setLastError(normalizedError);
-
-          if (assistantMessageId) {
-            if (accumulatedContent.trim() === '') {
-              setMessages((prev) => prev.filter((m) => m.id !== assistantMessageId));
-            } else {
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === assistantMessageId
-                    ? { ...msg, content: accumulatedContent }
-                    : msg
-                )
-              );
-            }
-          }
+        if (isAbort) {
+          // 主动打断不视为致命故障，保留已上屏的片段，不设 lastError
           return false;
         }
+
+        console.error('Failed to generate reply:', err);
+        const normalizedError =
+          err instanceof ChatError
+            ? err
+            : new ChatError(
+                err instanceof Error ? err.message : 'Unknown chat error',
+                'UNKNOWN'
+              );
+        setLastError(normalizedError);
+        return false;
       } finally {
-        setIsLoading(false);
-        setIsGenerating(false);
         if (abortControllerRef.current === controller) {
           abortControllerRef.current = null;
         }
+        setIsLoading(false);
+        setIsGenerating(false);
       }
     },
     [mockDelayMs]
@@ -196,7 +168,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
 
   const sendMessage = useCallback(
     async (customContent?: string): Promise<boolean> => {
-      // 生成中禁止重复触发
+      // 思考中或流式生成中禁止重复触发
       if (isLoading || isGenerating) {
         return false;
       }
@@ -219,39 +191,33 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
         createdAt: Date.now(),
       };
 
-      const contextMessages = [...messages, userMessage];
-      setMessages(contextMessages);
+      const nextMessages = [...messages, userMessage];
+      setMessages(nextMessages);
       setInputText('');
 
-      return await executeStream(contextMessages);
+      return await executeSend(nextMessages);
     },
-    [executeStream, inputText, isGenerating, isLoading, messages]
+    [executeSend, inputText, isGenerating, isLoading, messages]
   );
 
   /**
    * 失败重试（限定失败场景，会话日志严格仅追加，零截断）
-   * 守卫规则：仅当存在未恢复的 lastError 且不在生成中时可用
+   * 守卫规则：仅当存在未恢复的 lastError 且最后一条为 user 消息时可用
    */
   const retryFailedSend = useCallback(async (): Promise<boolean> => {
     if (isLoading || isGenerating || !lastError || messages.length === 0) {
       return false;
     }
 
-    // 寻找最近一条用户消息作为重试上下文
-    const lastUserIndex = messages.map((m) => m.role).lastIndexOf('user');
-    if (lastUserIndex === -1) {
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage.role !== 'user') {
       return false;
     }
 
-    // 遵循 ADR-005：截断目标消息之后的消息，并重新驱动流
-    const contextMessages = messages.slice(0, lastUserIndex + 1);
-
     // 开始重试，清空当前错误
     setLastError(null);
-    setMessages(contextMessages);
-
-    return await executeStream(contextMessages);
-  }, [executeStream, isGenerating, isLoading, lastError, messages]);
+    return await executeSend(messages);
+  }, [executeSend, isGenerating, isLoading, lastError, messages]);
 
   return {
     messages,
@@ -261,8 +227,8 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     lastError,
     setInputText,
     sendMessage,
-    stopGenerating,
     retryFailedSend,
+    stopGenerating,
     dismissError,
     clearMessages,
   };

@@ -34,8 +34,8 @@ describe('Task 9: 错误提示与用量记录 UI 集成测试', () => {
       lastError: null,
       setInputText: vi.fn(),
       sendMessage: vi.fn(),
-      stopGenerating: vi.fn(),
       retryFailedSend: vi.fn(),
+      stopGenerating: vi.fn(),
       dismissError: vi.fn(),
       clearMessages: vi.fn(),
     });
@@ -70,8 +70,8 @@ describe('Task 9: 错误提示与用量记录 UI 集成测试', () => {
       lastError: new ChatError('403 PERMISSION_DENIED: region unsupported', 'AUTH_ERROR'),
       setInputText: vi.fn(),
       sendMessage: vi.fn(),
-      stopGenerating: vi.fn(),
       retryFailedSend: retryFailedSendMock,
+      stopGenerating: vi.fn(),
       dismissError: dismissErrorMock,
       clearMessages: vi.fn(),
     });
@@ -103,8 +103,8 @@ describe('Task 9: 错误提示与用量记录 UI 集成测试', () => {
       lastError: new ChatError('Invalid API Key', 'AUTH_ERROR'),
       setInputText: vi.fn(),
       sendMessage: vi.fn(),
-      stopGenerating: vi.fn(),
       retryFailedSend: vi.fn(),
+      stopGenerating: vi.fn(),
       dismissError: vi.fn(),
       clearMessages: vi.fn(),
     });

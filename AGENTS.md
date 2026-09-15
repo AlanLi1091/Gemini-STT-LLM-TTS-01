@@ -40,8 +40,8 @@
 - **约束声明**：愿景仅用于技术决策对齐（接口预留、目录结构等），不构成任何执行授权（见铁律 3）。
 
 ## 1. 当前授权
-- **授权任务**：Task 10 已授权、执行中（Step 1 已完成，待指派 Step 2）
-- **最近 commit**：1282903 feat(adapter): implement stream and abort cascade for GeminiChatAdapter with contract tests
+- **授权任务**：Task 10 Step 2 已完成，待指派 Step 3（UI 呈现与集成闭环）
+- **最近 commit**：592be1a feat(chat): refine useChat streaming state machine and align tests
 - **越权处理**：凡不在当前授权范围内的文件改动，一律回滚，并记录到 §7 风险区。
 
 ## 2. 项目阶段
@@ -102,6 +102,7 @@
 - [x] **Gemini 模型升级与测试闭环**：将默认与可选 Gemini 模型升级至 3.8-flash / 3.6-flash / 3.1-pro，全量同步 settings-storage 与 UI 测试（commit: 14b72bb）
 - [ ] **Task 10**: GeminiChatAdapter.stream + 中断（AbortController）+ 打字机 UI + stream 契约测试扩展
   - [x] **Step 1（适配器流式与中断）**：GeminiChatAdapter.stream 实现、AbortSignal 级联、契约测试与单测扩展（commit: 1282903）
+  - [x] **Step 2（Hook 状态机与控制）**：`useChat` 流式驱动、`isGenerating` / `stopGenerating` 控制、`AbortController` 级联与中途打断单测
 
 ## 5. 待办事项
 所有任务默认未授权。执行任何任务前，须由用户在 §1 指派。
@@ -120,7 +121,7 @@
 - [x] **Task 9**: 错误展示与用量记录 UI（Step 1 模型与Hook + Step 2 纯展示组件 + Step 3 挂载组装与集成测试全量完成）
 - [ ] **Task 10**: GeminiChatAdapter.stream + 中断（AbortController）+ 打字机 UI + stream 契约测试扩展（Mock/Gemini 同跑，Mock 流式可在无 key 下演示）
   - [x] **Step 1（适配器流式与中断）**：GeminiChatAdapter.stream 实现、AbortSignal 级联、契约测试单测（已完成）
-  - [ ] **Step 2（Hook 状态机与控制）**：useChat 流式驱动、stopGenerating 控制与中途打断单测
+  - [x] **Step 2（Hook 状态机与控制）**：useChat 流式驱动、stopGenerating 控制与中途打断单测（已完成）
   - [ ] **Step 3（UI 呈现与集成闭环）**：打字机光标动效、停止生成按钮与端到端回归
 - [ ] **模型动态发现与拉取（提议，未授权）**：支持通过 Gemini API（models.list）动态拉取当前 Key 可用的模型列表，替代硬编码配置，避免模型下线或权限不匹配。
 

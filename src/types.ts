@@ -7,8 +7,6 @@ export interface Message {
   createdAt: number;
   /** 单次回复消耗的 Token 用量（Task 10 流式完成时回填于此字段，与 ADR-007 语义保持一致） */
   usage?: ChatUsage;
-  /** 标识该条消息是否已被用户主动中断生成 (Task 10) */
-  aborted?: boolean;
 }
 
 export interface ChatUsage {
