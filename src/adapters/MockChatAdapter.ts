@@ -1,4 +1,4 @@
-import { ChatAdapter, ChatAdapterOptions, ChatChunk, ChatResponse, Message } from '../types';
+import { ChatAdapter, ChatAdapterOptions, ChatChunk, ChatError, ChatResponse, Message } from '../types';
 
 export interface MockChatAdapterOptions {
   delayMs?: number;
@@ -40,7 +40,7 @@ export class MockChatAdapter implements ChatAdapter {
     const { signal } = options;
 
     if (signal?.aborted) {
-      throw new DOMException('The operation was aborted.', 'AbortError');
+      throw new ChatError('The operation was aborted.', 'ABORTED');
     }
 
     const delay = (options.delayMs as number | undefined) ?? this.defaultDelayMs;
@@ -53,7 +53,7 @@ export class MockChatAdapter implements ChatAdapter {
 
         const onAbort = () => {
           clearTimeout(timer);
-          reject(new DOMException('The operation was aborted.', 'AbortError'));
+          reject(new ChatError('The operation was aborted.', 'ABORTED'));
         };
 
         if (signal) {
@@ -79,7 +79,7 @@ export class MockChatAdapter implements ChatAdapter {
     const { signal } = options;
 
     if (signal?.aborted) {
-      throw new DOMException('The operation was aborted.', 'AbortError');
+      throw new ChatError('The operation was aborted.', 'ABORTED');
     }
 
     const initialDelay = (options.delayMs as number | undefined) ?? (this.defaultDelayMs > 0 ? 100 : 0);
@@ -92,7 +92,7 @@ export class MockChatAdapter implements ChatAdapter {
 
         const onAbort = () => {
           clearTimeout(timer);
-          reject(new DOMException('The operation was aborted.', 'AbortError'));
+          reject(new ChatError('The operation was aborted.', 'ABORTED'));
         };
 
         if (signal) {
@@ -129,7 +129,7 @@ export class MockChatAdapter implements ChatAdapter {
 
     for (let i = 0; i < chunks.length; i++) {
       if (signal?.aborted) {
-        throw new DOMException('The operation was aborted.', 'AbortError');
+        throw new ChatError('The operation was aborted.', 'ABORTED');
       }
 
       const delta = chunks[i];
@@ -145,7 +145,7 @@ export class MockChatAdapter implements ChatAdapter {
 
           const onAbort = () => {
             clearTimeout(timer);
-            reject(new DOMException('The operation was aborted.', 'AbortError'));
+            reject(new ChatError('The operation was aborted.', 'ABORTED'));
           };
 
           if (signal) {

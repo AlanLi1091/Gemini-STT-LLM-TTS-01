@@ -9,6 +9,7 @@ import { ChatError, Message } from '../types';
 
 // Mock @google/genai
 const mockGenerateContent = vi.fn();
+const mockGenerateContentStream = vi.fn();
 
 vi.mock('@google/genai', () => {
   return {
@@ -16,6 +17,7 @@ vi.mock('@google/genai', () => {
       return {
         models: {
           generateContent: mockGenerateContent,
+          generateContentStream: mockGenerateContentStream,
         },
       };
     }),
@@ -145,7 +147,7 @@ describe('GeminiChatAdapter Unit Tests (Task 7)', () => {
     it('当未配置 apiKey 时，stream 迭代抛出 AUTH_ERROR 类型的 ChatError', async () => {
       const adapter = new GeminiChatAdapter({ apiKey: '   ' });
       const streamGen = adapter.stream([{ id: '1', role: 'user', content: 'test', createdAt: 1 }]);
-      await expect(streamGen.next()).rejects.toMatchObject({
+      await expect(streamGen[Symbol.asyncIterator]().next()).rejects.toMatchObject({
         code: 'AUTH_ERROR',
       });
     });
@@ -280,6 +282,203 @@ describe('GeminiChatAdapter Unit Tests (Task 7)', () => {
         adapter.send([{ id: '1', role: 'user', content: 'hi', createdAt: 1 }])
       ).rejects.toSatisfy((err: unknown) => {
         return err instanceof ChatError && err.code === 'NETWORK_ERROR';
+      });
+    });
+  });
+
+  describe('stream 流式接口测试 (Task 10)', () => {
+    it('缺少有效 API Key 时，直接抛出 AUTH_ERROR 的 ChatError，不调用 SDK', async () => {
+      const adapter = new GeminiChatAdapter({ apiKey: '   ' });
+
+      await expect(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        for await (const _ of adapter.stream([{ id: '1', role: 'user', content: 'hi', createdAt: 1 }])) {
+          // no-op
+        }
+      }).rejects.toSatisfy((err: unknown) => {
+        return err instanceof ChatError && err.code === 'AUTH_ERROR';
+      });
+
+      expect(mockGenerateContentStream).not.toHaveBeenCalled();
+    });
+
+    it('已中断的 AbortSignal 传入时，直接抛出 ABORTED 的 ChatError', async () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      const adapter = new GeminiChatAdapter({ apiKey: 'valid-key' });
+
+      await expect(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        for await (const _ of adapter.stream(
+          [{ id: '1', role: 'user', content: 'hi', createdAt: 1 }],
+          { signal: controller.signal }
+        )) {
+          // no-op
+        }
+      }).rejects.toSatisfy((err: unknown) => {
+        return err instanceof ChatError && err.code === 'ABORTED';
+      });
+
+      expect(mockGenerateContentStream).not.toHaveBeenCalled();
+    });
+
+    it('空消息列表直接返回仅有 done: true 的空 chunk', async () => {
+      const adapter = new GeminiChatAdapter({ apiKey: 'valid-key' });
+
+      const chunks = [];
+      for await (const chunk of adapter.stream([])) {
+        chunks.push(chunk);
+      }
+
+      expect(chunks).toEqual([
+        {
+          delta: '',
+          accumulated: '',
+          done: true,
+        },
+      ]);
+      expect(mockGenerateContentStream).not.toHaveBeenCalled();
+    });
+
+    it('正常流式调用：逐步输出 delta 与 accumulated，最后一个 chunk 带有 done: true 与 usageMetadata', async () => {
+      mockGenerateContentStream.mockResolvedValueOnce(
+        (async function* () {
+          yield { text: 'Hello' };
+          yield { text: ' World' };
+          yield {
+            text: '!',
+            usageMetadata: {
+              promptTokenCount: 5,
+              candidatesTokenCount: 15,
+              totalTokenCount: 20,
+            },
+          };
+        })()
+      );
+
+      const adapter = new GeminiChatAdapter({
+        apiKey: 'valid-key',
+        model: 'gemini-3.8-flash',
+        systemInstruction: 'You are helpful',
+      });
+
+      const chunks = [];
+      for await (const chunk of adapter.stream(
+        [{ id: '1', role: 'user', content: 'Say hello', createdAt: 1 }],
+        { temperature: 0.7, maxTokens: 100 }
+      )) {
+        chunks.push(chunk);
+      }
+
+      expect(chunks).toEqual([
+        { delta: 'Hello', accumulated: 'Hello', done: false },
+        { delta: ' World', accumulated: 'Hello World', done: false },
+        { delta: '!', accumulated: 'Hello World!', done: false },
+        {
+          delta: '',
+          accumulated: 'Hello World!',
+          done: true,
+          usage: {
+            promptTokens: 5,
+            completionTokens: 15,
+            totalTokens: 20,
+          },
+        },
+      ]);
+
+      expect(mockGenerateContentStream).toHaveBeenCalledWith({
+        model: 'gemini-3.8-flash',
+        contents: [{ role: 'user', parts: [{ text: 'Say hello' }] }],
+        config: {
+          systemInstruction: 'You are helpful',
+          temperature: 0.7,
+          maxOutputTokens: 100,
+          abortSignal: undefined,
+        },
+      });
+    });
+
+    it('流式生成过程中触发 AbortSignal：正确中止并抛出 ABORTED 错误', async () => {
+      const controller = new AbortController();
+
+      mockGenerateContentStream.mockResolvedValueOnce(
+        (async function* () {
+          yield { text: 'Chunk 1' };
+          // 模拟下个 chunk 到来前被打断
+          controller.abort();
+          yield { text: 'Chunk 2' };
+        })()
+      );
+
+      const adapter = new GeminiChatAdapter({ apiKey: 'valid-key' });
+
+      await expect(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        for await (const _ of adapter.stream(
+          [{ id: '1', role: 'user', content: 'test', createdAt: 1 }],
+          { signal: controller.signal }
+        )) {
+          // no-op
+        }
+      }).rejects.toSatisfy((err: unknown) => {
+        return err instanceof ChatError && err.code === 'ABORTED';
+      });
+    });
+
+    it('流式调用 SDK 抛出 403 / PERMISSION_DENIED 时转译为 AUTH_ERROR', async () => {
+      mockGenerateContentStream.mockRejectedValueOnce({
+        status: 403,
+        message: 'The caller does not have permission: PERMISSION_DENIED',
+      });
+
+      const adapter = new GeminiChatAdapter({ apiKey: 'denied-key' });
+
+      await expect(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        for await (const _ of adapter.stream([{ id: '1', role: 'user', content: 'test', createdAt: 1 }])) {
+          // no-op
+        }
+      }).rejects.toSatisfy((err: unknown) => {
+        return err instanceof ChatError && err.code === 'AUTH_ERROR' && err.status === 403;
+      });
+    });
+
+    it('流式迭代过程中抛出网络异常时转译为 NETWORK_ERROR', async () => {
+      mockGenerateContentStream.mockResolvedValueOnce(
+        (async function* () {
+          yield { text: 'Part 1' };
+          throw new TypeError('Failed to fetch');
+        })()
+      );
+
+      const adapter = new GeminiChatAdapter({ apiKey: 'valid-key' });
+
+      await expect(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        for await (const _ of adapter.stream([{ id: '1', role: 'user', content: 'test', createdAt: 1 }])) {
+          // no-op
+        }
+      }).rejects.toSatisfy((err: unknown) => {
+        return err instanceof ChatError && err.code === 'NETWORK_ERROR';
+      });
+    });
+
+    it('流式调用 SDK 抛出 429 配额异常时转译为 RATE_LIMIT', async () => {
+      mockGenerateContentStream.mockRejectedValueOnce({
+        status: 429,
+        message: 'Resource has been exhausted',
+      });
+
+      const adapter = new GeminiChatAdapter({ apiKey: 'valid-key' });
+
+      await expect(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        for await (const _ of adapter.stream([{ id: '1', role: 'user', content: 'test', createdAt: 1 }])) {
+          // no-op
+        }
+      }).rejects.toSatisfy((err: unknown) => {
+        return err instanceof ChatError && err.code === 'RATE_LIMIT' && err.status === 429;
       });
     });
   });

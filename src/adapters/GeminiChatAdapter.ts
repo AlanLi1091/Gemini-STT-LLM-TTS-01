@@ -205,13 +205,15 @@ export class GeminiChatAdapter implements ChatAdapter {
   }
 
   /**
-   * 流式生成接口（Task 7 为契约占位，Task 10 将完整落地打字机流式）
+   * 流式生成接口 (ADR-007, Task 10)
    */
   async *stream(messages: Message[], options: ChatAdapterOptions = {}): AsyncIterable<ChatChunk> {
-    const { signal } = options;
+    const { signal, temperature, maxTokens } = options;
+
     if (signal?.aborted) {
       throw new ChatError('The operation was aborted.', 'ABORTED');
     }
+
     const key = this.apiKey.trim();
     if (!key) {
       throw new ChatError(
@@ -219,6 +221,73 @@ export class GeminiChatAdapter implements ChatAdapter {
         'AUTH_ERROR'
       );
     }
-    throw new Error('GeminiChatAdapter stream is not yet implemented (scheduled for Task 10)');
+
+    const contents = formatGeminiContents(messages);
+    if (contents.length === 0) {
+      yield {
+        delta: '',
+        accumulated: '',
+        done: true,
+      };
+      return;
+    }
+
+    const systemInstruction = resolveSystemInstruction(messages, this.systemInstruction);
+
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+
+      const streamResponse = await ai.models.generateContentStream({
+        model: this.model,
+        contents,
+        config: {
+          systemInstruction,
+          temperature,
+          maxOutputTokens: maxTokens,
+          abortSignal: signal,
+        },
+      });
+
+      let accumulated = '';
+      let latestUsage: ChatUsage | undefined;
+
+      for await (const chunk of streamResponse) {
+        if (signal?.aborted) {
+          throw new ChatError('The operation was aborted.', 'ABORTED');
+        }
+
+        if (chunk.usageMetadata) {
+          latestUsage = {
+            promptTokens: chunk.usageMetadata.promptTokenCount,
+            completionTokens: chunk.usageMetadata.candidatesTokenCount,
+            totalTokens: chunk.usageMetadata.totalTokenCount,
+          };
+        }
+
+        const delta = chunk.text || '';
+        if (delta) {
+          accumulated += delta;
+          yield {
+            delta,
+            accumulated,
+            done: false,
+          };
+        }
+      }
+
+      if (signal?.aborted) {
+        throw new ChatError('The operation was aborted.', 'ABORTED');
+      }
+
+      // 产出最终结束 chunk 并附带用量
+      yield {
+        delta: '',
+        accumulated,
+        done: true,
+        usage: latestUsage,
+      };
+    } catch (err) {
+      throw classifyGeminiError(err, signal);
+    }
   }
 }
