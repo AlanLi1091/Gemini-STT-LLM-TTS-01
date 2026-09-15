@@ -41,7 +41,7 @@
 
 ## 1. 当前授权
 - **授权任务**：Task 10 Step 2 已完成，待指派 Step 3（UI 呈现与集成闭环）
-- **最近 commit**：592be1a feat(chat): refine useChat streaming state machine and align tests
+- **最近 commit**：19f31dc feat(chat): refine useChat streaming state machine and align tests
 - **越权处理**：凡不在当前授权范围内的文件改动，一律回滚，并记录到 §7 风险区。
 
 ## 2. 项目阶段
