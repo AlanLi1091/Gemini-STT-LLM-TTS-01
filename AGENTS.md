@@ -34,14 +34,14 @@
   - 模型后端可插拔（Gemini / 其他 LLM），统一通过 ChatAdapter 接口接入
   - 内置角色扮演系统（人设配置、上下文与记忆管理）
   - 保留 Web Playground 作为长期调试与演示控制台
-- **使用场景（直播伴随）**：直播画面以主播自身内容为主（如游戏画面）；主播通过 Discord 语音通话唤醒 STT→LLM→TTS 全链路，bot 语音播给所有参与/观看直播的人；Discord 文字聊天仅启用 LLM 对话。直播时文字与语音同时需要，文字的具体承载方式（Discord 频道展示 / 画面 Overlay / 其他）待 Phase 6 预研确定。
+- **使用场景（直播伴随）**：直播画面以主播自身内容为主（如游戏画面）；主播通过 Discord 语音通话唤醒 STT→LLM→TTS 全链路，bot 语音播给所有参与/观看直播的人；Discord 文字聊天仅启用 LLM 对话。直播时文字与语音同时需要，文字承载方式（Discord 频道 / 画面 Overlay / 其他）待 Phase 6 预研确定。
 - **演进路径**：Web Mock MVP → LLM 接入 → 后端服务化 → Discord 文字接入 → 角色扮演系统 → 语音链路 → 多模型完善
 - **远期方向（纯愿景，不进入 Phase 路线图，不构成执行授权）**：bot 角色三阶段演进——①语音助手（回应主播）；②直播伴侣（回复观众弹幕/评论）；③自主行为能力（对直播画面发表看法）。仅作为 Phase 5 之后架构决策的参考坐标。
 - **约束声明**：愿景仅用于技术决策对齐（接口预留、目录结构等），不构成任何执行授权（见铁律 3）。
 
 ## 1. 当前授权
-- **授权任务**：Task 10（GeminiChatAdapter.stream 与打字机体验）已授权、执行中（首步规划：Step 1 适配器流式与中断实现）
-- **最近 commit**：bddfc41 docs(agents): record model upgrade, ADR-008 and dynamic models backlog
+- **授权任务**：Task 10 已授权、执行中
+- **最近 commit**：f8e37b3 docs(agents): update scenario, long-term vision, Phase 6 goals and Task 10 authorization
 - **越权处理**：凡不在当前授权范围内的文件改动，一律回滚，并记录到 §7 风险区。
 
 ## 2. 项目阶段
@@ -76,6 +76,7 @@
   - **UI 层**：React Hook 仅做内核与视图的绑定
   - **适配层**：ChatAdapter（Phase 2 起）；后续 Transcriber / Synthesizer（Phase 6）
 - **版本控制**：细粒度语义化 commit；`git status` 同时作为越权审计手段
+- **开发与执行环境**：编码、测试与提交由 Google AI Studio 中的 Gemini agent 执行（沙箱限制见 §7 风险 7）；跨会话不保留对话记忆，状态恢复完全依赖本文档；计划审批与结果验收由用户负责。
 
 ## 4. 已完成事项
 - [x] 初始化本地 Git 代码仓库
@@ -187,9 +188,9 @@
   - **应对**：依赖 discord.js 内置限流处理；设计消息频率上限。
 - **风险 6**: token 与 TTS 成本
   - **应对**：Phase 2 起记录用量；Playground 默认 Mock / 低成本模型。
-- **风险 7**: 沙箱无凭证导致 GitHub 远端 Push 校验中断
-  - **事件**：容器沙箱未预置 GitHub 交互式凭证/PAT，非交互执行 `git push` 报 `could not read Username`。
-  - **应对**：确保本地具备完整语义化 commit 链路；待环境配置 PAT 或由用户在设置中授权同步。
+- **风险 7**: AI Studio 沙箱无凭证导致 GitHub 远端 Push 校验中断
+  - **事件**：执行环境为 Google AI Studio，其沙箱未预置 GitHub 交互式凭证/PAT，非交互执行 `git push` 报 `could not read Username`。
+  - **应对**：确保本地具备完整语义化 commit 链路；待环境配置 PAT 或由用户在设置中授权同步。push 失败属已知环境限制，记录后继续推进，不视为步骤失败。
 - **风险 8**: @google/genai 浏览器兼容与版本变动
   - **应对**：锁定版本、SDK 类型不泄漏进领域内核。
 - **风险 9（已发生，已缓解）**: Gemini API 403 权限/环境异常与密钥清洗防御
