@@ -38,8 +38,8 @@
 - **约束声明**：愿景仅用于技术决策对齐（接口预留、目录结构等），不构成任何执行授权（见铁律 3）。
 
 ## 1. 当前授权
-- **授权任务**：将默认与可选 Gemini 模型升级为 Google 官方当前支持的 3.8/3.6/3.1 系列（gemini-3.8-flash / gemini-3.6-flash / gemini-3.1-pro），并完成 Git 本地提交与 GitHub push（已完成）；待授权执行 Task 10（GeminiChatAdapter.stream 与打字机体验）
-- **最近 commit**：14b72bb feat(models): upgrade Gemini models to 3.8-flash, 3.6-flash and 3.1-pro
+- **授权任务**：同步 AGENTS.md 状态区、模型升级记录与 ADR-008 链路防御台账（已完成）；待授权执行 Task 10（GeminiChatAdapter.stream 与打字机体验）
+- **最近 commit**：2ff43a1 docs(agents): update recent commit to 14b72bb
 - **越权处理**：凡不在当前授权范围内的文件改动，一律回滚，并记录到 §7 风险区。
 
 ## 2. 项目阶段
@@ -96,6 +96,7 @@
   - [x] **Step 1（模型扩展与 Hook 状态）**：`Message.usage?: ChatUsage`；`useChat` 捕获 `ChatError`、透传 `lastError`、零截断重试 `retryFailedSend`、Hook 单元测试（commit: 20e77ec）
   - [x] **Step 2（纯展示组件构建）**：`TokenUsageBadge`（Zap 图标/条件渲染/ARIA）与 `ChatErrorBanner`（6 种错误码+default兜底/重试与设置入口/alert），组件单元测试（commit: d14d0ce）
   - [x] **Step 3（挂载组装与全量回归）**：在 `MessageList` 挂载 Token 徽章，在 `App` 挂载错误横幅并联动设置弹窗，完成端到端集成测试与全量测试回归（commit: a5fecf9）
+- [x] **Gemini 模型升级与测试闭环**：将默认与可选 Gemini 模型升级至 3.8-flash / 3.6-flash / 3.1-pro，全量同步 settings-storage 与 UI 测试（commit: 14b72bb）
 
 ## 5. 待办事项
 所有任务默认未授权。执行任何任务前，须由用户在 §1 指派。
@@ -113,6 +114,10 @@
 - [x] **Task 8**: 设置面板与模型切换（Step 1 存储/校验 + Step 2 弹窗/入口 + Step 3 状态集成/单测全量完成）
 - [x] **Task 9**: 错误展示与用量记录 UI（Step 1 模型与Hook + Step 2 纯展示组件 + Step 3 挂载组装与集成测试全量完成）
 - [ ] **Task 10**: GeminiChatAdapter.stream + 中断（AbortController）+ 打字机 UI + stream 契约测试扩展（Mock/Gemini 同跑，Mock 流式可在无 key 下演示）
+  - [ ] **Step 1（适配器流式与中断）**：GeminiChatAdapter.stream 实现、AbortSignal 级联、契约测试单测
+  - [ ] **Step 2（Hook 状态机与控制）**：useChat 流式驱动、stopGenerating 控制与中途打断单测
+  - [ ] **Step 3（UI 呈现与集成闭环）**：打字机光标动效、停止生成按钮与端到端回归
+- [ ] **模型动态发现与拉取（提议，未授权）**：支持通过 Gemini API（models.list）动态拉取当前 Key 可用的模型列表，替代硬编码配置，避免模型下线或权限不匹配。
 
 ### 后续阶段预研（未授权，仅规划）
 - [ ] **Task 11 (Phase 3)**: 后端框架与部署方案调研（Cloud Run / VPS）
@@ -156,6 +161,13 @@
     1. adapter 统一 `stream(): AsyncIterable<ChatChunk>` + `AbortSignal` 中断；
     2. 注明 ADR-005“禁止原地修改”限定于编辑重发场景，流式中末条消息 content 逐 chunk 更新不违反，日志数组仍仅追加。
   - **影响**：统一 Mock 与真实模型的流式协议；打字机动效与 token 统计接口规范化。
+- **ADR-008: 模型列表演进策略与链路防御规范**
+  - **背景**：模型版本更迭频繁，硬编码可能面临弃用（如 2.5 下线）；同时用户输入 API Key 存在粘贴空白、不可见字符以及设置变更后 Adapter 缓存未更新等隐患。
+  - **决策**：
+    1. 固化四重链路防御：零宽/不可见字符深度过滤、严格首尾 trim、空 key 前置抛出 AUTH_ERROR、Settings 变动严格驱动 useMemo 重建 Adapter；
+    2. 当前以 Google 官方基线推荐清单（3.8-flash / 3.6-flash / 3.1-pro）作为稳定配置；
+    3. 规划动态发现机制（models.list API）作为后续演进路线。
+  - **影响**：规避因用户输入微瑕疵导致的 403/400 假性故障；保持与官方活跃模型的对齐。
 
 ## 7. 风险与阻塞
 - **风险 0（已发生，已缓解）**：agent 完成偏置导致越权执行
@@ -178,6 +190,9 @@
   - **应对**：确保本地具备完整语义化 commit 链路；待环境配置 PAT 或由用户在设置中授权同步。
 - **风险 8**: @google/genai 浏览器兼容与版本变动
   - **应对**：锁定版本、SDK 类型不泄漏进领域内核。
+- **风险 9（已发生，已缓解）**: Gemini API 403 权限/环境异常与密钥清洗防御
+  - **事件**：用户使用未启用付费/欠费/项目受限的 API Key 发起调用时返回 403 PERMISSION_DENIED。
+  - **应对**：排查确认为环境/Key 权限问题；同时沉淀四重通用防御（不可见字符与空白清洗、空 key 拦截、强触发重构），确保前端链路无隐形故障。
 
 ## 8. 质量与交付验收标准
 ### 通用 DoD（所有 Phase 适用）
