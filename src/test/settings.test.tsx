@@ -51,7 +51,7 @@ describe('Task 8: 设置面板与模型切换组件行为测试', () => {
 
     // 选择深度推理模型
     const select = screen.getByLabelText(/Gemini 模型版本/i) as HTMLSelectElement;
-    fireEvent.change(select, { target: { value: 'gemini-2.5-pro' } });
+    fireEvent.change(select, { target: { value: 'gemini-3.1-pro' } });
 
     // 点击保存
     const saveBtn = screen.getByRole('button', { name: /保存配置/i });
@@ -68,10 +68,10 @@ describe('Task 8: 设置面板与模型切换组件行为测试', () => {
     const parsed = JSON.parse(savedStr!);
     expect(parsed.provider).toBe('gemini');
     expect(parsed.geminiApiKey).toBe('AIzaSyTestApiKey123');
-    expect(parsed.geminiModel).toBe('gemini-2.5-pro');
+    expect(parsed.geminiModel).toBe('gemini-3.1-pro');
 
     // 校验顶栏状态副标题更新
-    expect(screen.getByText('Gemini (gemini-2.5-pro)')).toBeInTheDocument();
+    expect(screen.getByText('Gemini (gemini-3.1-pro)')).toBeInTheDocument();
   });
 
   it('③ 取消 / ESC / 点击遮罩丢弃草稿，不写入 localStorage', async () => {
@@ -166,13 +166,13 @@ describe('Task 8: 设置面板与模型切换组件行为测试', () => {
       target: { value: '  AIzaSyFreshKey123  ' },
     });
     fireEvent.change(screen.getByLabelText(/Gemini 模型版本/i), {
-      target: { value: 'gemini-2.5-flash' },
+      target: { value: 'gemini-3.8-flash' },
     });
     fireEvent.click(screen.getByRole('button', { name: /保存配置/i }));
 
-    // 确认顶栏展示更新为 Gemini (gemini-2.5-flash)
+    // 确认顶栏展示更新为 Gemini (gemini-3.8-flash)
     await waitFor(() => {
-      expect(screen.getByText('Gemini (gemini-2.5-flash)')).toBeInTheDocument();
+      expect(screen.getByText('Gemini (gemini-3.8-flash)')).toBeInTheDocument();
     });
 
     // 再次打开并切回 Mock

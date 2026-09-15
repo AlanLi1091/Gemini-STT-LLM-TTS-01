@@ -38,8 +38,8 @@
 - **约束声明**：愿景仅用于技术决策对齐（接口预留、目录结构等），不构成任何执行授权（见铁律 3）。
 
 ## 1. 当前授权
-- **授权任务**：Playground generateContent 403 根因排查与链路防御（已完成）；待授权执行 Task 10（GeminiChatAdapter.stream 与打字机体验）
-- **最近 commit**：6f6f5cc fix(settings): reinforce API key trimming, entry validation and adapter rebuild lifecycle
+- **授权任务**：将默认与可选 Gemini 模型升级为 Google 官方当前支持的 3.8/3.6/3.1 系列（gemini-3.8-flash / gemini-3.6-flash / gemini-3.1-pro），并完成 Git 本地提交（已完成）；待授权执行 Task 10（GeminiChatAdapter.stream 与打字机体验）
+- **最近 commit**：3a3ebc8 fix(models): correct Pro model to gemini-3.1-pro and sync all tests
 - **越权处理**：凡不在当前授权范围内的文件改动，一律回滚，并记录到 §7 风险区。
 
 ## 2. 项目阶段

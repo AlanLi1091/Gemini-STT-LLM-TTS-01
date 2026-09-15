@@ -38,10 +38,10 @@ describe('Settings persistence and sanitization (ADR-006, Task 8)', () => {
       const sanitized = sanitizeSettings({
         provider: 'gemini',
         geminiApiKey: '   valid-trimmed-key   ',
-        geminiModel: 'gemini-2.5-pro',
+        geminiModel: 'gemini-3.1-pro',
       });
       expect(sanitized.geminiApiKey).toBe('valid-trimmed-key');
-      expect(sanitized.geminiModel).toBe('gemini-2.5-pro');
+      expect(sanitized.geminiModel).toBe('gemini-3.1-pro');
 
       const nonString = sanitizeSettings({
         provider: 'gemini',
@@ -70,7 +70,7 @@ describe('Settings persistence and sanitization (ADR-006, Task 8)', () => {
       const newSettings = {
         provider: 'gemini' as const,
         geminiApiKey: 'AIzaSyExampleKey',
-        geminiModel: 'gemini-2.5-pro',
+        geminiModel: 'gemini-3.1-pro',
       };
 
       saveSettings(newSettings);
@@ -84,7 +84,7 @@ describe('Settings persistence and sanitization (ADR-006, Task 8)', () => {
       saveSettings({
         provider: 'gemini',
         geminiApiKey: '   AIzaSyKeyWithSpaces   ',
-        geminiModel: 'gemini-2.5-flash',
+        geminiModel: 'gemini-3.8-flash',
       });
 
       const loaded = loadSettings();
