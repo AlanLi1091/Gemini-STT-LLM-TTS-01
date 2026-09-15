@@ -47,9 +47,9 @@ describe('Task 4: Mock 机器人响应引擎与思考态测试', () => {
       expect(screen.getByRole('status', { name: '机器人正在思考中' })).toBeInTheDocument();
       expect(screen.getByText('思考中')).toBeInTheDocument();
 
-      // 前进 800ms，完成 Mock 响应
+      // 推进定时器，完成 Mock 响应流
       await act(async () => {
-        vi.advanceTimersByTime(800);
+        await vi.runAllTimersAsync();
       });
 
       // 思考态消失，机器人消息追加上屏

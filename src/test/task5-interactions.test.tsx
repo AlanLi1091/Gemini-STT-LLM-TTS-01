@@ -25,7 +25,7 @@ describe('Task 5 交互细节与体验优化全面测试', () => {
       // 发送第一条
       await act(async () => {
         const p = result.current.sendMessage('消息 A');
-        vi.runAllTimers();
+        await vi.runAllTimersAsync();
         await p;
       });
 
@@ -38,7 +38,7 @@ describe('Task 5 交互细节与体验优化全面测试', () => {
       // 发送第二条
       await act(async () => {
         const p = result.current.sendMessage('消息 B');
-        vi.runAllTimers();
+        await vi.runAllTimersAsync();
         await p;
       });
 
@@ -111,7 +111,7 @@ describe('Task 5 交互细节与体验优化全面测试', () => {
       await act(async () => {
         fireEvent.change(textarea, { target: { value: '测试清空' } });
         fireEvent.click(screen.getByRole('button', { name: '发送消息' }));
-        vi.advanceTimersByTime(800);
+        await vi.runAllTimersAsync();
       });
 
       expect(screen.getByText('测试清空')).toBeInTheDocument();
@@ -140,7 +140,7 @@ describe('Task 5 交互细节与体验优化全面测试', () => {
       await act(async () => {
         fireEvent.change(textarea, { target: { value: '不被删除的消息' } });
         fireEvent.click(screen.getByRole('button', { name: '发送消息' }));
-        vi.advanceTimersByTime(800);
+        await vi.runAllTimersAsync();
       });
 
       const clearBtn = screen.getByRole('button', { name: '清空对话' });
@@ -169,7 +169,7 @@ describe('Task 5 交互细节与体验优化全面测试', () => {
       await act(async () => {
         fireEvent.change(textarea, { target: { value: '滚动测试' } });
         fireEvent.click(screen.getByRole('button', { name: '发送消息' }));
-        vi.advanceTimersByTime(800);
+        await vi.runAllTimersAsync();
       });
 
       // 验证 scrollIntoView 已被调度
