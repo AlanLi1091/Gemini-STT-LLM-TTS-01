@@ -40,8 +40,8 @@
 - **约束声明**：愿景仅用于技术决策对齐（接口预留、目录结构等），不构成任何执行授权（见铁律 3）。
 
 ## 1. 当前授权
-- **授权任务**：Task 10 Step 2 已完成，待指派 Step 3（UI 呈现与集成闭环）
-- **最近 commit**：19f31dc feat(chat): refine useChat streaming state machine and align tests
+- **授权任务**：Task 10 Step 3 已完成（Task 10 全部完成），待指示后续任务
+- **最近 commit**：2040469 feat(chat): complete typing cursor and stop generating UI for streaming responses
 - **越权处理**：凡不在当前授权范围内的文件改动，一律回滚，并记录到 §7 风险区。
 
 ## 2. 项目阶段
@@ -100,9 +100,10 @@
   - [x] **Step 2（纯展示组件构建）**：`TokenUsageBadge`（Zap 图标/条件渲染/ARIA）与 `ChatErrorBanner`（6 种错误码+default兜底/重试与设置入口/alert），组件单元测试（commit: d14d0ce）
   - [x] **Step 3（挂载组装与全量回归）**：在 `MessageList` 挂载 Token 徽章，在 `App` 挂载错误横幅并联动设置弹窗，完成端到端集成测试与全量测试回归（commit: a5fecf9）
 - [x] **Gemini 模型升级与测试闭环**：将默认与可选 Gemini 模型升级至 3.8-flash / 3.6-flash / 3.1-pro，全量同步 settings-storage 与 UI 测试（commit: 14b72bb）
-- [ ] **Task 10**: GeminiChatAdapter.stream + 中断（AbortController）+ 打字机 UI + stream 契约测试扩展
+- [x] **Task 10**: GeminiChatAdapter.stream + 中断（AbortController）+ 打字机 UI + stream 契约测试扩展
   - [x] **Step 1（适配器流式与中断）**：GeminiChatAdapter.stream 实现、AbortSignal 级联、契约测试与单测扩展（commit: 1282903）
   - [x] **Step 2（Hook 状态机与控制）**：`useChat` 流式驱动、`isGenerating` / `stopGenerating` 控制、`AbortController` 级联与中途打断单测
+  - [x] **Step 3（UI 呈现与集成闭环）**：打字机光标动效、停止生成按钮与端到端回归
 
 ## 5. 待办事项
 所有任务默认未授权。执行任何任务前，须由用户在 §1 指派。
@@ -119,10 +120,10 @@
 - [x] **Task 7**: GeminiChatAdapter.send（非流式）：role 映射、错误分类、usage 提取；单测全 mock 网络层
 - [x] **Task 8**: 设置面板与模型切换（Step 1 存储/校验 + Step 2 弹窗/入口 + Step 3 状态集成/单测全量完成）
 - [x] **Task 9**: 错误展示与用量记录 UI（Step 1 模型与Hook + Step 2 纯展示组件 + Step 3 挂载组装与集成测试全量完成）
-- [ ] **Task 10**: GeminiChatAdapter.stream + 中断（AbortController）+ 打字机 UI + stream 契约测试扩展（Mock/Gemini 同跑，Mock 流式可在无 key 下演示）
+- [x] **Task 10**: GeminiChatAdapter.stream + 中断（AbortController）+ 打字机 UI + stream 契约测试扩展（Mock/Gemini 同跑，Mock 流式可在无 key 下演示）
   - [x] **Step 1（适配器流式与中断）**：GeminiChatAdapter.stream 实现、AbortSignal 级联、契约测试单测（已完成）
   - [x] **Step 2（Hook 状态机与控制）**：useChat 流式驱动、stopGenerating 控制与中途打断单测（已完成）
-  - [ ] **Step 3（UI 呈现与集成闭环）**：打字机光标动效、停止生成按钮与端到端回归
+  - [x] **Step 3（UI 呈现与集成闭环）**：打字机光标动效、停止生成按钮与端到端回归
 - [ ] **模型动态发现与拉取（提议，未授权）**：支持通过 Gemini API（models.list）动态拉取当前 Key 可用的模型列表，替代硬编码配置，避免模型下线或权限不匹配。
 
 ### 后续阶段预研（未授权，仅规划）
