@@ -30,10 +30,12 @@ export const App: React.FC = () => {
     messages,
     inputText,
     isLoading,
+    isGenerating,
     lastError,
     setInputText,
     sendMessage,
     retryFailedSend,
+    stopGenerating,
     dismissError,
     clearMessages,
   } = useChat({
@@ -52,6 +54,7 @@ export const App: React.FC = () => {
     saveSettings(newSettings);
   };
 
+  const isBusy = isLoading || isGenerating;
   const subtitle = settings.provider === 'gemini' ? `Gemini (${settings.geminiModel})` : 'Web Mock MVP';
 
   return (
@@ -65,7 +68,7 @@ export const App: React.FC = () => {
         messageCount={messages.length}
         onClear={handleClear}
         onOpenSettings={() => setIsSettingsOpen(true)}
-        disabled={isLoading}
+        disabled={isBusy}
       />
 
       {/* 错误提示横幅 (Task 9) */}
@@ -74,17 +77,23 @@ export const App: React.FC = () => {
         onRetry={retryFailedSend}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onDismiss={dismissError}
-        isRetrying={isLoading}
+        isRetrying={isBusy}
       />
 
       {/* 中间可滚动消息区 */}
-      <MessageList messages={messages} isLoading={isLoading} />
+      <MessageList
+        messages={messages}
+        isLoading={isLoading}
+        isGenerating={isGenerating}
+      />
 
       {/* 底部输入控制栏 */}
       <ChatInput
         ref={inputRef}
         value={inputText}
         disabled={isLoading}
+        isGenerating={isGenerating}
+        onStop={stopGenerating}
         onChange={(e) => setInputText(e.target.value)}
         onSubmit={() => sendMessage()}
       />

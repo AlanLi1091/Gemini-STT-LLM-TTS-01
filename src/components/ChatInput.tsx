@@ -1,11 +1,13 @@
 import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { Send } from 'lucide-react';
+import { Send, Square } from 'lucide-react';
 
 interface ChatInputProps {
   value?: string;
   onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onSubmit?: (e: React.FormEvent) => void;
   disabled?: boolean;
+  isGenerating?: boolean;
+  onStop?: () => void;
   placeholder?: string;
   autoFocus?: boolean;
 }
@@ -19,6 +21,8 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(({
   onChange,
   onSubmit,
   disabled = false,
+  isGenerating = false,
+  onStop,
   placeholder = '输入消息，与机器人对话...',
   autoFocus = true,
 }, ref) => {
@@ -112,17 +116,31 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(({
             />
           </div>
 
-          <button
-            id="chat-send-button"
-            type="submit"
-            disabled={isSendDisabled}
-            aria-label="发送消息"
-            title={disabled ? '机器人正在思考，请稍候...' : '按 Enter 发送，Shift + Enter 换行'}
-            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white shadow-xs hover:bg-zinc-800 active:scale-[0.98] transition-all disabled:opacity-40 disabled:hover:bg-zinc-900 disabled:cursor-not-allowed shrink-0 cursor-pointer h-10 mb-0.5"
-          >
-            <Send className="w-4 h-4" aria-hidden="true" />
-            <span className="hidden sm:inline">发送</span>
-          </button>
+          {isGenerating ? (
+            <button
+              id="chat-stop-button"
+              type="button"
+              onClick={onStop}
+              aria-label="停止生成"
+              title="停止生成当前回复"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-medium text-white shadow-xs hover:bg-red-700 active:scale-[0.98] transition-all shrink-0 cursor-pointer h-10 mb-0.5"
+            >
+              <Square className="w-3.5 h-3.5 fill-current" aria-hidden="true" />
+              <span className="hidden sm:inline">停止</span>
+            </button>
+          ) : (
+            <button
+              id="chat-send-button"
+              type="submit"
+              disabled={isSendDisabled}
+              aria-label="发送消息"
+              title={disabled ? '机器人正在思考，请稍候...' : '按 Enter 发送，Shift + Enter 换行'}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white shadow-xs hover:bg-zinc-800 active:scale-[0.98] transition-all disabled:opacity-40 disabled:hover:bg-zinc-900 disabled:cursor-not-allowed shrink-0 cursor-pointer h-10 mb-0.5"
+            >
+              <Send className="w-4 h-4" aria-hidden="true" />
+              <span className="hidden sm:inline">发送</span>
+            </button>
+          )}
         </form>
 
         <div className="flex items-center justify-between text-[11px] text-zinc-400 px-1 mt-2 select-none">

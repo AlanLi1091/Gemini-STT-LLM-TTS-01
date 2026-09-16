@@ -7,11 +7,13 @@ import { TokenUsageBadge } from './TokenUsageBadge';
 interface MessageListProps {
   messages?: Message[];
   isLoading?: boolean;
+  isGenerating?: boolean;
 }
 
 export const MessageList: React.FC<MessageListProps> = ({
   messages = [],
   isLoading = false,
+  isGenerating = false,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
@@ -109,8 +111,10 @@ export const MessageList: React.FC<MessageListProps> = ({
             </div>
           ) : (
             <div id="chat-messages-stream" className="space-y-4">
-              {messages.map((msg) => {
+              {messages.map((msg, idx) => {
                 const isUser = msg.role === 'user';
+                const isLast = idx === messages.length - 1;
+                const showCursor = isGenerating && !isUser && isLast;
                 return (
                   <div
                     key={msg.id}
@@ -135,7 +139,17 @@ export const MessageList: React.FC<MessageListProps> = ({
                           : 'bg-white border border-zinc-200 text-zinc-800 rounded-tl-sm'
                       }`}
                     >
-                      <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                      <p className="whitespace-pre-wrap break-words">
+                        {msg.content}
+                        {showCursor && (
+                          <span
+                            id="chat-typing-cursor"
+                            data-testid="chat-typing-cursor"
+                            aria-hidden="true"
+                            className="inline-block w-1.5 h-3.5 ml-1 bg-zinc-600 animate-pulse align-middle rounded-xs"
+                          />
+                        )}
+                      </p>
                       {!isUser && msg.usage && (
                         <div>
                           <TokenUsageBadge usage={msg.usage} />

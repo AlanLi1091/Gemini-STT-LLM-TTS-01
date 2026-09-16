@@ -63,10 +63,11 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             id="settings-button"
             type="button"
+            disabled={disabled}
             onClick={onOpenSettings}
             aria-label="设置"
             title="模型与调试设置"
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100 border border-zinc-200 transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100 border border-zinc-200 transition-all disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-zinc-700 disabled:cursor-not-allowed cursor-pointer"
           >
             <Settings className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">设置</span>
@@ -106,6 +107,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               id="chat-clear-button"
               type="button"
+              aria-label="清空对话"
               disabled={disabled || messageCount === 0}
               onClick={() => setShowConfirm(true)}
               title="清空当前对话记录"
