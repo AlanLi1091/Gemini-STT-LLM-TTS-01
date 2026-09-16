@@ -40,8 +40,8 @@
 - **约束声明**：愿景仅用于技术决策对齐（接口预留、目录结构等），不构成任何执行授权（见铁律 3）。
 
 ## 1. 当前授权
-- **授权任务**：Task 10 Step 3 已完成（Task 10 全部完成），待指示后续任务
-- **最近 commit**：2040469 feat(chat): complete typing cursor and stop generating UI for streaming responses
+- **授权任务**：建立测试台账 `TESTS.md`（13 套件 / 118 断言全量入册）并纳入规范维护，已完成，待指示后续任务
+- **最近 commit**：0c56390 docs(test): establish TESTS.md catalog for 13 suites and 118 test cases
 - **越权处理**：凡不在当前授权范围内的文件改动，一律回滚，并记录到 §7 风险区。
 
 ## 2. 项目阶段
@@ -103,7 +103,8 @@
 - [x] **Task 10**: GeminiChatAdapter.stream + 中断（AbortController）+ 打字机 UI + stream 契约测试扩展
   - [x] **Step 1（适配器流式与中断）**：GeminiChatAdapter.stream 实现、AbortSignal 级联、契约测试与单测扩展（commit: 1282903）
   - [x] **Step 2（Hook 状态机与控制）**：`useChat` 流式驱动、`isGenerating` / `stopGenerating` 控制、`AbortController` 级联与中途打断单测
-  - [x] **Step 3（UI 呈现与集成闭环）**：打字机光标动效、停止生成按钮与端到端回归
+  - [x] **Step 3（UI 呈现与集成闭环）**：打字机光标动效、停止生成按钮与端到端回归（commit: 2040469）
+- [x] **测试全景台账建立（TESTS.md）**：全景梳理 13 个测试套件、118 项用例并确立维护规范，纳入通用 DoD
 
 ## 5. 待办事项
 所有任务默认未授权。执行任何任务前，须由用户在 §1 指派。
@@ -205,6 +206,7 @@
 ### 通用 DoD（所有 Phase 适用）
 - [ ] 无 TypeScript 类型错误与 ESLint / 编译警告
 - [ ] 改动均有对应测试，npm run test 100% 通过
+- [ ] 测试变更同步更新 TESTS.md 测试台账（保证 100% 映射一致）
 - [ ] 单步交付：每个改动步骤有语义化 Git commit 并已推送至 GitHub 远端
 - [ ] 本文档状态区已同步更新（含 §1 当前授权）
 - [ ] git status 干净，无授权范围外文件
