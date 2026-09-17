@@ -41,7 +41,7 @@
 
 ## 1. 当前授权
 - **授权任务**：Phase 2 人工验收全部通过，Phase 2 顺利结项并交接（待开启 Phase 3）
-- **最近 commit**：15a9e7c fix(ui): 修复流式输出期间触底滚动失效并增加用户滚动守卫，完成Phase 2全部验收与结项
+- **最近 commit**：7e6c19a docs(agents): update TESTS.md test count to 122 in AGENTS.md
 - **越权处理**：凡不在当前授权范围内的文件改动，一律回滚，并记录到 §7 风险区。
 
 ## 2. 项目阶段
@@ -104,7 +104,7 @@
   - [x] **Step 1（适配器流式与中断）**：GeminiChatAdapter.stream 实现、AbortSignal 级联、契约测试与单测扩展（commit: 1282903）
   - [x] **Step 2（Hook 状态机与控制）**：`useChat` 流式驱动、`isGenerating` / `stopGenerating` 控制、`AbortController` 级联与中途打断单测
   - [x] **Step 3（UI 呈现与集成闭环）**：打字机光标动效、停止生成按钮与端到端回归（commit: 2040469）
-- [x] **测试全景台账建立（TESTS.md）**：全景梳理 13 个测试套件、118 项用例并确立维护规范，纳入通用 DoD
+- [x] **测试全景台账建立（TESTS.md）**：全景梳理 13 个测试套件、122 项用例并确立维护规范，纳入通用 DoD
 - [x] **流式触底滚动与用户滚动守卫（Smart Sticky Bottom）**：全面迁移滚动 API 至 scrollTo/scrollTop；区分消息增量 smooth 触底与流式 content 高频 rAF auto 触底；实现 100px 守卫判定与上滑发送强制吸底，测试增至 122 项全绿（commit: e8e6711）
 
 ## 5. 待办事项
