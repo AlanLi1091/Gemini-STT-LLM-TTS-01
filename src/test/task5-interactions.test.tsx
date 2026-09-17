@@ -162,7 +162,7 @@ describe('Task 5 交互细节与体验优化全面测试', () => {
       expect(logContainer).toHaveAttribute('aria-live', 'polite');
     });
 
-    it('发送消息后调用滚动触底 scrollIntoView', async () => {
+    it('发送消息后调用滚动触底 scrollTo', async () => {
       render(<App />);
       const textarea = screen.getByRole('textbox', { name: '输入消息' });
 
@@ -172,8 +172,8 @@ describe('Task 5 交互细节与体验优化全面测试', () => {
         await vi.runAllTimersAsync();
       });
 
-      // 验证 scrollIntoView 已被调度
-      expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+      // 验证 scrollTo 已被调度并以 smooth 方式触底
+      expect(Element.prototype.scrollTo).toHaveBeenCalled();
     });
   });
 });

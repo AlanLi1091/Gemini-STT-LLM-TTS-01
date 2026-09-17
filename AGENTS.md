@@ -40,13 +40,13 @@
 - **约束声明**：愿景仅用于技术决策对齐（接口预留、目录结构等），不构成任何执行授权（见铁律 3）。
 
 ## 1. 当前授权
-- **授权任务**：建立测试台账 `TESTS.md`（13 套件 / 118 断言全量入册）并纳入规范维护，已完成，待指示后续任务
-- **最近 commit**：0c56390 docs(test): establish TESTS.md catalog for 13 suites and 118 test cases
+- **授权任务**：Phase 2 人工验收全部通过，Phase 2 顺利结项并交接（待开启 Phase 3）
+- **最近 commit**：15a9e7c fix(ui): 修复流式输出期间触底滚动失效并增加用户滚动守卫，完成Phase 2全部验收与结项
 - **越权处理**：凡不在当前授权范围内的文件改动，一律回滚，并记录到 §7 风险区。
 
 ## 2. 项目阶段
-- **当前阶段**：Phase 2 —— LLM 接入与 ChatAdapter 落地（开发中）
-- **当前目标**：落地 ChatAdapter 架构并接入 Gemini 模型（Task 6–10），支持流式与用量展示。
+- **当前阶段**：Phase 2 —— LLM 接入与 ChatAdapter 落地（已结项，准备开启 Phase 3）
+- **当前目标**：开启 Phase 3（后端服务化：Node.js 服务承载领域内核、会话持久化与密钥管理）。
 
 ## 3. 项目规划
 ### 3.1 产品设计（Phase 1 范围）
@@ -60,9 +60,9 @@
 ### 3.2 分阶段路线图
 | Phase | 目标 | 退出条件 |
 | :--- | :--- | :--- |
-| **1（当前）** | Web Playground MVP（纯前端 Mock） | Task 1–5 完成，Mock 闭环可用，测试全绿 |
-| **2** | LLM 接入 | ChatAdapter 接口（含流式签名）落地；Gemini adapter 流式/非流式通过测试；Playground 可切换真实模型；用量记录可见 |
-| **3** | 后端服务化 | Node.js 服务承载领域内核；Playground 改连后端；会话持久化；密钥管理落地 |
+| **1** | Web Playground MVP（纯前端 Mock） | Task 1–5 完成，Mock 闭环可用，测试全绿（已完成） |
+| **2** | LLM 接入 | ChatAdapter 接口（含流式签名）落地；Gemini adapter 流式/非流式通过测试；Playground 可切换真实模型；用量记录可见（已结项） |
+| **3（下一阶段）** | 后端服务化 | Node.js 服务承载领域内核；Playground 改连后端；会话持久化；密钥管理落地 |
 | **4** | Discord 文字接入 | discord.js 网关稳定在线；文字对话闭环；限流与错误处理 |
 | **5** | 角色扮演系统 | 角色配置（人设 Prompt / 开场白 / 记忆）可用；Character Card 兼容评估完成 |
 | **6** | 语音链路 | STT→LLM→TTS 流式管道打通；主入口为 Discord 语音通话（直播场景），Web 麦克风保留为调试通道；直播场景文字+语音伴随输出可用（承载方式以预研结论为准） |
@@ -105,6 +105,7 @@
   - [x] **Step 2（Hook 状态机与控制）**：`useChat` 流式驱动、`isGenerating` / `stopGenerating` 控制、`AbortController` 级联与中途打断单测
   - [x] **Step 3（UI 呈现与集成闭环）**：打字机光标动效、停止生成按钮与端到端回归（commit: 2040469）
 - [x] **测试全景台账建立（TESTS.md）**：全景梳理 13 个测试套件、118 项用例并确立维护规范，纳入通用 DoD
+- [x] **流式触底滚动与用户滚动守卫（Smart Sticky Bottom）**：全面迁移滚动 API 至 scrollTo/scrollTop；区分消息增量 smooth 触底与流式 content 高频 rAF auto 触底；实现 100px 守卫判定与上滑发送强制吸底，测试增至 122 项全绿（commit: e8e6711）
 
 ## 5. 待办事项
 所有任务默认未授权。执行任何任务前，须由用户在 §1 指派。
@@ -201,6 +202,12 @@
 - **风险 9（已发生，已缓解）**: Gemini API 403 权限/环境异常与密钥清洗防御
   - **事件**：用户使用未启用付费/欠费/项目受限的 API Key 发起调用时返回 403 PERMISSION_DENIED。
   - **应对**：排查确认为环境/Key 权限问题；同时沉淀四重通用防御（不可见字符与空白清洗、空 key 拦截、强触发重构），确保前端链路无隐形故障。
+- **风险 10（已发生，已缓解）**: 本地跨平台执行环境（macOS ARM64）与 Rollup 原生依赖适配
+  - **事件**：本地 Apple Silicon (M 芯片) 环境运行 Vitest 时，因 node_modules 仅包含 x64 版本、缺少 `@rollup/rollup-darwin-arm64` 原生二进制可选依赖，导致测试引擎在收集测试前启动失败。
+  - **应对与红线**：
+    1. 属本地原生可选依赖缺失，仅限在本地机器依赖目录修复补齐（如 `npm i -D @rollup/rollup-darwin-arm64`）；
+    2. **铁律红线**：严禁将特定平台的二进制依赖加入项目依赖、严禁将本地平台污染的 `package-lock.json` 或特定平台模块 commit / push 到 Git 仓库，确保 Linux CI/CD 与云端环境纯净；
+    3. 修复后本地测试套件 13/13 全绿、118/118 用例通过，与 TESTS.md 台账完全一致。
 
 ## 8. 质量与交付验收标准
 ### 通用 DoD（所有 Phase 适用）

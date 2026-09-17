@@ -14,9 +14,9 @@ describe('Smoke Test Infrastructure', () => {
     document.body.removeChild(div);
   });
 
-  it('should support mocked scrollIntoView', () => {
+  it('should support mocked scrollTo in jsdom', () => {
     const el = document.createElement('div');
-    expect(typeof el.scrollIntoView).toBe('function');
-    expect(() => el.scrollIntoView()).not.toThrow();
+    expect(typeof el.scrollTo).toBe('function');
+    expect(() => el.scrollTo({ top: 100, behavior: 'smooth' })).not.toThrow();
   });
 });

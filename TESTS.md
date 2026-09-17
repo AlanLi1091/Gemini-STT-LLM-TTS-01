@@ -1,7 +1,7 @@
 # 测试套件与测试用例台账 (TESTS.md)
 
 > **维护规范**：
-> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（13 个套件）与具体测试用例（118 个断言项）。
+> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（13 个套件）与具体测试用例（122 个断言项）。
 > 2. **铁律联动**：后续开发中，每次有新功能开发、重构或测试内容更新时，**必须同步在此台账中维护新增或修改的测试项**，保持与实际测试套件 100% 同步。
 
 ## 1. 测试套件概览看板
@@ -20,8 +20,8 @@
 | 10 | `src/hooks/useChat.test.ts` | Task 3 / 9 / 10 | useChat Hook 领域逻辑状态机（流式驱动/中断/重试/生命周期） | 13 | ✅ 通过 |
 | 11 | `src/test/error-and-usage-components.test.tsx` | Task 9 | TokenUsageBadge 徽章与 ChatErrorBanner 错误横幅纯组件测试 | 15 | ✅ 通过 |
 | 12 | `src/test/error-and-usage-integration.test.tsx` | Task 9 | 错误横幅展示/重试/设置联动及 Token 徽章端到端集成测试 | 3 | ✅ 通过 |
-| 13 | `src/test/streaming-ui.test.tsx` | Task 10 | 流式打字机光标动效、停止生成按钮及顶栏联动禁用集成测试 | 4 | ✅ 通过 |
-| **合计** | **13 个测试文件** | **Phase 1 & Phase 2** | **全链路领域内核、适配器与 UI 交互** | **118** | **✅ 100% 通过** |
+| 13 | `src/test/streaming-ui.test.tsx` | Task 10 | 流式打字机光标动效、停止生成按钮、顶栏联动禁用与 Smart Sticky Bottom 触底滚动守卫 | 8 | ✅ 通过 |
+| **合计** | **13 个测试文件** | **Phase 1 & Phase 2** | **全链路领域内核、适配器与 UI 交互** | **122** | **✅ 100% 通过** |
 
 ---
 
@@ -34,7 +34,7 @@
 #### Smoke Test Infrastructure
 - [x] **should run basic assertion in vitest**
 - [x] **should have dom environment available in jsdom**
-- [x] **should support mocked scrollIntoView**
+- [x] **should support mocked scrollTo in jsdom**
 
 ### 2.2 `src/test/chat-skeleton.test.tsx` (6 项)
 > **任务对应**：Task 2 · 聊天界面基础骨架（Header / MessageList / ChatInput）
@@ -92,7 +92,7 @@
 
 #### Task 5 交互细节与体验优化全面测试 > 无障碍与触底调度测试
 - [x] **消息列表容器应具备 role="log" 和 aria-live="polite"**
-- [x] **发送消息后调用滚动触底 scrollIntoView**
+- [x] **发送消息后调用滚动触底 scrollTo**
 
 ### 2.6 `src/test/chat-adapter-contract.test.ts` (14 项)
 > **任务对应**：Task 6 / 10 · ChatAdapter 通用契约测试套件（Mock & Gemini send/stream）
@@ -249,8 +249,8 @@
 - [x] **当存在 lastError 时，顶部正确展示 ChatErrorBanner 错误横幅**
 - [x] **点击错误横幅中的“检查设置”按钮，能够联动打开设置弹窗**
 
-### 2.13 `src/test/streaming-ui.test.tsx` (4 项)
-> **任务对应**：Task 10 · 流式打字机光标动效、停止生成按钮及顶栏联动禁用集成测试
+### 2.13 `src/test/streaming-ui.test.tsx` (8 项)
+> **任务对应**：Task 10 · 流式打字机光标动效、停止生成按钮、顶栏联动禁用与 Smart Sticky Bottom 触底滚动守卫
 
 
 #### Task 10 Step 3: 流式 UI 交互与端到端集成测试
@@ -258,4 +258,10 @@
 - [x] **当 isGenerating 为 false 时，即使存在 assistant 消息也不应渲染打字机光标**
 - [x] **当 isGenerating 为 true 时，发送按钮应替换为停止生成按钮，点击应触发 stopGenerating**
 - [x] **当 isGenerating 为 true 时，顶部 Header 的操作应联动禁用**
+
+#### Task 10 Step 3: 流式触底滚动与用户滚动守卫 (Smart Sticky Bottom)
+- [x] **流式 content 变化且用户在底部区域时，应触发 scrollTo 吸底**
+- [x] **用户主动上滑离开底部区域时，流式 chunk 更新不得强制吸底（用户滚动守卫生效）**
+- [x] **用户滑回底部区域时，恢复自动吸底追踪**
+- [x] **用户上滑期间发送新消息时，无条件 smooth 强制吸底并重置守卫**
 

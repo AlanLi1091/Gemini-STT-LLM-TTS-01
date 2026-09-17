@@ -16,62 +16,96 @@ export const MessageList: React.FC<MessageListProps> = ({
   isGenerating = false,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const bottomAnchorRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState<boolean>(true);
   const [showScrollBottomBtn, setShowScrollBottomBtn] = useState<boolean>(false);
   const prevMessagesLengthRef = useRef<number>(messages.length);
+  const isProgrammaticScrollRef = useRef<boolean>(false);
+  const rafIdRef = useRef<number | null>(null);
 
-  // 判断滚动条是否在底部（距底部 <= 24px）
-  const checkIsAtBottom = useCallback(() => {
+  // 判断滚动条是否在底部区域（距底部 <= 100px 为 Smart Sticky Bottom 吸底阈值）
+  const checkIsNearBottom = useCallback(() => {
     const el = containerRef.current;
     if (!el) return true;
     const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    return distanceFromBottom <= 24;
+    return distanceFromBottom <= 100;
   }, []);
 
-  // 平滑滚动到底部
+  // 纯容器 API 滚动到底部（全量迁移至 scrollTo / scrollTop，废弃 scrollIntoView）
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
-    if (bottomAnchorRef.current?.scrollIntoView) {
-      bottomAnchorRef.current.scrollIntoView({ behavior, block: 'end' });
-    } else if (typeof containerRef.current?.scrollTo === 'function') {
-      containerRef.current.scrollTo({
-        top: containerRef.current.scrollHeight,
+    const el = containerRef.current;
+    if (!el) return;
+
+    isProgrammaticScrollRef.current = true;
+    if (typeof el.scrollTo === 'function') {
+      el.scrollTo({
+        top: el.scrollHeight,
         behavior,
       });
-    } else if (containerRef.current) {
-      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    } else {
+      el.scrollTop = el.scrollHeight;
+    }
+
+    // 针对 smooth 或 auto 滚动后释放程序锁，避免误判为用户上滑
+    if (behavior === 'smooth') {
+      setTimeout(() => {
+        isProgrammaticScrollRef.current = false;
+      }, 300);
+    } else {
+      isProgrammaticScrollRef.current = false;
     }
   }, []);
 
-  // 监听用户滚动事件，检测当前是否在底部
+  // 监听用户滚动事件：仅在非程序滚动时响应用户滚动意图
   const handleScroll = useCallback(() => {
-    const atBottom = checkIsAtBottom();
-    setIsAtBottom(atBottom);
-    setShowScrollBottomBtn(!atBottom && messages.length > 2);
-  }, [checkIsAtBottom, messages.length]);
+    if (isProgrammaticScrollRef.current) return;
+    const nearBottom = checkIsNearBottom();
+    setIsAtBottom(nearBottom);
+    setShowScrollBottomBtn(!nearBottom && messages.length > 2);
+  }, [checkIsNearBottom, messages.length]);
 
-  // 智能滚动调度（方案 A）
+  // 滚动调度核心：分级滚动与用户守卫
+  const lastMessage = messages[messages.length - 1];
+  const lastMessageContent = lastMessage?.content;
+
   useEffect(() => {
     const prevLen = prevMessagesLengthRef.current;
     const currLen = messages.length;
     prevMessagesLengthRef.current = currLen;
 
-    // 用户新增发送消息（最后一条为 user）：无条件平滑触底
+    // 场景 A：新消息到达（含用户上滑期间发送新消息 或 初始/清空）
+    // 无条件强制 smooth 吸底并重置守卫状态
     if (currLen > prevLen) {
-      const lastMsg = messages[currLen - 1];
-      if (lastMsg && lastMsg.role === 'user') {
-        scrollToBottom('smooth');
-        setIsAtBottom(true);
-        setShowScrollBottomBtn(false);
-        return;
-      }
+      scrollToBottom('smooth');
+      setIsAtBottom(true);
+      setShowScrollBottomBtn(false);
+      return;
     }
 
-    // 思考态或助手回复到达：仅在"在底部"时跟随滚动，不打断翻阅
-    if (isAtBottom) {
+    // 场景 B：仅末条消息 content 变化（流式生成 chunk 高频到达）
+    // 仅当用户保持在底部守卫范围内时，使用 requestAnimationFrame 节流 + auto 瞬间跟随吸底
+    if (isGenerating && isAtBottom) {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+      rafIdRef.current = requestAnimationFrame(() => {
+        scrollToBottom('auto');
+        rafIdRef.current = null;
+      });
+      return;
+    }
+
+    // 场景 C：思考态开启（isLoading 变更）且当前在底部守卫内
+    if (isLoading && isAtBottom) {
       scrollToBottom('smooth');
     }
-  }, [messages, isLoading, isAtBottom, scrollToBottom]);
+
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+    };
+  }, [messages.length, lastMessageContent, isGenerating, isLoading, isAtBottom, scrollToBottom]);
 
   return (
     <div className="relative flex-1 w-full flex flex-col overflow-hidden">
@@ -160,8 +194,6 @@ export const MessageList: React.FC<MessageListProps> = ({
                 );
               })}
               {isLoading && <ThinkingIndicator />}
-              {/* 触底锚点 */}
-              <div ref={bottomAnchorRef} className="h-0 w-0" aria-hidden="true" />
             </div>
           )}
         </div>
