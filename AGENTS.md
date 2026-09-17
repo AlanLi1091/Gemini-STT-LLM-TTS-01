@@ -40,13 +40,13 @@
 - **约束声明**：愿景仅用于技术决策对齐（接口预留、目录结构等），不构成任何执行授权（见铁律 3）。
 
 ## 1. 当前授权
-- **授权任务**：更新 AGENTS.md（落地 ADR-009 与 Phase 3 Task 11–14 任务规划，预研区去编号化）
-- **最近 commit**：a6a872b docs(agents): update TESTS.md test count to 122 in AGENTS.md and align recent commit
+- **授权任务**：Task 11 Step 1：三目录划分与双环境测试配置（已完成）
+- **最近 commit**：25db159 feat(server): setup core/server 3-tier structure, express skeleton and dual-env vitest (Task 11 Step 1)
 - **越权处理**：凡不在当前授权范围内的文件改动，一律回滚，并记录到 §7 风险区。
 
 ## 2. 项目阶段
-- **当前阶段**：Phase 2 —— LLM 接入与 ChatAdapter 落地（已结项，准备开启 Phase 3）
-- **当前目标**：开启 Phase 3（后端服务化：Node.js 服务承载领域内核、会话持久化与密钥管理）。
+- **当前阶段**：Phase 3 —— 后端服务化（进行中）
+- **当前目标**：搭建后端服务骨架与契约基建（Task 11）。
 
 ## 3. 项目规划
 ### 3.1 产品设计（Phase 1 范围）
@@ -106,6 +106,8 @@
   - [x] **Step 3（UI 呈现与集成闭环）**：打字机光标动效、停止生成按钮与端到端回归（commit: 2040469）
 - [x] **测试全景台账建立（TESTS.md）**：全景梳理 13 个测试套件、122 项用例并确立维护规范，纳入通用 DoD
 - [x] **流式触底滚动与用户滚动守卫（Smart Sticky Bottom）**：全面迁移滚动 API 至 scrollTo/scrollTop；区分消息增量 smooth 触底与流式 content 高频 rAF auto 触底；实现 100px 守卫判定与上滑发送强制吸底，测试增至 122 项全绿（commit: e8e6711）
+- [x] **Task 11**: 后端服务骨架与契约基建搭建
+  - [x] **Step 1（三目录划分与双环境测试配置）**：落地 `core/`、`server/` 结构与 tsconfig 路径别名（`@core/*`）；配置 Express 骨架、Vitest 双环境（前端 jsdom / 服务端 node）、Supertest 依赖与服务端运行/构建脚本；同步拓展 TESTS.md 服务端条目。
 
 ## 5. 待办事项
 所有任务默认未授权。执行任何任务前，须由用户在 §1 指派。
@@ -127,11 +129,11 @@
   - [x] **Step 2（Hook 状态机与控制）**：useChat 流式驱动、stopGenerating 控制与中途打断单测（已完成）
   - [x] **Step 3（UI 呈现与集成闭环）**：打字机光标动效、停止生成按钮与端到端回归
 
-### Phase 3（已规划，全部未授权）
+### Phase 3（进行中，未授权项不得开工）
 - [ ] **Task 11**: 后端服务骨架与契约基建搭建
-  - **Step 1（三目录划分与双环境测试配置）**：落地 `core/`、`server/` 结构与 tsconfig 路径别名（`@core/*`）；配置 Express 骨架、Vitest 双环境（前端 jsdom / 服务端 node）、Supertest 依赖与服务端运行/构建脚本；同步拓展 TESTS.md 服务端条目。
-  - **Step 2（共享契约模块与健康检查接口）**：在 `core/` 落地共享 SSE 协议（chunk / done / error，error 内嵌 ChatError 的 code 与 message）；声明 Task 13 无状态向 Task 14 sessionId 演进路径；实现 `/api/health` 接口及 Supertest 单测。
-  - **Step 3（轻量安全防护与环境隔离）**：CORS 白名单支持 `ALLOWED_ORIGINS` 环境变量；配置 `.env.example`（含 `GEMINI_API_KEY` 与 `ALLOWED_ORIGINS` 样例），`.env` 与测试数据进 `.gitignore`；补齐骨架链路测试。
+  - [x] **Step 1（三目录划分与双环境测试配置）**：落地 `core/`、`server/` 结构与 tsconfig 路径别名（`@core/*`）；配置 Express 骨架、Vitest 双环境（前端 jsdom / 服务端 node）、Supertest 依赖与服务端运行/构建脚本；同步拓展 TESTS.md 服务端条目。
+  - [ ] **Step 2（共享契约模块与健康检查接口）**：在 `core/` 落地共享 SSE 协议（chunk / done / error，error 内嵌 ChatError 的 code 与 message）；声明 Task 13 无状态向 Task 14 sessionId 演进路径；实现 `/api/health` 接口及 Supertest 单测。
+  - [ ] **Step 3（轻量安全防护与环境隔离）**：CORS 白名单支持 `ALLOWED_ORIGINS` 环境变量；配置 `.env.example`（含 `GEMINI_API_KEY` 与 `ALLOWED_ORIGINS` 样例），`.env` 与测试数据进 `.gitignore`；补齐骨架链路测试。
 - [ ] **Task 12**: 服务端承载 Chat 调用与密钥收拢
   - **Step 1（服务端 SSE 流式管道与生命周期管理）**：实现 `/api/chat/stream` SSE 接口，接入约 15s 心跳注释行保活（`: ping\n\n`）；显式声明不支持断点续传；实现客户端中断到服务端上游 AbortController 的级联取消链路与单测覆盖。
   - **Step 2（GeminiAdapter 服务端承载与 Key 收拢）**：将 `GeminiChatAdapter` 纳入 `core/` 共享实现，服务端通过 `process.env.GEMINI_API_KEY` 注入实例化；前端调试模式复用同实现不产平行代码；编写服务端环境变量注入与模型调用单测（100% Mock 网络层）。
