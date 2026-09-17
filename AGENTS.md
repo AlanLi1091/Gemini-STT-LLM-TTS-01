@@ -40,8 +40,8 @@
 - **约束声明**：愿景仅用于技术决策对齐（接口预留、目录结构等），不构成任何执行授权（见铁律 3）。
 
 ## 1. 当前授权
-- **授权任务**：Phase 2 人工验收全部通过，Phase 2 顺利结项并交接（待开启 Phase 3）
-- **最近 commit**：7e6c19a docs(agents): update TESTS.md test count to 122 in AGENTS.md
+- **授权任务**：更新 AGENTS.md（落地 ADR-009 与 Phase 3 Task 11–14 任务规划，预研区去编号化）
+- **最近 commit**：a6a872b docs(agents): update TESTS.md test count to 122 in AGENTS.md and align recent commit
 - **越权处理**：凡不在当前授权范围内的文件改动，一律回滚，并记录到 §7 风险区。
 
 ## 2. 项目阶段
@@ -62,7 +62,7 @@
 | :--- | :--- | :--- |
 | **1** | Web Playground MVP（纯前端 Mock） | Task 1–5 完成，Mock 闭环可用，测试全绿（已完成） |
 | **2** | LLM 接入 | ChatAdapter 接口（含流式签名）落地；Gemini adapter 流式/非流式通过测试；Playground 可切换真实模型；用量记录可见（已结项） |
-| **3（下一阶段）** | 后端服务化 | Node.js 服务承载领域内核；Playground 改连后端；会话持久化；密钥管理落地 |
+| **3（下一阶段）** | 后端服务化 | Task 11–14 完成：Node.js 服务承载领域内核；Playground 改连后端且原有测试语义零漂移；会话 JSON 文件持久化；密钥收拢至服务端环境变量 |
 | **4** | Discord 文字接入 | discord.js 网关稳定在线；文字对话闭环；限流与错误处理 |
 | **5** | 角色扮演系统 | 角色配置（人设 Prompt / 开场白 / 记忆）可用；Character Card 兼容评估完成 |
 | **6** | 语音链路 | STT→LLM→TTS 流式管道打通；主入口为 Discord 语音通话（直播场景），Web 麦克风保留为调试通道；直播场景文字+语音伴随输出可用（承载方式以预研结论为准） |
@@ -117,7 +117,7 @@
 - [x] **Task 4**: Mock 机器人响应引擎（思考态加载动画、延时回复策略）
 - [x] **Task 5**: 交互细节与体验优化（自动触底滚动、键盘快捷键、IME防误发、清空对话）
 
-### Phase 2（已规划，全部未授权）
+### Phase 2（已完成）
 - [x] **Task 6**: ChatAdapter 接口定义（send + stream 签名）+ 契约测试套件 + Mock 重构为 MockChatAdapter（同时实现 send/stream，行为不变，Phase 1 测试全绿）
 - [x] **Task 7**: GeminiChatAdapter.send（非流式）：role 映射、错误分类、usage 提取；单测全 mock 网络层
 - [x] **Task 8**: 设置面板与模型切换（Step 1 存储/校验 + Step 2 弹窗/入口 + Step 3 状态集成/单测全量完成）
@@ -126,14 +126,32 @@
   - [x] **Step 1（适配器流式与中断）**：GeminiChatAdapter.stream 实现、AbortSignal 级联、契约测试单测（已完成）
   - [x] **Step 2（Hook 状态机与控制）**：useChat 流式驱动、stopGenerating 控制与中途打断单测（已完成）
   - [x] **Step 3（UI 呈现与集成闭环）**：打字机光标动效、停止生成按钮与端到端回归
-- [ ] **模型动态发现与拉取（提议，未授权）**：支持通过 Gemini API（models.list）动态拉取当前 Key 可用的模型列表，替代硬编码配置，避免模型下线或权限不匹配。
 
-### 后续阶段预研（未授权，仅规划）
-- [ ] **Task 11 (Phase 3)**: 后端框架与部署方案调研（Cloud Run / VPS）
-- [ ] **Task 12 (Phase 4)**: discord.js 选型验证与最小网关 Demo
-- [ ] **Task 13 (Phase 5)**: 角色数据格式调研（自定义 schema vs Character Card V2）
+### Phase 3（已规划，全部未授权）
+- [ ] **Task 11**: 后端服务骨架与契约基建搭建
+  - **Step 1（三目录划分与双环境测试配置）**：落地 `core/`、`server/` 结构与 tsconfig 路径别名（`@core/*`）；配置 Express 骨架、Vitest 双环境（前端 jsdom / 服务端 node）、Supertest 依赖与服务端运行/构建脚本；同步拓展 TESTS.md 服务端条目。
+  - **Step 2（共享契约模块与健康检查接口）**：在 `core/` 落地共享 SSE 协议（chunk / done / error，error 内嵌 ChatError 的 code 与 message）；声明 Task 13 无状态向 Task 14 sessionId 演进路径；实现 `/api/health` 接口及 Supertest 单测。
+  - **Step 3（轻量安全防护与环境隔离）**：CORS 白名单支持 `ALLOWED_ORIGINS` 环境变量；配置 `.env.example`（含 `GEMINI_API_KEY` 与 `ALLOWED_ORIGINS` 样例），`.env` 与测试数据进 `.gitignore`；补齐骨架链路测试。
+- [ ] **Task 12**: 服务端承载 Chat 调用与密钥收拢
+  - **Step 1（服务端 SSE 流式管道与生命周期管理）**：实现 `/api/chat/stream` SSE 接口，接入约 15s 心跳注释行保活（`: ping\n\n`）；显式声明不支持断点续传；实现客户端中断到服务端上游 AbortController 的级联取消链路与单测覆盖。
+  - **Step 2（GeminiAdapter 服务端承载与 Key 收拢）**：将 `GeminiChatAdapter` 纳入 `core/` 共享实现，服务端通过 `process.env.GEMINI_API_KEY` 注入实例化；前端调试模式复用同实现不产平行代码；编写服务端环境变量注入与模型调用单测（100% Mock 网络层）。
+  - **Step 3（Mock 降级复用与统一错误透传）**：无 Key 访问时自动复用 `core/MockChatAdapter`；错误透传复用 `classifyGeminiError` 并通过 SSE error 事件携带标准错误码；以纯前端 ChatErrorBanner 零改动为架构对齐验证点。
+- [ ] **Task 13**: 前端 Playground 改连与架构平滑切换
+  - **Step 1（RemoteChatAdapter 实现与契约测试）**：在 `src/adapters/RemoteChatAdapter.ts` 实现 `ChatAdapter` 接口，通过 `fetch` + `ReadableStream` 消费 SSE 事件并支持 AbortSignal 中断；单测 100% Mock 网络，不依赖真实后端进程。
+  - **Step 2（设置面板适配）**：SettingsModal 扩展连接模式选择（“后端服务（推荐）”与“前端直连调试模式”）；选择后端模式时 API Key 输入区域隐藏或锁定并提示环境变量托管；直连模式去留于 Phase 3 结项时由用户决策。
+  - **Step 3（集成装配与全量回归）**：在 App.tsx 接入 RemoteChatAdapter 闭环流式体验；确保现有 122 项用例语义零漂移，新增用例同步登记 TESTS.md。
+- [ ] **Task 14**: 会话持久化与上下文管理
+  - **Step 1（持久化存储层抽象与 JSON 文件引擎）**：定义 `SessionStorage` 接口（遵循 ADR-005 唯一 ID 与严格追加语义）；默认实现 JSON 文件存储引擎（每会话单文件，存 `data/` 目录进 `.gitignore`）；编写存储层单测。
+  - **Step 2（会话操作 API 与多轮上下文拼接）**：实现会话获取与创建接口，支持 sessionId 寻址；上下文默认全量历史（截断策略推迟至 Phase 5）；清空对话定案为归档标记语义（Soft Delete / Archived），保持物理日志不可变。
+  - **Step 3（前端单会话自动恢复与状态联动）**：Playground 启动时恢复最近会话；清空对话联动后端归档；补充持久化集成测试；前端不做多会话管理 UI（Phase 5 范围）。
+
+### 后续阶段预研（未授权，仅规划，去编号化）
+- [ ] **Phase 3 收尾预研**：部署方案（Cloud Run / VPS，显式声明不阻塞 Phase 3 退出条件）
+- [ ] **Phase 4 预研**：discord.js 选型验证与最小网关 Demo
+- [ ] **Phase 5 预研**：角色数据格式调研（自定义 schema vs Character Card V2）
 - [ ] **消息重发/重生成与分支导航（基于 ADR-005 消息树模型）** (Phase 5)
-- [ ] **Task 14 (Phase 6)**: 语音链路方案对比（Gemini 原生音频 vs Whisper+TTS；Discord 语音通话作为直播主入口的可行性与端到端延迟验证；Web 麦克风降级为调试通道；直播文字伴随输出的承载方式选型）
+- [ ] **Phase 6 预研**：语音链路方案对比（Gemini 原生音频 vs Whisper+TTS；Discord 语音通话直播主入口可行性与端到端延迟验证；Web 麦克风调试通道；直播文字伴随输出承载选型）
+- [ ] **模型动态发现与拉取（提议，未授权）**：支持通过 Gemini API（models.list）动态拉取当前 Key 可用的模型列表，替代硬编码配置。
 
 ## 6. 技术决策记录
 - **ADR-001: MVP 采用纯前端 Mock 机制**
@@ -177,6 +195,14 @@
     2. 当前以 Google 官方基线推荐清单（3.8-flash / 3.6-flash / 3.1-pro）作为稳定配置；
     3. 规划动态发现机制（models.list API）作为后续演进路线。
   - **影响**：规避因用户输入微瑕疵导致的 403/400 假性故障；保持与官方活跃模型的对齐。
+- **ADR-009: Phase 3 服务端架构与代码共享组织（单仓三目录 + SSE 契约通道）**
+  - **背景**：领域内核需同时服务 Web 前端与 Node 服务端（Phase 4 扩展至 Discord 机器人）；需在 Monorepo Workspaces 与单仓多目录间权衡；既有 122 项测试需路径零漂移与 100% 稳定运行；持久化引擎须规避原生 C++ 二进制依赖以消除沙箱和本地跨平台编译风险（风险 10）。
+  - **决策**：
+    1. **代码组织结构**：采用单仓三目录（`core/` 领域内核、契约与适配器通用实现；`src/` Web UI 与 RemoteChatAdapter；`server/` Express 服务端、SSE 路由与存储层）；
+    2. **依赖与编译边界**：`core/` 持独立 tsconfig 确保无 React/DOM/Node 专属全局污染，`src/` 与 `server/` 经 tsconfig path alias（`@core/*`）引用，根 `package.json` 统一管理依赖；触发条件：Phase 4 若产生独立 Bot 运行进程或独立分发单元，升格为 npm workspaces；
+    3. **测试统一入口**：保持单一 `npm run test`，以 Vitest 双环境（web=jsdom / server=node）覆盖前后端全部用例，既有测试路径与 TESTS.md 台账零漂移；
+    4. **通信与存储**：确立 SSE（Server-Sent Events）为前后端唯一流式契约通道（包含 chunk / done / error 事件与 ~15s 心跳保活，不支持断点续传）；持久化引擎默认采用无原生依赖的 JSON 文件存储（每会话单文件，遵循 ADR-005 仅追加语义，`data/` 目录进 `.gitignore`），SQLite 降级为部署期可选插件。
+  - **影响**：杜绝跨平台原生依赖故障；前后端适配器实现统一无冗余；以最小侵入性实现全栈服务化演进。
 
 ## 7. 风险与阻塞
 - **风险 0（已发生，已缓解）**：agent 完成偏置导致越权执行
