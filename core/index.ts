@@ -1,0 +1,6 @@
+/**
+ * @core 领域内核与通用契约入口
+ * 遵循 ADR-009 架构设计：纯 TS 实现，无 DOM、无 React、无 Node 特有依赖
+ */
+
+export const CORE_VERSION = '0.1.0';
