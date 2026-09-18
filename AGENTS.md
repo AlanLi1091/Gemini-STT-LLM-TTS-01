@@ -43,7 +43,7 @@
 - **授权任务**：Task 13 Step 1：RemoteChatAdapter 实现与契约测试（已完成）
 - **最近 commit**：cea4ab4 feat(web): add remote chat SSE adapter (Task 13 Step 1)
 - **当前测试基线**：19/19 个测试套件、152/152 项用例通过（`npm run test`）
-- **开发执行模型交接记录（2026-09-17 18:39:03 PDT）**：因 Google AI Studio 持续出现且并非个例的 “Internal Error”，GPT-5.6 Sol 临时接替 Gemini 3.8 Flash 处理开发任务；待 AI Studio 恢复后，GPT-5.6 Sol 的开发任务暂时终止，由 Gemini 3.8 Flash 继续开发。本记录仅描述开发执行者切换，不扩大当前任务授权范围。
+- **开发与验收模型交接记录（2026-09-17 18:39:03 PDT）**：因 Google AI Studio 持续出现且并非个例的 “Internal Error”，GPT-5.6 Sol 临时接替 Gemini 3.8 Flash 处理开发任务，并完成 Task 11 与 Task 12 的开发。自 Task 13 Step 1 起，为节省额度，开发任务改由 GPT-5.6 Terra 承接；GPT-5.6 Sol 持续负责 AI 自动化验收。待 AI Studio 恢复后，开发执行者再由 Gemini 3.8 Flash 承接。本记录仅描述职责交接，不扩大当前任务授权范围。
 - **越权处理**：凡不在当前授权范围内的文件改动，一律回滚，并记录到 §7 风险区。
 
 ## 2. 项目阶段
@@ -116,7 +116,7 @@
 - [x] **Task 12 Step 1（服务端 SSE 流式管道与生命周期管理）**：实现 `/api/chat/stream` SSE 接口、15 秒心跳、不支持断点续传声明、客户端断开到上游 AbortController 的级联取消与完整测试（commit: 1bd0116）。
 - [x] **Task 12 Step 2（GeminiAdapter 服务端承载与 Key 收拢）**：将通用聊天类型与 GeminiChatAdapter 迁入 `core/` 单一实现；服务端通过 `GEMINI_API_KEY` 注入并映射为 SSE 流源，前端直连调试复用同一实现；网络层测试 100% Mock（commit: ef83d78）。
 - [x] **Task 12 Step 3（Mock 降级复用与统一错误透传）**：将 MockChatAdapter 迁入 `core/` 单一实现；无有效服务端 Key 时自动降级 Mock；Gemini 错误复用统一分类并通过 SSE error 事件透传标准 code/message；ChatErrorBanner 零改动通过既有测试（commit: c2c2dc6）。
-- [x] **Task 13 Step 1（RemoteChatAdapter 实现与契约测试）**：实现 `RemoteChatAdapter`，通过 fetch + ReadableStream 消费服务端 SSE，支持标准错误映射与 AbortSignal；网络层全 Mock，不依赖真实后端进程（commit: cea4ab4）。
+- [x] **Task 13 Step 1（RemoteChatAdapter 实现与契约测试）**：由 GPT-5.6 Terra 开发、GPT-5.6 Sol 完成 AI 自动化验收；实现 `RemoteChatAdapter`，通过 fetch + ReadableStream 消费服务端 SSE，支持标准错误映射与 AbortSignal；网络层全 Mock，不依赖真实后端进程（commit: cea4ab4）。
 
 ## 5. 待办事项
 所有任务默认未授权。执行任何任务前，须由用户在 §1 指派。
