@@ -40,15 +40,15 @@
 - **约束声明**：愿景仅用于技术决策对齐（接口预留、目录结构等），不构成任何执行授权（见铁律 3）。
 
 ## 1. 当前授权
-- **授权任务**：Task 12 Step 3：Mock 降级复用与统一错误透传（已完成）；Task 12 全部完成
-- **最近 commit**：c2c2dc6 feat(server): add Mock fallback and standardized SSE errors (Task 12 Step 3)
-- **当前测试基线**：18/18 个测试套件、146/146 项用例通过（`npm run test`）
+- **授权任务**：Task 13 Step 1：RemoteChatAdapter 实现与契约测试（已完成）
+- **最近 commit**：cea4ab4 feat(web): add remote chat SSE adapter (Task 13 Step 1)
+- **当前测试基线**：19/19 个测试套件、152/152 项用例通过（`npm run test`）
 - **开发执行模型交接记录（2026-09-17 18:39:03 PDT）**：因 Google AI Studio 持续出现且并非个例的 “Internal Error”，GPT-5.6 Sol 临时接替 Gemini 3.8 Flash 处理开发任务；待 AI Studio 恢复后，GPT-5.6 Sol 的开发任务暂时终止，由 Gemini 3.8 Flash 继续开发。本记录仅描述开发执行者切换，不扩大当前任务授权范围。
 - **越权处理**：凡不在当前授权范围内的文件改动，一律回滚，并记录到 §7 风险区。
 
 ## 2. 项目阶段
 - **当前阶段**：Phase 3 —— 后端服务化（进行中）
-- **当前目标**：Task 12 服务端 Chat 调用与密钥收拢已完成，等待下一项明确授权。
+- **当前目标**：Task 13 Step 1 RemoteChatAdapter 已完成，等待下一项明确授权。
 
 ## 3. 项目规划
 ### 3.1 产品设计（Phase 1 范围）
@@ -116,6 +116,7 @@
 - [x] **Task 12 Step 1（服务端 SSE 流式管道与生命周期管理）**：实现 `/api/chat/stream` SSE 接口、15 秒心跳、不支持断点续传声明、客户端断开到上游 AbortController 的级联取消与完整测试（commit: 1bd0116）。
 - [x] **Task 12 Step 2（GeminiAdapter 服务端承载与 Key 收拢）**：将通用聊天类型与 GeminiChatAdapter 迁入 `core/` 单一实现；服务端通过 `GEMINI_API_KEY` 注入并映射为 SSE 流源，前端直连调试复用同一实现；网络层测试 100% Mock（commit: ef83d78）。
 - [x] **Task 12 Step 3（Mock 降级复用与统一错误透传）**：将 MockChatAdapter 迁入 `core/` 单一实现；无有效服务端 Key 时自动降级 Mock；Gemini 错误复用统一分类并通过 SSE error 事件透传标准 code/message；ChatErrorBanner 零改动通过既有测试（commit: c2c2dc6）。
+- [x] **Task 13 Step 1（RemoteChatAdapter 实现与契约测试）**：实现 `RemoteChatAdapter`，通过 fetch + ReadableStream 消费服务端 SSE，支持标准错误映射与 AbortSignal；网络层全 Mock，不依赖真实后端进程（commit: cea4ab4）。
 
 ## 5. 待办事项
 所有任务默认未授权。执行任何任务前，须由用户在 §1 指派。
@@ -147,7 +148,7 @@
   - [x] **Step 2（GeminiAdapter 服务端承载与 Key 收拢）**：将 `GeminiChatAdapter` 纳入 `core/` 共享实现，服务端通过 `process.env.GEMINI_API_KEY` 注入实例化；前端调试模式复用同实现不产平行代码；编写服务端环境变量注入与模型调用单测（100% Mock 网络层）（commit: ef83d78）。
   - [x] **Step 3（Mock 降级复用与统一错误透传）**：无 Key 访问时自动复用 `core/MockChatAdapter`；错误透传复用 `classifyGeminiError` 并通过 SSE error 事件携带标准错误码；以纯前端 ChatErrorBanner 零改动为架构对齐验证点（commit: c2c2dc6）。
 - [ ] **Task 13**: 前端 Playground 改连与架构平滑切换
-  - **Step 1（RemoteChatAdapter 实现与契约测试）**：在 `src/adapters/RemoteChatAdapter.ts` 实现 `ChatAdapter` 接口，通过 `fetch` + `ReadableStream` 消费 SSE 事件并支持 AbortSignal 中断；单测 100% Mock 网络，不依赖真实后端进程。
+  - [x] **Step 1（RemoteChatAdapter 实现与契约测试）**：在 `src/adapters/RemoteChatAdapter.ts` 实现 `ChatAdapter` 接口，通过 `fetch` + `ReadableStream` 消费 SSE 事件并支持 AbortSignal 中断；单测 100% Mock 网络，不依赖真实后端进程（commit: cea4ab4）。
   - **Step 2（设置面板适配）**：SettingsModal 扩展连接模式选择（“后端服务（推荐）”与“前端直连调试模式”）；选择后端模式时 API Key 输入区域隐藏或锁定并提示环境变量托管；直连模式去留于 Phase 3 结项时由用户决策。
   - **Step 3（集成装配与全量回归）**：在 App.tsx 接入 RemoteChatAdapter 闭环流式体验；确保现有 135 项用例语义零漂移，新增用例同步登记 TESTS.md。
 - [ ] **Task 14**: 会话持久化与上下文管理
