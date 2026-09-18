@@ -1,3 +1,7 @@
+import type { ChatErrorCode } from '@core/contracts/sse';
+
+export type { ChatErrorCode } from '@core/contracts/sse';
+
 export type MessageRole = 'user' | 'assistant' | 'system';
 
 export interface Message {
@@ -33,14 +37,6 @@ export interface ChatAdapterOptions {
   maxTokens?: number;
   [key: string]: unknown;
 }
-
-export type ChatErrorCode =
-  | 'AUTH_ERROR'
-  | 'RATE_LIMIT'
-  | 'NETWORK_ERROR'
-  | 'MODEL_ERROR'
-  | 'ABORTED'
-  | 'UNKNOWN';
 
 export class ChatError extends Error {
   readonly code: ChatErrorCode;

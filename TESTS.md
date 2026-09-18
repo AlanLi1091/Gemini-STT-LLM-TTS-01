@@ -1,7 +1,7 @@
 # 测试套件与测试用例台账 (TESTS.md)
 
 > **维护规范**：
-> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（14 个套件）与具体测试用例（125 个断言项）。
+> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（15 个套件）与具体测试用例（130 个断言项）。
 > 2. **铁律联动**：后续开发中，每次有新功能开发、重构或测试内容更新时，**必须同步在此台账中维护新增或修改的测试项**，保持与实际测试套件 100% 同步。
 
 ## 1. 测试套件概览看板
@@ -21,8 +21,9 @@
 | 11 | `src/test/error-and-usage-components.test.tsx` | Task 9 | TokenUsageBadge 徽章与 ChatErrorBanner 错误横幅纯组件测试 | 15 | ✅ 通过 |
 | 12 | `src/test/error-and-usage-integration.test.tsx` | Task 9 | 错误横幅展示/重试/设置联动及 Token 徽章端到端集成测试 | 3 | ✅ 通过 |
 | 13 | `src/test/streaming-ui.test.tsx` | Task 10 | 流式打字机光标动效、停止生成按钮、顶栏联动禁用与 Smart Sticky Bottom 触底滚动守卫 | 8 | ✅ 通过 |
-| 14 | `server/test/server-skeleton.test.ts` | Task 11 | Express 服务端骨架、双环境运行与根路径响应 | 3 | ✅ 通过 |
-| **合计** | **14 个测试文件** | **Phase 1, 2 & Phase 3** | **全链路领域内核、适配器、UI 交互与服务端骨架** | **125** | **✅ 100% 通过** |
+| 14 | `server/test/server-skeleton.test.ts` | Task 11 | Express 服务端骨架、双环境运行、根路径与健康检查响应 | 4 | ✅ 通过 |
+| 15 | `core/test/sse-contract.test.ts` | Task 11 | 共享 SSE 事件、错误载荷与 sessionId 演进契约 | 4 | ✅ 通过 |
+| **合计** | **15 个测试文件** | **Phase 1, 2 & Phase 3** | **全链路领域内核、适配器、UI 交互与服务端契约基建** | **130** | **✅ 100% 通过** |
 
 ---
 
@@ -266,11 +267,22 @@
 - [x] **用户滑回底部区域时，恢复自动吸底追踪**
 - [x] **用户上滑期间发送新消息时，无条件 smooth 强制吸底并重置守卫**
 
-### 2.14 `server/test/server-skeleton.test.ts` (3 项)
-> **任务对应**：Task 11 · Express 服务端骨架、Node.js 运行环境与根路径响应
+### 2.14 `server/test/server-skeleton.test.ts` (4 项)
+> **任务对应**：Task 11 · Express 服务端骨架、Node.js 运行环境、根路径与健康检查响应
 
 #### Task 11 Step 1: 服务端 Express 骨架与双环境测试
 - [x] **应当在真实的 Node.js 环境下运行测试（window 为 undefined）**
 - [x] **GET / 应返回 200 状态码并输出服务信息与 @core 版本号**
 - [x] **访问不存在的路由应当返回 404**
 
+#### Task 11 Step 2: 健康检查接口
+- [x] **GET /api/health 应返回 200 状态码与共享健康状态结构**
+
+### 2.15 `core/test/sse-contract.test.ts` (4 项)
+> **任务对应**：Task 11 Step 2 · 共享 SSE 协议与无状态到会话化的演进契约
+
+#### Task 11 Step 2: 共享 SSE 契约
+- [x] **chunk 事件应携带增量文本与累积文本**
+- [x] **done 事件应携带最终文本与可选 Token 用量**
+- [x] **error 事件应内嵌 ChatError 的 code 与 message**
+- [x] **应声明 Task 13 无状态请求向 Task 14 sessionId 的兼容演进路径**

@@ -4,3 +4,17 @@
  */
 
 export const CORE_VERSION = '0.1.0';
+
+export type {
+  ChatErrorCode,
+  ChatSseEvent,
+  ChatStreamMessage,
+  ChatStreamRequest,
+  HealthResponse,
+  SseChunkEvent,
+  SseDoneEvent,
+  SseErrorEvent,
+  SseUsage,
+} from './contracts/sse';
+
+export { CHAT_ERROR_CODES } from './contracts/sse';
