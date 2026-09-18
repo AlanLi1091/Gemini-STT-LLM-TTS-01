@@ -1,5 +1,5 @@
 import { Message } from '../types';
-import { MockChatAdapter } from '../adapters/MockChatAdapter';
+import { MockChatAdapter } from '@core/adapters/MockChatAdapter';
 
 export interface MockResponseOptions {
   delayMs?: number;
@@ -37,4 +37,3 @@ export function createAssistantMessage(content: string, usage?: Message['usage']
     ...(usage ? { usage } : {}),
   };
 }
-

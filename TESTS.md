@@ -1,7 +1,7 @@
 # 测试套件与测试用例台账 (TESTS.md)
 
 > **维护规范**：
-> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（18 个套件）与具体测试用例（145 个断言项）。
+> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（18 个套件）与具体测试用例（146 个断言项）。
 > 2. **铁律联动**：后续开发中，每次有新功能开发、重构或测试内容更新时，**必须同步在此台账中维护新增或修改的测试项**，保持与实际测试套件 100% 同步。
 
 ## 1. 测试套件概览看板
@@ -25,8 +25,8 @@
 | 15 | `core/test/sse-contract.test.ts` | Task 11 | 共享 SSE 事件、错误载荷与 sessionId 演进契约 | 4 | ✅ 通过 |
 | 16 | `server/test/cors.test.ts` | Task 11 | CORS 白名单解析、允许/拒绝策略与预检链路 | 5 | ✅ 通过 |
 | 17 | `server/test/chat-stream.test.ts` | Task 12 | SSE 流式管道、心跳、续传声明与中断级联 | 7 | ✅ 通过 |
-| 18 | `server/test/gemini-stream-source.test.ts` | Task 12 | 服务端 Key 注入、Gemini 流式调用与 SSE 事件映射 | 2 | ✅ 通过 |
-| **合计** | **18 个测试文件** | **Phase 1, 2 & Phase 3** | **全链路领域内核、共享适配器、UI 交互与服务端流式管道** | **145** | **✅ 100% 通过** |
+| 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 3 | ✅ 通过 |
+| **合计** | **18 个测试文件** | **Phase 1, 2 & Phase 3** | **全链路领域内核、共享适配器、UI 交互与服务端流式管道** | **146** | **✅ 100% 通过** |
 
 ---
 
@@ -312,9 +312,10 @@
 - [x] **上游异常应转换为标准 UNKNOWN error 事件且不泄漏内部错误**
 - [x] **客户端断开连接时应中止上游 AbortSignal**
 
-### 2.18 `server/test/gemini-stream-source.test.ts` (2 项)
-> **任务对应**：Task 12 Step 2 · GeminiAdapter 服务端承载与 Key 收拢
+### 2.18 `server/test/chat-adapter-stream-source.test.ts` (3 项)
+> **任务对应**：Task 12 Step 2–3 · 服务端 Adapter 承载、自动降级与错误透传
 
-#### Task 12 Step 2: Gemini 服务端流源
-- [x] **应从服务端环境变量注入 Key，并映射 Gemini chunk/done 与 AbortSignal**
-- [x] **缺少服务端 Key 时应抛出 AUTH_ERROR 且不调用 Gemini SDK**
+#### Task 12 Step 3: Adapter 自动选择与统一错误透传
+- [x] **有效服务端 Key 应选择 Gemini，并映射 chunk/done 与 AbortSignal**
+- [x] **缺少、空白或不可见字符 Key 时应自动降级共享 MockAdapter**
+- [x] **Gemini 错误应通过 SSE error 事件透传标准 code 与 message**

@@ -40,4 +40,10 @@ export {
   classifyGeminiError,
   formatGeminiContents,
   resolveSystemInstruction,
+  sanitizeGeminiApiKey,
 } from './adapters/GeminiChatAdapter';
+
+export {
+  MockChatAdapter,
+  type MockChatAdapterOptions,
+} from './adapters/MockChatAdapter';

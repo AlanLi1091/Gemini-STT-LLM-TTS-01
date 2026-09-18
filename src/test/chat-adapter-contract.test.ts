@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ChatAdapter, ChatError, Message } from '../types';
-import { MockChatAdapter } from '../adapters/MockChatAdapter';
+import { MockChatAdapter } from '@core/adapters/MockChatAdapter';
 import { GeminiChatAdapter } from '@core/adapters/GeminiChatAdapter';
 
 // Mock @google/genai for GeminiChatAdapter contract tests

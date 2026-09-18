@@ -7,7 +7,7 @@ import { ChatErrorBanner } from './components/ChatErrorBanner';
 import { useChat } from './hooks/useChat';
 import { loadSettings, saveSettings } from './settings';
 import { AppSettings, ChatAdapter } from './types';
-import { MockChatAdapter } from './adapters/MockChatAdapter';
+import { MockChatAdapter } from '@core/adapters/MockChatAdapter';
 import { GeminiChatAdapter } from '@core/adapters/GeminiChatAdapter';
 
 export const App: React.FC = () => {

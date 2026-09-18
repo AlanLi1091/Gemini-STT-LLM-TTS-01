@@ -10,6 +10,10 @@ import {
   type Message,
 } from '../chat';
 
+export function sanitizeGeminiApiKey(apiKey: string | undefined): string {
+  return (apiKey || '').trim().replace(/[^\x20-\x7E]/g, '');
+}
+
 /** 转换领域消息格式至 Gemini SDK 请求格式。 */
 export function formatGeminiContents(messages: Message[]) {
   return messages
@@ -125,7 +129,7 @@ export class GeminiChatAdapter implements ChatAdapter {
   private readonly systemInstruction?: string;
 
   constructor(config: GeminiAdapterConfig) {
-    this.apiKey = (config.apiKey || '').trim().replace(/[^\x20-\x7E]/g, '');
+    this.apiKey = sanitizeGeminiApiKey(config.apiKey);
     this.model = config.model?.trim() || 'gemini-3.8-flash';
     this.systemInstruction = config.systemInstruction;
     this.id = `gemini-${this.model}`;
