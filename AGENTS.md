@@ -40,8 +40,9 @@
 - **约束声明**：愿景仅用于技术决策对齐（接口预留、目录结构等），不构成任何执行授权（见铁律 3）。
 
 ## 1. 当前授权
-- **授权任务**：Task 11 Step 1：三目录划分与双环境测试配置（已完成）
+- **授权任务**：Task 11 Step 1：三目录划分与双环境测试配置（已完成）；本次补充开发执行模型交接记录（已完成）
 - **最近 commit**：25db159 feat(server): setup core/server 3-tier structure, express skeleton and dual-env vitest (Task 11 Step 1)
+- **开发执行模型交接记录（2026-09-17 18:39:03 PDT）**：因 Google AI Studio 持续出现且并非个例的 “Internal Error”，GPT-5.6 Sol 临时接替 Gemini 3.8 Flash 处理开发任务；待 AI Studio 恢复后，GPT-5.6 Sol 的开发任务暂时终止，由 Gemini 3.8 Flash 继续开发。本记录仅描述开发执行者切换，不扩大当前任务授权范围。
 - **越权处理**：凡不在当前授权范围内的文件改动，一律回滚，并记录到 §7 风险区。
 
 ## 2. 项目阶段
@@ -106,6 +107,7 @@
   - [x] **Step 3（UI 呈现与集成闭环）**：打字机光标动效、停止生成按钮与端到端回归（commit: 2040469）
 - [x] **测试全景台账建立（TESTS.md）**：全景梳理 13 个测试套件、122 项用例并确立维护规范，纳入通用 DoD
 - [x] **流式触底滚动与用户滚动守卫（Smart Sticky Bottom）**：全面迁移滚动 API 至 scrollTo/scrollTop；区分消息增量 smooth 触底与流式 content 高频 rAF auto 触底；实现 100px 守卫判定与上滑发送强制吸底，测试增至 122 项全绿（commit: e8e6711）
+- [x] **开发执行模型临时交接记录（2026-09-17）**：因 Google AI Studio 的重复性 “Internal Error” 导致其侧开发流程中断，GPT-5.6 Sol 临时接替 Gemini 3.8 Flash；待 AI Studio 恢复后暂停 GPT-5.6 Sol 的开发任务，由 Gemini 3.8 Flash 继续开发。
 - [x] **Task 11**: 后端服务骨架与契约基建搭建
   - [x] **Step 1（三目录划分与双环境测试配置）**：落地 `core/`、`server/` 结构与 tsconfig 路径别名（`@core/*`）；配置 Express 骨架、Vitest 双环境（前端 jsdom / 服务端 node）、Supertest 依赖与服务端运行/构建脚本；同步拓展 TESTS.md 服务端条目。
 
@@ -236,6 +238,9 @@
     1. 属本地原生可选依赖缺失，仅限在本地机器依赖目录修复补齐（如 `npm i -D @rollup/rollup-darwin-arm64`）；
     2. **铁律红线**：严禁将特定平台的二进制依赖加入项目依赖、严禁将本地平台污染的 `package-lock.json` 或特定平台模块 commit / push 到 Git 仓库，确保 Linux CI/CD 与云端环境纯净；
     3. 修复后本地测试套件 13/13 全绿、118/118 用例通过，与 TESTS.md 台账完全一致。
+- **风险 11（已发生，待 AI Studio 恢复）**: Google AI Studio 重复出现 “Internal Error” 导致 Gemini 3.8 Flash 侧开发流程中断
+  - **事件**：用户反馈该错误持续出现且并非个例；Google AI Developers Forum 近期公开报告了 Gemini 3.8 Flash / AI Studio 的重复性 Internal Error（[2026-09-08 报告](https://discuss.ai.google.dev/t/repeated-an-internal-error-occurred-in-google-ai-studio-build-with-gemini-3-8-flash/181795)、[2026-09-14 报告](https://discuss.ai.google.dev/t/gemini-3-8-flash-down-an-internal-error-occurred-tool-calling-and-web-access-not-working/182668)）。
+  - **应对与交接**：GPT-5.6 Sol 临时接替开发；待 AI Studio 恢复后，GPT-5.6 Sol 的开发任务暂时终止，由 Gemini 3.8 Flash 继续开发。该交接不改变 Phase 3 路线、任务边界或当前授权。
 
 ## 8. 质量与交付验收标准
 ### 通用 DoD（所有 Phase 适用）
