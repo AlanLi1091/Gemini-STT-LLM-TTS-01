@@ -2,17 +2,17 @@
 
 ## 当前阶段
 
-Phase 3 —— 后端服务化（进行中）。Task 13 Step 1 RemoteChatAdapter 已完成；文档结构迁移 Step 3 已完成，等待下一项明确授权。
+Phase 3 —— 后端服务化（进行中）。Task 13 Step 1 RemoteChatAdapter 已完成；文档结构迁移 Step 4 已完成，等待下一项明确授权。
 
 ## 当前授权
 
-- **授权任务**：文档结构迁移 Step 3：将 `TESTS.md` 移至 `dev-docs/tests.md` 并修正相关引用（已完成）。
+- **授权任务**：文档结构迁移 Step 4：将 ADR-001 至 ADR-009 拆分至 `dev-docs/adr/`（已完成）。
 - **最近 commit**：cea4ab4 feat(web): add remote chat SSE adapter (Task 13 Step 1)
 - **当前测试基线**：19/19 个测试套件、152/152 项用例通过（`npm run test`）。
 
 ## 下一步计划
 
-文档结构迁移 Step 4：将 ADR-001 至 ADR-009 拆分至 `dev-docs/adr/`；未经明确授权不得执行。
+文档结构迁移 Step 5：将根目录 `AGENTS.md` 重写为文档索引；未经明确授权不得执行。
 
 ## 职责交接记录
 
