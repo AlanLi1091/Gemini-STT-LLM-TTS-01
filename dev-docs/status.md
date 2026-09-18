@@ -7,7 +7,7 @@ Phase 3 —— 后端服务化（进行中）。Task 13 Step 1 RemoteChatAdapter
 ## 当前授权
 
 - **授权任务**：文档结构迁移 Step 1：创建 `dev-docs/` 并迁移协作规范、DoD 与当前状态（已完成）。
-- **最近 commit**：待本步骤提交后更新。
+- **最近 commit**：cea4ab4 feat(web): add remote chat SSE adapter (Task 13 Step 1)
 - **当前测试基线**：19/19 个测试套件、152/152 项用例通过（`npm run test`）。
 
 ## 下一步计划
