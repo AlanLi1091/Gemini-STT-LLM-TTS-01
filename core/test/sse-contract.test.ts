@@ -7,6 +7,10 @@ import type {
   SseDoneEvent,
   SseErrorEvent,
 } from '../contracts/sse';
+import {
+  SSE_DEFAULT_HEARTBEAT_MS,
+  SSE_SUPPORTS_RESUMPTION,
+} from '../contracts/sse';
 
 describe('Task 11 Step 2: 共享 SSE 契约', () => {
   it('chunk 事件应携带增量文本与累积文本', () => {
@@ -59,5 +63,10 @@ describe('Task 11 Step 2: 共享 SSE 契约', () => {
     expect(statelessRequest.sessionId).toBeUndefined();
     expect(sessionRequest.sessionId).toBe('session-123');
     expectTypeOf<ChatSseEvent['event']>().toEqualTypeOf<'chunk' | 'done' | 'error'>();
+  });
+
+  it('应声明 15 秒默认心跳且明确不支持断点续传', () => {
+    expect(SSE_DEFAULT_HEARTBEAT_MS).toBe(15_000);
+    expect(SSE_SUPPORTS_RESUMPTION).toBe(false);
   });
 });

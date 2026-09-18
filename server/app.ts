@@ -1,9 +1,12 @@
 import express, { Express, Request, Response } from 'express';
 import { CORE_VERSION, type HealthResponse } from '@core/index';
 import { createCorsMiddleware } from './cors';
+import { createChatStreamHandler, type ChatStreamSource } from './chat-stream';
 
 export interface AppOptions {
   allowedOrigins?: readonly string[];
+  chatStreamSource?: ChatStreamSource;
+  chatStreamHeartbeatIntervalMs?: number;
 }
 
 /**
@@ -32,6 +35,14 @@ export function createApp(options: AppOptions = {}): Express {
       coreVersion: CORE_VERSION,
     });
   });
+
+  app.post(
+    '/api/chat/stream',
+    createChatStreamHandler({
+      source: options.chatStreamSource,
+      heartbeatIntervalMs: options.chatStreamHeartbeatIntervalMs,
+    }),
+  );
 
   return app;
 }

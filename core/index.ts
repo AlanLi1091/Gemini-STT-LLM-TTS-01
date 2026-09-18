@@ -17,4 +17,8 @@ export type {
   SseUsage,
 } from './contracts/sse';
 
-export { CHAT_ERROR_CODES } from './contracts/sse';
+export {
+  CHAT_ERROR_CODES,
+  SSE_DEFAULT_HEARTBEAT_MS,
+  SSE_SUPPORTS_RESUMPTION,
+} from './contracts/sse';

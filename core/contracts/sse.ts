@@ -3,7 +3,11 @@
  *
  * Task 13 采用无状态请求：客户端发送完整 messages，sessionId 省略。
  * Task 14 启用持久化后可逐步携带 sessionId，而无需改变 SSE 事件结构。
+ * 当前协议不支持通过 Last-Event-ID 断点续传，断线后必须发起全新请求。
  */
+
+export const SSE_DEFAULT_HEARTBEAT_MS = 15_000;
+export const SSE_SUPPORTS_RESUMPTION = false;
 
 export const CHAT_ERROR_CODES = [
   'AUTH_ERROR',
