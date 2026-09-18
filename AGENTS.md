@@ -40,8 +40,8 @@
 - **约束声明**：愿景仅用于技术决策对齐（接口预留、目录结构等），不构成任何执行授权（见铁律 3）。
 
 ## 1. 当前授权
-- **授权任务**：Task 11 Step 1：三目录划分与双环境测试配置（已完成）；本次补充开发执行模型交接记录（已完成）
-- **最近 commit**：25db159 feat(server): setup core/server 3-tier structure, express skeleton and dual-env vitest (Task 11 Step 1)
+- **授权任务**：Task 11 Step 2：共享契约模块与健康检查接口（已完成）
+- **最近 commit**：7e80fd6 feat(server): add shared SSE contracts and health endpoint (Task 11 Step 2)
 - **开发执行模型交接记录（2026-09-17 18:39:03 PDT）**：因 Google AI Studio 持续出现且并非个例的 “Internal Error”，GPT-5.6 Sol 临时接替 Gemini 3.8 Flash 处理开发任务；待 AI Studio 恢复后，GPT-5.6 Sol 的开发任务暂时终止，由 Gemini 3.8 Flash 继续开发。本记录仅描述开发执行者切换，不扩大当前任务授权范围。
 - **越权处理**：凡不在当前授权范围内的文件改动，一律回滚，并记录到 §7 风险区。
 
@@ -110,6 +110,7 @@
 - [x] **开发执行模型临时交接记录（2026-09-17）**：因 Google AI Studio 的重复性 “Internal Error” 导致其侧开发流程中断，GPT-5.6 Sol 临时接替 Gemini 3.8 Flash；待 AI Studio 恢复后暂停 GPT-5.6 Sol 的开发任务，由 Gemini 3.8 Flash 继续开发。
 - [x] **Task 11**: 后端服务骨架与契约基建搭建
   - [x] **Step 1（三目录划分与双环境测试配置）**：落地 `core/`、`server/` 结构与 tsconfig 路径别名（`@core/*`）；配置 Express 骨架、Vitest 双环境（前端 jsdom / 服务端 node）、Supertest 依赖与服务端运行/构建脚本；同步拓展 TESTS.md 服务端条目。
+  - [x] **Step 2（共享契约模块与健康检查接口）**：在 `core/` 落地共享 SSE 协议（chunk / done / error，error 内嵌 ChatError 的 code 与 message）；声明 Task 13 无状态向 Task 14 sessionId 演进路径；实现 `/api/health` 接口及 Supertest 单测（commit: 7e80fd6）。
 
 ## 5. 待办事项
 所有任务默认未授权。执行任何任务前，须由用户在 §1 指派。
@@ -134,7 +135,7 @@
 ### Phase 3（进行中，未授权项不得开工）
 - [ ] **Task 11**: 后端服务骨架与契约基建搭建
   - [x] **Step 1（三目录划分与双环境测试配置）**：落地 `core/`、`server/` 结构与 tsconfig 路径别名（`@core/*`）；配置 Express 骨架、Vitest 双环境（前端 jsdom / 服务端 node）、Supertest 依赖与服务端运行/构建脚本；同步拓展 TESTS.md 服务端条目。
-  - [ ] **Step 2（共享契约模块与健康检查接口）**：在 `core/` 落地共享 SSE 协议（chunk / done / error，error 内嵌 ChatError 的 code 与 message）；声明 Task 13 无状态向 Task 14 sessionId 演进路径；实现 `/api/health` 接口及 Supertest 单测。
+  - [x] **Step 2（共享契约模块与健康检查接口）**：在 `core/` 落地共享 SSE 协议（chunk / done / error，error 内嵌 ChatError 的 code 与 message）；声明 Task 13 无状态向 Task 14 sessionId 演进路径；实现 `/api/health` 接口及 Supertest 单测（commit: 7e80fd6）。
   - [ ] **Step 3（轻量安全防护与环境隔离）**：CORS 白名单支持 `ALLOWED_ORIGINS` 环境变量；配置 `.env.example`（含 `GEMINI_API_KEY` 与 `ALLOWED_ORIGINS` 样例），`.env` 与测试数据进 `.gitignore`；补齐骨架链路测试。
 - [ ] **Task 12**: 服务端承载 Chat 调用与密钥收拢
   - **Step 1（服务端 SSE 流式管道与生命周期管理）**：实现 `/api/chat/stream` SSE 接口，接入约 15s 心跳注释行保活（`: ping\n\n`）；显式声明不支持断点续传；实现客户端中断到服务端上游 AbortController 的级联取消链路与单测覆盖。
