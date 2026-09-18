@@ -1,0 +1,31 @@
+# 风险与阻塞
+
+- **风险 0（已发生，已缓解）**：agent 完成偏置导致越权执行。
+  - **事件**：首次会话中 agent 跳过文档与仓库初始化，直接编写前后端代码。
+  - **应对**：v2 铁律与授权机制（ADR-004）；任务票式指派；保持工具逐条确认模式。
+- **风险 1**：React 19 与测试库兼容性。
+  - **应对**：使用适配 React 19 的最新 Testing Library 与 Vitest，jsdom 环境。
+- **风险 2**：无头环境 DOM 滚动。
+  - **应对**：jsdom 中显式 Mock `Element.prototype.scrollIntoView`。
+- **风险 3**：密钥管理（Phase 3 起）。
+  - **应对**：token / API key 不入 git；.env + .gitignore；密钥仅存在于服务端。
+- **风险 4**：STT→LLM→TTS 串行延迟（Phase 6）。
+  - **应对**：流式传输与管道并行化；先验证端到端延迟预算。
+- **风险 5**：Discord API 限流（Phase 4）。
+  - **应对**：依赖 discord.js 内置限流处理；设计消息频率上限。
+- **风险 6**：token 与 TTS 成本。
+  - **应对**：Phase 2 起记录用量；Playground 默认 Mock / 低成本模型。
+- **风险 7**：AI Studio 沙箱无凭证导致 GitHub 远端 Push 校验中断。
+  - **事件**：执行环境为 Google AI Studio，其沙箱未预置 GitHub 交互式凭证/PAT，非交互执行 `git push` 报 `could not read Username`。
+  - **应对**：确保本地具备完整语义化 commit 链路；待环境配置 PAT 或由用户在设置中授权同步。push 失败属已知环境限制，记录后继续推进，不视为步骤失败。
+- **风险 8**：@google/genai 浏览器兼容与版本变动。
+  - **应对**：锁定版本、SDK 类型不泄漏进领域内核。
+- **风险 9（已发生，已缓解）**：Gemini API 403 权限/环境异常与密钥清洗防御。
+  - **事件**：用户使用未启用付费/欠费/项目受限的 API Key 发起调用时返回 403 PERMISSION_DENIED。
+  - **应对**：排查确认为环境/Key 权限问题；同时沉淀四重通用防御（不可见字符与空白清洗、空 key 拦截、强触发重构），确保前端链路无隐形故障。
+- **风险 10（已发生，已缓解）**：本地跨平台执行环境（macOS ARM64）与 Rollup 原生依赖适配。
+  - **事件**：本地 Apple Silicon 环境运行 Vitest 时，因 node_modules 仅包含 x64 版本、缺少 `@rollup/rollup-darwin-arm64` 原生二进制可选依赖，导致测试引擎在收集测试前启动失败。
+  - **应对与红线**：仅限在本地机器依赖目录修复补齐；严禁将特定平台的二进制依赖或平台污染的 `package-lock.json` commit / push；修复后本地 13/13 套件、118/118 用例通过。
+- **风险 11（已发生，待 AI Studio 恢复）**：Google AI Studio 重复出现 “Internal Error” 导致 Gemini 3.8 Flash 侧开发流程中断。
+  - **事件**：用户反馈该错误持续出现且并非个例；Google AI Developers Forum 近期公开报告了 Gemini 3.8 Flash / AI Studio 的重复性 Internal Error（[2026-09-08 报告](https://discuss.ai.google.dev/t/repeated-an-internal-error-occurred-in-google-ai-studio-build-with-gemini-3-8-flash/181795)、[2026-09-14 报告](https://discuss.ai.google.dev/t/gemini-3-8-flash-down-an-internal-error-occurred-tool-calling-and-web-access-not-working/182668)）。
+  - **应对与交接**：GPT-5.6 Sol 临时接替开发；待 AI Studio 恢复后，GPT-5.6 Sol 的开发任务暂时终止，由 Gemini 3.8 Flash 继续开发。该交接不改变 Phase 3 路线、任务边界或当前授权。

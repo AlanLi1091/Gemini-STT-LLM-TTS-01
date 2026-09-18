@@ -1,0 +1,42 @@
+# 历史归档
+
+本文件只增不改，归档所有已完成事项。
+
+- [x] 初始化本地 Git 代码仓库。
+- [x] 确立 MVP 产品范围（纯前端本地 Mock 交互闭环）。
+- [x] 完成初版产品架构与实施路线图梳理。
+- [x] 编写 AGENTS.md v1（状态跟踪 / ADR / 风险 / DoD）。
+- [x] AGENTS.md v2 重构：铁律、启动/收尾协议、当前授权、项目愿景与 Phase 1–7 路线图（ADR-003 / ADR-004）。
+- [x] **Task 1**：搭建单元测试基建（Vitest、Testing Library、运行脚本，commit: 8a59453）。
+- [x] **Task 2**：聊天界面骨架构建（标题栏、消息容器、底部输入栏，commit: 98a3f11）。
+- [x] **Task 3**：用户输入与消息派发逻辑（状态管理、消息追加、表单清空与校验，commit: 96a62be）。
+- [x] **Task 4**：Mock 机器人响应引擎（思考态加载动画、延时回复策略，commit: b432acf）。
+- [x] **Task 5**：交互细节与体验优化（智能触底滚动、auto-expanding textarea、IME 防误发、清空对话、无障碍适配，commit: 10c0bbc）。
+- [x] **Task 6**：ChatAdapter 接口定义与契约测试套件，Mock 重构为 MockChatAdapter（commit: 0998e94）。
+- [x] **Task 7**：GeminiChatAdapter.send（非流式实现、role 映射、错误分类、Token 用量提取，单测 100% Mock 网络层，commit: f1722d5）。
+- [x] **Task 8**：设置面板与模型切换。
+  - [x] **Step 1（存储与校验）**：定义 `AppSettings`、`settings.ts` 防御性存储与草稿模式校验（commit: 6e43820）。
+  - [x] **Step 2（设置弹窗与入口）**：构建 `SettingsModal` 弹窗（Provider/模型选择、密码框显隐切换、无障碍）并在 `Header` 挂载入口按钮（commit: fab6ecb）。
+  - [x] **Step 3（状态集成与单测）**：在 `App` 接入设置状态、动态 `useMemo` Adapter 工厂与组件级集成单测（commit: a9b0187）。
+- [x] **Task 9**：错误展示与用量记录 UI。
+  - [x] **Step 1（模型扩展与 Hook 状态）**：`Message.usage?: ChatUsage`；`useChat` 捕获 `ChatError`、透传 `lastError`、零截断重试 `retryFailedSend`、Hook 单元测试（commit: 20e77ec）。
+  - [x] **Step 2（纯展示组件构建）**：`TokenUsageBadge`（Zap 图标/条件渲染/ARIA）与 `ChatErrorBanner`（6 种错误码+default兜底/重试与设置入口/alert），组件单元测试（commit: d14d0ce）。
+  - [x] **Step 3（挂载组装与全量回归）**：在 `MessageList` 挂载 Token 徽章，在 `App` 挂载错误横幅并联动设置弹窗，完成端到端集成测试与全量测试回归（commit: a5fecf9）。
+- [x] **Gemini 模型升级与测试闭环**：默认与可选模型升级至 3.8-flash / 3.6-flash / 3.1-pro（commit: 14b72bb）。
+- [x] **Task 10**：GeminiChatAdapter.stream + 中断 + 打字机 UI + stream 契约测试扩展。
+  - [x] **Step 1（适配器流式与中断）**：GeminiChatAdapter.stream 实现、AbortSignal 级联、契约测试与单测扩展（commit: 1282903）。
+  - [x] **Step 2（Hook 状态机与控制）**：`useChat` 流式驱动、`isGenerating` / `stopGenerating` 控制、`AbortController` 级联与中途打断单测。
+  - [x] **Step 3（UI 呈现与集成闭环）**：打字机光标动效、停止生成按钮与端到端回归（commit: 2040469）。
+- [x] **测试全景台账建立（TESTS.md）**：全景梳理 13 个测试套件、122 项用例并确立维护规范，纳入通用 DoD。
+- [x] **流式触底滚动与用户滚动守卫（Smart Sticky Bottom）**：全面迁移滚动 API 至 scrollTo/scrollTop；区分消息增量 smooth 触底与流式 content 高频 rAF auto 触底；实现 100px 守卫判定与上滑发送强制吸底，测试增至 122 项全绿（commit: e8e6711）。
+- [x] **开发执行模型临时交接记录（2026-09-17）**：因 Google AI Studio 的重复性 “Internal Error” 导致其侧开发流程中断，GPT-5.6 Sol 临时接替 Gemini 3.8 Flash；待 AI Studio 恢复后暂停 GPT-5.6 Sol 的开发任务，由 Gemini 3.8 Flash 继续开发。
+- [x] **Task 11**：后端服务骨架与契约基建搭建。
+  - [x] **Step 1（三目录划分与双环境测试配置）**：落地 `core/`、`server/` 结构与 tsconfig 路径别名（`@core/*`）；配置 Express 骨架、Vitest 双环境（前端 jsdom / 服务端 node）、Supertest 依赖与服务端运行/构建脚本；同步拓展 `TESTS.md` 服务端条目。
+  - [x] **Step 2（共享契约模块与健康检查接口）**：在 `core/` 落地共享 SSE 协议（chunk / done / error，error 内嵌 ChatError 的 code 与 message）；声明 Task 13 无状态向 Task 14 sessionId 演进路径；实现 `/api/health` 接口及 Supertest 单测（commit: 7e80fd6）。
+  - [x] **Step 3（轻量安全防护与环境隔离）**：以 `ALLOWED_ORIGINS` 环境变量驱动精确匹配 CORS 白名单；配置 `.env.example` 与 `.gitignore` 环境/数据隔离规则；补齐允许、拒绝及预检链路测试（commit: 27e719b）。
+- [x] **Task 12 Step 1**：服务端 SSE 流式管道、心跳、断点续传声明与中断级联（commit: 1bd0116）。
+- [x] **Task 12 Step 2**：GeminiAdapter 服务端承载与 Key 收拢（commit: ef83d78）。
+- [x] **Task 12 Step 3**：Mock 降级复用与统一错误透传（commit: c2c2dc6）。
+- [x] **Task 13 Step 1**：RemoteChatAdapter 实现与契约测试（commit: cea4ab4）。
+- [x] **文档结构迁移 Step 1**：迁移协作规范、DoD 与当前状态（commits: 7ef7560, 0399fb3）。
+- [x] **文档结构迁移 Step 2**：迁移路线图、待办、历史与风险台账。
