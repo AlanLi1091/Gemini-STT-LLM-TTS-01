@@ -40,15 +40,15 @@
 - **约束声明**：愿景仅用于技术决策对齐（接口预留、目录结构等），不构成任何执行授权（见铁律 3）。
 
 ## 1. 当前授权
-- **授权任务**：Task 12 Step 1：服务端 SSE 流式管道与生命周期管理（已完成）
-- **最近 commit**：1bd0116 feat(server): add SSE streaming lifecycle (Task 12 Step 1)
-- **当前测试基线**：17/17 个测试套件、143/143 项用例通过（`npm run test`）
+- **授权任务**：Task 12 Step 2：GeminiAdapter 服务端承载与 Key 收拢（已完成）
+- **最近 commit**：ef83d78 feat(server): host shared Gemini adapter and server key injection (Task 12 Step 2)
+- **当前测试基线**：18/18 个测试套件、145/145 项用例通过（`npm run test`）
 - **开发执行模型交接记录（2026-09-17 18:39:03 PDT）**：因 Google AI Studio 持续出现且并非个例的 “Internal Error”，GPT-5.6 Sol 临时接替 Gemini 3.8 Flash 处理开发任务；待 AI Studio 恢复后，GPT-5.6 Sol 的开发任务暂时终止，由 Gemini 3.8 Flash 继续开发。本记录仅描述开发执行者切换，不扩大当前任务授权范围。
 - **越权处理**：凡不在当前授权范围内的文件改动，一律回滚，并记录到 §7 风险区。
 
 ## 2. 项目阶段
 - **当前阶段**：Phase 3 —— 后端服务化（进行中）
-- **当前目标**：推进 Task 12 服务端 Chat 调用与密钥收拢；Step 1 已完成，后续步骤等待明确授权。
+- **当前目标**：推进 Task 12 服务端 Chat 调用与密钥收拢；Step 1–2 已完成，后续步骤等待明确授权。
 
 ## 3. 项目规划
 ### 3.1 产品设计（Phase 1 范围）
@@ -114,6 +114,7 @@
   - [x] **Step 2（共享契约模块与健康检查接口）**：在 `core/` 落地共享 SSE 协议（chunk / done / error，error 内嵌 ChatError 的 code 与 message）；声明 Task 13 无状态向 Task 14 sessionId 演进路径；实现 `/api/health` 接口及 Supertest 单测（commit: 7e80fd6）。
   - [x] **Step 3（轻量安全防护与环境隔离）**：以 `ALLOWED_ORIGINS` 环境变量驱动精确匹配 CORS 白名单；配置 `.env.example` 与 `.gitignore` 环境/数据隔离规则；补齐允许、拒绝及预检链路测试（commit: 27e719b）。
 - [x] **Task 12 Step 1（服务端 SSE 流式管道与生命周期管理）**：实现 `/api/chat/stream` SSE 接口、15 秒心跳、不支持断点续传声明、客户端断开到上游 AbortController 的级联取消与完整测试（commit: 1bd0116）。
+- [x] **Task 12 Step 2（GeminiAdapter 服务端承载与 Key 收拢）**：将通用聊天类型与 GeminiChatAdapter 迁入 `core/` 单一实现；服务端通过 `GEMINI_API_KEY` 注入并映射为 SSE 流源，前端直连调试复用同一实现；网络层测试 100% Mock（commit: ef83d78）。
 
 ## 5. 待办事项
 所有任务默认未授权。执行任何任务前，须由用户在 §1 指派。
@@ -142,7 +143,7 @@
   - [x] **Step 3（轻量安全防护与环境隔离）**：CORS 白名单支持 `ALLOWED_ORIGINS` 环境变量；配置 `.env.example`（含 `GEMINI_API_KEY` 与 `ALLOWED_ORIGINS` 样例），`.env` 与测试数据进 `.gitignore`；补齐骨架链路测试（commit: 27e719b）。
 - [ ] **Task 12**: 服务端承载 Chat 调用与密钥收拢
   - [x] **Step 1（服务端 SSE 流式管道与生命周期管理）**：实现 `/api/chat/stream` SSE 接口，接入约 15s 心跳注释行保活（`: ping\n\n`）；显式声明不支持断点续传；实现客户端中断到服务端上游 AbortController 的级联取消链路与单测覆盖（commit: 1bd0116）。
-  - **Step 2（GeminiAdapter 服务端承载与 Key 收拢）**：将 `GeminiChatAdapter` 纳入 `core/` 共享实现，服务端通过 `process.env.GEMINI_API_KEY` 注入实例化；前端调试模式复用同实现不产平行代码；编写服务端环境变量注入与模型调用单测（100% Mock 网络层）。
+  - [x] **Step 2（GeminiAdapter 服务端承载与 Key 收拢）**：将 `GeminiChatAdapter` 纳入 `core/` 共享实现，服务端通过 `process.env.GEMINI_API_KEY` 注入实例化；前端调试模式复用同实现不产平行代码；编写服务端环境变量注入与模型调用单测（100% Mock 网络层）（commit: ef83d78）。
   - **Step 3（Mock 降级复用与统一错误透传）**：无 Key 访问时自动复用 `core/MockChatAdapter`；错误透传复用 `classifyGeminiError` 并通过 SSE error 事件携带标准错误码；以纯前端 ChatErrorBanner 零改动为架构对齐验证点。
 - [ ] **Task 13**: 前端 Playground 改连与架构平滑切换
   - **Step 1（RemoteChatAdapter 实现与契约测试）**：在 `src/adapters/RemoteChatAdapter.ts` 实现 `ChatAdapter` 接口，通过 `fetch` + `ReadableStream` 消费 SSE 事件并支持 AbortSignal 中断；单测 100% Mock 网络，不依赖真实后端进程。
