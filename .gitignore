@@ -7,3 +7,5 @@ coverage/
 .vitest/
 .env*
 !.env.example
+data/
+test-data/

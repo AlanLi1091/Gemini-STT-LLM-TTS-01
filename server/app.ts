@@ -1,13 +1,19 @@
 import express, { Express, Request, Response } from 'express';
 import { CORE_VERSION, type HealthResponse } from '@core/index';
+import { createCorsMiddleware } from './cors';
+
+export interface AppOptions {
+  allowedOrigins?: readonly string[];
+}
 
 /**
  * 创建并配置 Express 应用程序实例
  * 分离 app 工厂与 listen 启动逻辑，方便使用 Supertest 进行无端口启动的集成与单元测试
  */
-export function createApp(): Express {
+export function createApp(options: AppOptions = {}): Express {
   const app = express();
 
+  app.use(createCorsMiddleware(options.allowedOrigins ?? []));
   app.use(express.json());
 
   // 基础根路由，用于服务骨架与版本探测
