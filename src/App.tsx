@@ -8,7 +8,7 @@ import { useChat } from './hooks/useChat';
 import { loadSettings, saveSettings } from './settings';
 import { AppSettings, ChatAdapter } from './types';
 import { MockChatAdapter } from './adapters/MockChatAdapter';
-import { GeminiChatAdapter } from './adapters/GeminiChatAdapter';
+import { GeminiChatAdapter } from '@core/adapters/GeminiChatAdapter';
 
 export const App: React.FC = () => {
   // 设置状态管理与弹窗显隐控制 (ADR-006, Task 8)

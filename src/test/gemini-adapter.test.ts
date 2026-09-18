@@ -4,7 +4,7 @@ import {
   formatGeminiContents,
   resolveSystemInstruction,
   classifyGeminiError,
-} from '../adapters/GeminiChatAdapter';
+} from '@core/adapters/GeminiChatAdapter';
 import { ChatError, Message } from '../types';
 
 // Mock @google/genai

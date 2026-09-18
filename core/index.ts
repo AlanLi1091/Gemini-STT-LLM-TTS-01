@@ -22,3 +22,22 @@ export {
   SSE_DEFAULT_HEARTBEAT_MS,
   SSE_SUPPORTS_RESUMPTION,
 } from './contracts/sse';
+
+export {
+  ChatError,
+  type ChatAdapter,
+  type ChatAdapterOptions,
+  type ChatChunk,
+  type ChatResponse,
+  type ChatUsage,
+  type GeminiAdapterConfig,
+  type Message,
+  type MessageRole,
+} from './chat';
+
+export {
+  GeminiChatAdapter,
+  classifyGeminiError,
+  formatGeminiContents,
+  resolveSystemInstruction,
+} from './adapters/GeminiChatAdapter';

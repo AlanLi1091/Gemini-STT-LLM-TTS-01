@@ -1,125 +1,114 @@
 import { GoogleGenAI } from '@google/genai';
 import {
-  ChatAdapter,
-  ChatAdapterOptions,
-  ChatChunk,
   ChatError,
-  ChatErrorCode,
-  ChatResponse,
-  ChatUsage,
-  GeminiAdapterConfig,
-  Message,
-} from '../types';
+  type ChatAdapter,
+  type ChatAdapterOptions,
+  type ChatChunk,
+  type ChatResponse,
+  type ChatUsage,
+  type GeminiAdapterConfig,
+  type Message,
+} from '../chat';
 
-/**
- * 转换领域消息格式至 Gemini SDK 请求格式
- */
+/** 转换领域消息格式至 Gemini SDK 请求格式。 */
 export function formatGeminiContents(messages: Message[]) {
   return messages
-    .filter((m) => m.role === 'user' || m.role === 'assistant')
-    .map((m) => ({
-      role: m.role === 'user' ? ('user' as const) : ('model' as const),
-      parts: [{ text: m.content }],
+    .filter((message) => message.role === 'user' || message.role === 'assistant')
+    .map((message) => ({
+      role: message.role === 'user' ? ('user' as const) : ('model' as const),
+      parts: [{ text: message.content }],
     }));
 }
 
-/**
- * 提取对话中的系统指令（合并 config 与历史中的 system 角色消息）
- */
+/** 提取并合并配置与消息历史中的系统指令。 */
 export function resolveSystemInstruction(
   messages: Message[],
-  configuredInstruction?: string
+  configuredInstruction?: string,
 ): string | undefined {
   const systemMessages = messages
-    .filter((m) => m.role === 'system')
-    .map((m) => m.content.trim())
+    .filter((message) => message.role === 'system')
+    .map((message) => message.content.trim())
     .filter(Boolean);
 
   const parts: string[] = [];
-  if (configuredInstruction?.trim()) {
-    parts.push(configuredInstruction.trim());
-  }
+  if (configuredInstruction?.trim()) parts.push(configuredInstruction.trim());
   parts.push(...systemMessages);
 
   return parts.length > 0 ? parts.join('\n\n') : undefined;
 }
 
-/**
- * 结构化分类并映射异常为 ChatError
- */
+/** 结构化分类并映射 Gemini 异常为共享 ChatError。 */
 export function classifyGeminiError(error: unknown, signal?: AbortSignal): ChatError {
-  if (error instanceof ChatError) {
-    return error;
-  }
-
-  if (
-    signal?.aborted ||
-    (error instanceof DOMException && error.name === 'AbortError') ||
-    (error as Error)?.name === 'AbortError' ||
-    (error as Error)?.message?.toLowerCase().includes('aborted')
-  ) {
-    return new ChatError('Request was aborted by user.', 'ABORTED', {
-      originalError: error,
-    });
-  }
+  if (error instanceof ChatError) return error;
 
   const errObj = error as {
     status?: number;
     statusCode?: number;
     code?: string | number;
     message?: string;
+    name?: string;
   };
+
+  if (
+    signal?.aborted ||
+    errObj.name === 'AbortError' ||
+    errObj.message?.toLowerCase().includes('aborted')
+  ) {
+    return new ChatError('Request was aborted by user.', 'ABORTED', {
+      originalError: error,
+    });
+  }
+
   const status = errObj.status || errObj.statusCode;
   const message = errObj.message || String(error);
-  const lowerMsg = message.toLowerCase();
+  const lowerMessage = message.toLowerCase();
 
-  // 1. 鉴权与 API Key 错误（含 PERMISSION_DENIED 与 Headers 非法字符）
   if (
     status === 401 ||
     status === 403 ||
-    lowerMsg.includes('permission_denied') ||
-    lowerMsg.includes('permission denied') ||
-    lowerMsg.includes('api_key_invalid') ||
-    lowerMsg.includes('api key not valid') ||
-    lowerMsg.includes('unauthenticated') ||
-    lowerMsg.includes('invalid api key') ||
-    lowerMsg.includes('iso-8859-1')
+    lowerMessage.includes('permission_denied') ||
+    lowerMessage.includes('permission denied') ||
+    lowerMessage.includes('api_key_invalid') ||
+    lowerMessage.includes('api key not valid') ||
+    lowerMessage.includes('unauthenticated') ||
+    lowerMessage.includes('invalid api key') ||
+    lowerMessage.includes('iso-8859-1')
   ) {
-    const hint = lowerMsg.includes('iso-8859-1')
+    const hint = lowerMessage.includes('iso-8859-1')
       ? 'API Key 中包含不可见的非法字符，请重新复制粘贴。'
       : message;
-    return new ChatError(hint, 'AUTH_ERROR', { status: status || 403, originalError: error });
+    return new ChatError(hint, 'AUTH_ERROR', {
+      status: status || 403,
+      originalError: error,
+    });
   }
 
-  // 2. 限流 / 配额耗尽
   if (
     status === 429 ||
-    lowerMsg.includes('resource_exhausted') ||
-    lowerMsg.includes('quota') ||
-    lowerMsg.includes('rate limit')
+    lowerMessage.includes('resource_exhausted') ||
+    lowerMessage.includes('quota') ||
+    lowerMessage.includes('rate limit')
   ) {
     return new ChatError(message, 'RATE_LIMIT', { status, originalError: error });
   }
 
-  // 3. 网络通信错误
   if (
     error instanceof TypeError ||
     errObj.code === 'ENOTFOUND' ||
     errObj.code === 'ECONNREFUSED' ||
-    lowerMsg.includes('failed to fetch') ||
-    lowerMsg.includes('network error') ||
-    lowerMsg.includes('networkerror')
+    lowerMessage.includes('failed to fetch') ||
+    lowerMessage.includes('network error') ||
+    lowerMessage.includes('networkerror')
   ) {
     return new ChatError(message, 'NETWORK_ERROR', { status, originalError: error });
   }
 
-  // 4. 服务端 / 模型安全策略拦截等模型侧错误
   if (
     (status && status >= 500) ||
-    lowerMsg.includes('safety') ||
-    lowerMsg.includes('blocked') ||
-    lowerMsg.includes('recitation') ||
-    lowerMsg.includes('overloaded')
+    lowerMessage.includes('safety') ||
+    lowerMessage.includes('blocked') ||
+    lowerMessage.includes('recitation') ||
+    lowerMessage.includes('overloaded')
   ) {
     return new ChatError(message, 'MODEL_ERROR', { status, originalError: error });
   }
@@ -127,15 +116,13 @@ export function classifyGeminiError(error: unknown, signal?: AbortSignal): ChatE
   return new ChatError(message, 'UNKNOWN', { status, originalError: error });
 }
 
-/**
- * Gemini 对话适配器实现 (ADR-003, ADR-006, ADR-007)
- */
+/** Gemini 对话适配器共享实现 (ADR-003, ADR-006, ADR-007)。 */
 export class GeminiChatAdapter implements ChatAdapter {
   readonly id: string;
   readonly name: string;
-  private apiKey: string;
-  private model: string;
-  private systemInstruction?: string;
+  private readonly apiKey: string;
+  private readonly model: string;
+  private readonly systemInstruction?: string;
 
   constructor(config: GeminiAdapterConfig) {
     this.apiKey = (config.apiKey || '').trim().replace(/[^\x20-\x7E]/g, '');
@@ -145,34 +132,26 @@ export class GeminiChatAdapter implements ChatAdapter {
     this.name = `Gemini (${this.model})`;
   }
 
-  /**
-   * 发送非流式请求
-   */
   async send(messages: Message[], options: ChatAdapterOptions = {}): Promise<ChatResponse> {
     const { signal, temperature, maxTokens } = options;
 
-    if (signal?.aborted) {
-      throw new ChatError('The operation was aborted.', 'ABORTED');
-    }
+    if (signal?.aborted) throw new ChatError('The operation was aborted.', 'ABORTED');
 
     const key = this.apiKey.trim();
     if (!key) {
       throw new ChatError(
         'Gemini API key is required. Please configure your API key.',
-        'AUTH_ERROR'
+        'AUTH_ERROR',
       );
     }
 
     const contents = formatGeminiContents(messages);
-    if (contents.length === 0) {
-      return { content: '' };
-    }
+    if (contents.length === 0) return { content: '' };
 
     const systemInstruction = resolveSystemInstruction(messages, this.systemInstruction);
 
     try {
       const ai = new GoogleGenAI({ apiKey: key });
-
       const response = await ai.models.generateContent({
         model: this.model,
         contents,
@@ -186,7 +165,6 @@ export class GeminiChatAdapter implements ChatAdapter {
 
       const content = response.text || '';
       let usage: ChatUsage | undefined;
-
       if (response.usageMetadata) {
         usage = {
           promptTokens: response.usageMetadata.promptTokenCount,
@@ -195,40 +173,31 @@ export class GeminiChatAdapter implements ChatAdapter {
         };
       }
 
-      return {
-        content,
-        usage,
-      };
-    } catch (err) {
-      throw classifyGeminiError(err, signal);
+      return { content, usage };
+    } catch (error) {
+      throw classifyGeminiError(error, signal);
     }
   }
 
-  /**
-   * 流式生成接口 (ADR-007, Task 10)
-   */
-  async *stream(messages: Message[], options: ChatAdapterOptions = {}): AsyncIterable<ChatChunk> {
+  async *stream(
+    messages: Message[],
+    options: ChatAdapterOptions = {},
+  ): AsyncIterable<ChatChunk> {
     const { signal, temperature, maxTokens } = options;
 
-    if (signal?.aborted) {
-      throw new ChatError('The operation was aborted.', 'ABORTED');
-    }
+    if (signal?.aborted) throw new ChatError('The operation was aborted.', 'ABORTED');
 
     const key = this.apiKey.trim();
     if (!key) {
       throw new ChatError(
         'Gemini API key is required. Please configure your API key.',
-        'AUTH_ERROR'
+        'AUTH_ERROR',
       );
     }
 
     const contents = formatGeminiContents(messages);
     if (contents.length === 0) {
-      yield {
-        delta: '',
-        accumulated: '',
-        done: true,
-      };
+      yield { delta: '', accumulated: '', done: true };
       return;
     }
 
@@ -236,7 +205,6 @@ export class GeminiChatAdapter implements ChatAdapter {
 
     try {
       const ai = new GoogleGenAI({ apiKey: key });
-
       const streamResponse = await ai.models.generateContentStream({
         model: this.model,
         contents,
@@ -252,9 +220,7 @@ export class GeminiChatAdapter implements ChatAdapter {
       let latestUsage: ChatUsage | undefined;
 
       for await (const chunk of streamResponse) {
-        if (signal?.aborted) {
-          throw new ChatError('The operation was aborted.', 'ABORTED');
-        }
+        if (signal?.aborted) throw new ChatError('The operation was aborted.', 'ABORTED');
 
         if (chunk.usageMetadata) {
           latestUsage = {
@@ -267,27 +233,20 @@ export class GeminiChatAdapter implements ChatAdapter {
         const delta = chunk.text || '';
         if (delta) {
           accumulated += delta;
-          yield {
-            delta,
-            accumulated,
-            done: false,
-          };
+          yield { delta, accumulated, done: false };
         }
       }
 
-      if (signal?.aborted) {
-        throw new ChatError('The operation was aborted.', 'ABORTED');
-      }
+      if (signal?.aborted) throw new ChatError('The operation was aborted.', 'ABORTED');
 
-      // 产出最终结束 chunk 并附带用量
       yield {
         delta: '',
         accumulated,
         done: true,
         usage: latestUsage,
       };
-    } catch (err) {
-      throw classifyGeminiError(err, signal);
+    } catch (error) {
+      throw classifyGeminiError(error, signal);
     }
   }
 }

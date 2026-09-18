@@ -1,72 +1,15 @@
-import type { ChatErrorCode } from '@core/contracts/sse';
-
-export type { ChatErrorCode } from '@core/contracts/sse';
-
-export type MessageRole = 'user' | 'assistant' | 'system';
-
-export interface Message {
-  id: string;
-  role: MessageRole;
-  content: string;
-  createdAt: number;
-  /** 单次回复消耗的 Token 用量（Task 10 流式完成时回填于此字段，与 ADR-007 语义保持一致） */
-  usage?: ChatUsage;
-}
-
-export interface ChatUsage {
-  promptTokens?: number;
-  completionTokens?: number;
-  totalTokens?: number;
-}
-
-export interface ChatResponse {
-  content: string;
-  usage?: ChatUsage;
-}
-
-export interface ChatChunk {
-  delta: string;
-  accumulated: string;
-  usage?: ChatUsage;
-  done: boolean;
-}
-
-export interface ChatAdapterOptions {
-  signal?: AbortSignal;
-  temperature?: number;
-  maxTokens?: number;
-  [key: string]: unknown;
-}
-
-export class ChatError extends Error {
-  readonly code: ChatErrorCode;
-  readonly status?: number;
-  readonly originalError?: unknown;
-
-  constructor(message: string, code: ChatErrorCode, options?: { status?: number; originalError?: unknown }) {
-    super(message);
-    this.name = 'ChatError';
-    this.code = code;
-    this.status = options?.status;
-    this.originalError = options?.originalError;
-  }
-}
-
-export interface GeminiAdapterConfig {
-  apiKey: string;
-  model?: string; // 默认 'gemini-3.8-flash'
-  systemInstruction?: string;
-}
-
-/**
- * 统一聊天模型适配器契约 (ADR-003, ADR-007)
- */
-export interface ChatAdapter {
-  readonly id: string;
-  readonly name: string;
-  send(messages: Message[], options?: ChatAdapterOptions): Promise<ChatResponse>;
-  stream(messages: Message[], options?: ChatAdapterOptions): AsyncIterable<ChatChunk>;
-}
+export {
+  ChatError,
+  type ChatAdapter,
+  type ChatAdapterOptions,
+  type ChatChunk,
+  type ChatErrorCode,
+  type ChatResponse,
+  type ChatUsage,
+  type GeminiAdapterConfig,
+  type Message,
+  type MessageRole,
+} from '@core/chat';
 
 export type ProviderType = 'mock' | 'gemini';
 
