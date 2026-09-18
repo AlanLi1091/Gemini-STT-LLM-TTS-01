@@ -42,6 +42,7 @@
 ## 1. 当前授权
 - **授权任务**：Task 11 Step 3：轻量安全防护与环境隔离（已完成）；Task 11 全部完成
 - **最近 commit**：27e719b feat(server): add CORS allowlist and environment isolation (Task 11 Step 3)
+- **当前测试基线**：16/16 个测试套件、135/135 项用例通过（`npm run test`）
 - **开发执行模型交接记录（2026-09-17 18:39:03 PDT）**：因 Google AI Studio 持续出现且并非个例的 “Internal Error”，GPT-5.6 Sol 临时接替 Gemini 3.8 Flash 处理开发任务；待 AI Studio 恢复后，GPT-5.6 Sol 的开发任务暂时终止，由 Gemini 3.8 Flash 继续开发。本记录仅描述开发执行者切换，不扩大当前任务授权范围。
 - **越权处理**：凡不在当前授权范围内的文件改动，一律回滚，并记录到 §7 风险区。
 
@@ -145,7 +146,7 @@
 - [ ] **Task 13**: 前端 Playground 改连与架构平滑切换
   - **Step 1（RemoteChatAdapter 实现与契约测试）**：在 `src/adapters/RemoteChatAdapter.ts` 实现 `ChatAdapter` 接口，通过 `fetch` + `ReadableStream` 消费 SSE 事件并支持 AbortSignal 中断；单测 100% Mock 网络，不依赖真实后端进程。
   - **Step 2（设置面板适配）**：SettingsModal 扩展连接模式选择（“后端服务（推荐）”与“前端直连调试模式”）；选择后端模式时 API Key 输入区域隐藏或锁定并提示环境变量托管；直连模式去留于 Phase 3 结项时由用户决策。
-  - **Step 3（集成装配与全量回归）**：在 App.tsx 接入 RemoteChatAdapter 闭环流式体验；确保现有 122 项用例语义零漂移，新增用例同步登记 TESTS.md。
+  - **Step 3（集成装配与全量回归）**：在 App.tsx 接入 RemoteChatAdapter 闭环流式体验；确保现有 135 项用例语义零漂移，新增用例同步登记 TESTS.md。
 - [ ] **Task 14**: 会话持久化与上下文管理
   - **Step 1（持久化存储层抽象与 JSON 文件引擎）**：定义 `SessionStorage` 接口（遵循 ADR-005 唯一 ID 与严格追加语义）；默认实现 JSON 文件存储引擎（每会话单文件，存 `data/` 目录进 `.gitignore`）；编写存储层单测。
   - **Step 2（会话操作 API 与多轮上下文拼接）**：实现会话获取与创建接口，支持 sessionId 寻址；上下文默认全量历史（截断策略推迟至 Phase 5）；清空对话定案为归档标记语义（Soft Delete / Archived），保持物理日志不可变。
