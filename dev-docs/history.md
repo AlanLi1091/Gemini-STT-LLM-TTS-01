@@ -27,11 +27,11 @@
   - [x] **Step 1（适配器流式与中断）**：GeminiChatAdapter.stream 实现、AbortSignal 级联、契约测试与单测扩展（commit: 1282903）。
   - [x] **Step 2（Hook 状态机与控制）**：`useChat` 流式驱动、`isGenerating` / `stopGenerating` 控制、`AbortController` 级联与中途打断单测。
   - [x] **Step 3（UI 呈现与集成闭环）**：打字机光标动效、停止生成按钮与端到端回归（commit: 2040469）。
-- [x] **测试全景台账建立（TESTS.md）**：全景梳理 13 个测试套件、122 项用例并确立维护规范，纳入通用 DoD。
+- [x] **测试全景台账建立（`dev-docs/tests.md`）**：全景梳理 13 个测试套件、122 项用例并确立维护规范，纳入通用 DoD。
 - [x] **流式触底滚动与用户滚动守卫（Smart Sticky Bottom）**：全面迁移滚动 API 至 scrollTo/scrollTop；区分消息增量 smooth 触底与流式 content 高频 rAF auto 触底；实现 100px 守卫判定与上滑发送强制吸底，测试增至 122 项全绿（commit: e8e6711）。
 - [x] **开发执行模型临时交接记录（2026-09-17）**：因 Google AI Studio 的重复性 “Internal Error” 导致其侧开发流程中断，GPT-5.6 Sol 临时接替 Gemini 3.8 Flash；待 AI Studio 恢复后暂停 GPT-5.6 Sol 的开发任务，由 Gemini 3.8 Flash 继续开发。
 - [x] **Task 11**：后端服务骨架与契约基建搭建。
-  - [x] **Step 1（三目录划分与双环境测试配置）**：落地 `core/`、`server/` 结构与 tsconfig 路径别名（`@core/*`）；配置 Express 骨架、Vitest 双环境（前端 jsdom / 服务端 node）、Supertest 依赖与服务端运行/构建脚本；同步拓展 `TESTS.md` 服务端条目。
+  - [x] **Step 1（三目录划分与双环境测试配置）**：落地 `core/`、`server/` 结构与 tsconfig 路径别名（`@core/*`）；配置 Express 骨架、Vitest 双环境（前端 jsdom / 服务端 node）、Supertest 依赖与服务端运行/构建脚本；同步拓展 `dev-docs/tests.md` 服务端条目。
   - [x] **Step 2（共享契约模块与健康检查接口）**：在 `core/` 落地共享 SSE 协议（chunk / done / error，error 内嵌 ChatError 的 code 与 message）；声明 Task 13 无状态向 Task 14 sessionId 演进路径；实现 `/api/health` 接口及 Supertest 单测（commit: 7e80fd6）。
   - [x] **Step 3（轻量安全防护与环境隔离）**：以 `ALLOWED_ORIGINS` 环境变量驱动精确匹配 CORS 白名单；配置 `.env.example` 与 `.gitignore` 环境/数据隔离规则；补齐允许、拒绝及预检链路测试（commit: 27e719b）。
 - [x] **Task 12 Step 1**：服务端 SSE 流式管道、心跳、断点续传声明与中断级联（commit: 1bd0116）。
@@ -40,3 +40,4 @@
 - [x] **Task 13 Step 1**：RemoteChatAdapter 实现与契约测试（commit: cea4ab4）。
 - [x] **文档结构迁移 Step 1**：迁移协作规范、DoD 与当前状态（commits: 7ef7560, 0399fb3）。
 - [x] **文档结构迁移 Step 2**：迁移路线图、待办、历史与风险台账。
+- [x] **文档结构迁移 Step 3**：将测试台账移动至 `dev-docs/tests.md` 并修正相关引用。
