@@ -82,6 +82,15 @@ describe('ChatErrorBanner 错误提示横幅组件测试', () => {
     expect(onOpenSettings).toHaveBeenCalledTimes(1);
   });
 
+  it('后端模式的 AUTH_ERROR 应引导检查服务端配置，而不展示“检查设置”按钮', () => {
+    const err = new ChatError('PERMISSION_DENIED', 'AUTH_ERROR');
+    render(<ChatErrorBanner error={err} connectionMode="server" onOpenSettings={vi.fn()} />);
+
+    expect(screen.getByText(/服务端鉴权或地区受限/)).toBeInTheDocument();
+    expect(screen.getByText(/GEMINI_API_KEY/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /检查设置/i })).not.toBeInTheDocument();
+  });
+
   it('点击重试按钮应触发 onRetry 回调', () => {
     const onRetry = vi.fn();
     const err = new ChatError('Network issue', 'NETWORK_ERROR');

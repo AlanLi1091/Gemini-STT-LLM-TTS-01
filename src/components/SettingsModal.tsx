@@ -170,11 +170,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               id="server-managed-credentials-notice"
               className="p-2.5 rounded-xl bg-blue-50 border border-blue-100 text-[11px] text-blue-700 leading-relaxed"
             >
-              后端服务模式下，API Key 由服务端环境变量托管，浏览器不会读取或保存密钥。
+              后端服务模式下，API Key 与模型提供方均由服务端环境变量托管，浏览器不会读取或保存密钥。
             </div>
           )}
 
-          {/* Provider 切换 */}
+          {/* Provider 切换仅供前端直连调试使用 */}
+          {draftConnectionMode === 'direct' && (
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider">
               模型提供方 (Provider)
@@ -214,6 +215,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </button>
             </div>
           </div>
+          )}
 
           {/* Gemini 设置区仅供前端直连调试使用 */}
           {draftConnectionMode === 'direct' && (
@@ -295,7 +297,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* 边界提示 (ADR-006) */}
           <div className="p-2.5 rounded-xl bg-zinc-50 border border-zinc-100 text-[11px] text-zinc-500 leading-relaxed">
             {draftConnectionMode === 'server'
-              ? '后端服务模式将使用服务器配置；前端直连调试模式仅供本地开发。'
+              ? '后端服务模式将使用服务器配置；如遇鉴权错误，请检查服务端环境变量与网络地区。'
               : '直连调试模式会将 API Key 明文存储于浏览器 localStorage，不入 Git 仓库与远端部署。'}
           </div>
         </div>

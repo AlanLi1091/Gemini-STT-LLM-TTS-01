@@ -1,7 +1,7 @@
 # 测试套件与测试用例台账
 
 > **维护规范**：
-> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（20 个套件）与具体测试用例（156 个断言项）。
+> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（20 个套件）与具体测试用例（157 个断言项）。
 > 2. **铁律联动**：后续开发中，每次有新功能开发、重构或测试内容更新时，**必须同步在此台账中维护新增或修改的测试项**，保持与实际测试套件 100% 同步。
 
 ## 1. 测试套件概览看板
@@ -18,7 +18,7 @@
 | 8 | `src/test/settings-storage.test.ts` | Task 8 / Task 13 Step 2 | AppSettings 本地存储、防御性解析、连接模式迁移与不可见字符清洗 | 11 | ✅ 通过 |
 | 9 | `src/test/settings.test.tsx` | Task 8 / Task 13 Step 2 | SettingsModal 弹窗交互、连接模式、表单校验与 Adapter 联动 | 8 | ✅ 通过 |
 | 10 | `src/hooks/useChat.test.ts` | Task 3 / 9 / 10 | useChat Hook 领域逻辑状态机（流式驱动/中断/重试/生命周期） | 13 | ✅ 通过 |
-| 11 | `src/test/error-and-usage-components.test.tsx` | Task 9 | TokenUsageBadge 徽章与 ChatErrorBanner 错误横幅纯组件测试 | 15 | ✅ 通过 |
+| 11 | `src/test/error-and-usage-components.test.tsx` | Task 9 / Task 13 验收修复 | TokenUsageBadge 徽章与 ChatErrorBanner 错误横幅纯组件测试 | 16 | ✅ 通过 |
 | 12 | `src/test/error-and-usage-integration.test.tsx` | Task 9 | 错误横幅展示/重试/设置联动及 Token 徽章端到端集成测试 | 3 | ✅ 通过 |
 | 13 | `src/test/streaming-ui.test.tsx` | Task 10 | 流式打字机光标动效、停止生成按钮、顶栏联动禁用与 Smart Sticky Bottom 触底滚动守卫 | 8 | ✅ 通过 |
 | 14 | `server/test/server-skeleton.test.ts` | Task 11 | Express 服务端骨架、双环境运行、根路径与健康检查响应 | 4 | ✅ 通过 |
@@ -28,7 +28,7 @@
 | 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 3 | ✅ 通过 |
 | 19 | `src/test/remote-chat-adapter.test.ts` | Task 13 | RemoteChatAdapter 的 SSE 消费、错误映射与 AbortSignal 传递 | 6 | ✅ 通过 |
 | 20 | `src/test/app-remote-integration.test.tsx` | Task 13 Step 3 | App 的后端 SSE 装配与直连调试隔离 | 2 | ✅ 通过 |
-| **合计** | **20 个测试文件** | **Phase 1, 2 & Phase 3** | **全链路领域内核、共享适配器、UI 交互与服务端流式管道** | **156** | **✅ 100% 通过** |
+| **合计** | **20 个测试文件** | **Phase 1, 2 & Phase 3** | **全链路领域内核、共享适配器、UI 交互与服务端流式管道** | **157** | **✅ 100% 通过** |
 
 ---
 
@@ -226,8 +226,8 @@
 - [x] **调用 stopGenerating 应立即打断流式传输，保留已上屏内容且不报错误**
 - [x] **流式过程中抛出异常应正确捕获 lastError 并结束生成状态**
 
-### 2.11 `src/test/error-and-usage-components.test.tsx` (15 项)
-> **任务对应**：Task 9 · TokenUsageBadge 徽章与 ChatErrorBanner 错误横幅纯组件测试
+### 2.11 `src/test/error-and-usage-components.test.tsx` (16 项)
+> **任务对应**：Task 9 / Task 13 验收修复 · TokenUsageBadge 徽章与 ChatErrorBanner 错误横幅纯组件测试
 
 
 #### TokenUsageBadge 纯展示组件测试
@@ -245,6 +245,7 @@
 - [x] **应正确匹配错误码 [ABORTED] 对应的标题文案**
 - [x] **应正确匹配错误码 [UNKNOWN] 对应的标题文案**
 - [x] **AUTH_ERROR 时应提供“检查设置”按钮并能触发回调**
+- [x] **后端模式的 AUTH_ERROR 应引导检查服务端配置，而不展示“检查设置”按钮**
 - [x] **点击重试按钮应触发 onRetry 回调**
 - [x] **点击关闭按钮应触发 onDismiss 回调**
 - [x] **default 兜底分支测试**

@@ -140,7 +140,7 @@ export const MessageList: React.FC<MessageListProps> = ({
                 id="chat-empty-desc"
                 className="text-sm text-zinc-500 max-w-sm mt-1.5 leading-relaxed"
               >
-                当前处于 Phase 1 本地 Mock 模式。在下方输入框发送任意消息，即可体验对话骨架交互。
+                输入任意消息，即可开始对话。
               </p>
             </div>
           ) : (

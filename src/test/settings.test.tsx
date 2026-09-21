@@ -27,14 +27,11 @@ describe('Task 8: 设置面板与模型切换组件行为测试', () => {
     expect(dialog).toBeInTheDocument();
     expect(screen.getByText('模型与调试设置')).toBeInTheDocument();
 
-    // 校验默认选中 Mock 模式
-    const mockBtn = screen.getByRole('button', { name: /Mock 模拟引擎/i });
-    expect(mockBtn.className).toContain('bg-zinc-900');
-
     // 默认推荐后端服务，浏览器不展示 API Key 输入框
     expect(screen.getByRole('button', { name: /后端服务（推荐）/i }).className).toContain('bg-zinc-900');
     expect(screen.queryByPlaceholderText('AIzaSy...')).not.toBeInTheDocument();
-    expect(screen.getByText(/API Key 由服务端环境变量托管/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Mock 模拟引擎/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/API Key 与模型提供方均由服务端环境变量托管/)).toBeInTheDocument();
   });
 
   it('② 保存配置写入 localStorage 且往返一致，顶栏副标题同步更新', async () => {
@@ -209,6 +206,7 @@ describe('Task 8: 设置面板与模型切换组件行为测试', () => {
     fireEvent.click(screen.getByRole('button', { name: /设置/i }));
     fireEvent.click(screen.getByRole('button', { name: /后端服务（推荐）/i }));
     expect(screen.queryByPlaceholderText('AIzaSy...')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Mock 模拟引擎/i })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /保存配置/i }));
 

@@ -145,7 +145,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(({
 
         <div className="flex items-center justify-between text-[11px] text-zinc-400 px-1 mt-2 select-none">
           <span>Shift + Enter 换行 · Enter 发送</span>
-          <span>Phase 1 本地 Playground</span>
+          <span>Chatbot Playground</span>
         </div>
       </div>
     </footer>

@@ -23,7 +23,7 @@ describe('Task 2: 聊天界面骨架单元测试', () => {
       const container = screen.getByRole('log', { name: '消息列表' });
       expect(container).toBeInTheDocument();
       expect(screen.getByText('对话已就绪')).toBeInTheDocument();
-      expect(screen.getByText(/当前处于 Phase 1 本地 Mock 模式/)).toBeInTheDocument();
+      expect(screen.getByText('输入任意消息，即可开始对话。')).toBeInTheDocument();
     });
 
     it('有消息时应正确渲染用户与机器人消息气泡', () => {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { AlertCircle, RotateCcw, Settings, X } from 'lucide-react';
-import { ChatError, ChatErrorCode } from '../types';
+import { ChatError, ChatErrorCode, ConnectionMode } from '../types';
 
 export interface ChatErrorBannerProps {
   error: ChatError | null;
@@ -8,6 +8,7 @@ export interface ChatErrorBannerProps {
   onOpenSettings?: () => void;
   onDismiss?: () => void;
   isRetrying?: boolean;
+  connectionMode?: ConnectionMode;
 }
 
 interface ErrorDisplayInfo {
@@ -16,9 +17,21 @@ interface ErrorDisplayInfo {
   showSettingsBtn: boolean;
 }
 
-function resolveErrorInfo(code: ChatErrorCode, originalMessage: string): ErrorDisplayInfo {
+function resolveErrorInfo(
+  code: ChatErrorCode,
+  originalMessage: string,
+  connectionMode: ConnectionMode,
+): ErrorDisplayInfo {
   switch (code) {
     case 'AUTH_ERROR':
+      if (connectionMode === 'server') {
+        return {
+          title: '服务端鉴权或地区受限 (403/401)',
+          description:
+            '请检查服务端 .env 中的 GEMINI_API_KEY、重启后端服务，并确认当前网络出口位于 Gemini API 支持地区。',
+          showSettingsBtn: false,
+        };
+      }
       return {
         title: '鉴权或地区受限 (403/401)',
         description:
@@ -70,6 +83,7 @@ export const ChatErrorBanner: React.FC<ChatErrorBannerProps> = ({
   onOpenSettings,
   onDismiss,
   isRetrying = false,
+  connectionMode = 'direct' as ConnectionMode,
 }) => {
   if (!error) {
     return null;
@@ -77,7 +91,8 @@ export const ChatErrorBanner: React.FC<ChatErrorBannerProps> = ({
 
   const { title, description, showSettingsBtn } = resolveErrorInfo(
     error.code,
-    error.message
+    error.message,
+    connectionMode,
   );
 
   return (

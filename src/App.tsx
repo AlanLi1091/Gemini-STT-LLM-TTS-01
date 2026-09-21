@@ -87,6 +87,7 @@ export const App: React.FC = () => {
         onOpenSettings={() => setIsSettingsOpen(true)}
         onDismiss={dismissError}
         isRetrying={isBusy}
+        connectionMode={settings.connectionMode}
       />
 
       {/* 中间可滚动消息区 */}

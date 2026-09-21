@@ -81,7 +81,8 @@ describe('Task 9: 错误提示与用量记录 UI 集成测试', () => {
     // 校验错误横幅渲染
     const banner = screen.getByRole('alert');
     expect(banner).toBeInTheDocument();
-    expect(screen.getByText(/鉴权或地区受限/i)).toBeInTheDocument();
+    expect(screen.getByText(/服务端鉴权或地区受限/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /检查设置/i })).not.toBeInTheDocument();
 
     // 点击“重试”应触发 retryFailedSend
     const retryBtn = screen.getByRole('button', { name: /重试/i });
@@ -95,6 +96,12 @@ describe('Task 9: 错误提示与用量记录 UI 集成测试', () => {
   });
 
   it('点击错误横幅中的“检查设置”按钮，能够联动打开设置弹窗', async () => {
+    localStorage.setItem('app_settings_v1', JSON.stringify({
+      connectionMode: 'direct',
+      provider: 'gemini',
+      geminiApiKey: 'test-key',
+      geminiModel: 'gemini-3.8-flash',
+    }));
     vi.spyOn(useChatModule, 'useChat').mockReturnValue({
       messages: [],
       inputText: '',
