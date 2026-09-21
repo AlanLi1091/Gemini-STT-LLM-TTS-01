@@ -42,6 +42,12 @@
 - [x] **Task 13 Step 3**：Playground 按连接模式装配 RemoteChatAdapter；默认后端 SSE 流式体验、直连调试保留、Vite 本地 API 代理与 App 集成回归（commit: 01630b4）。
 - [x] **Task 13 验收修复**：后端模式隐藏无效 Provider 控件；按连接模式引导鉴权错误；清理本地 Mock 残留文案并补充回归测试（commit: 731c749）。
 - [x] **Task 13 开发代理 CORS 验收修复**：移除 Vite 内部 `/api` 代理转发的浏览器 Origin，避免空 CORS 白名单在适配器选择前误报 403；确认空 `GEMINI_API_KEY` 的 APP 流式 Mock 降级可用（commit: d9247a7）。
+- [x] **Task 13 空 Key Mock 降级最终验收闭环（2026-09-20 至 2026-09-21）**：
+  - 确认服务端 `.env` 的 `GEMINI_API_KEY` 为空，且 `createChatStreamSourceFromEnv` 应选择 `MockChatAdapter`；直接请求 3001 可收到完整 `[Mock 回复]` SSE，排除适配器选择缺陷。
+  - 复现浏览器 403/401：携带 `Origin` 经 Vite `/api` 代理时，被空 `ALLOWED_ORIGINS` 的 CORS 中间件在进入 ChatAdapter 前拒绝；在 Vite 内部代理移除 `Origin` 后，带浏览器来源的请求恢复 HTTP 200（功能 commit: d9247a7）。
+  - 重启过程中复现 HTTP 500：3000 已有 Vite 时再次运行 `npm run dev`，Vite 自动递增并占用 3001；3000 的 `/api` 随即代理到第二个 Vite，而 Express 后端未运行，形成错误代理链路。
+  - 停止误占 3001 的第二个 Vite，并在 3001 正确启动 `npm run server:dev`；最终验证 `localhost:3000 → Vite /api proxy → Express:3001 → MockChatAdapter` 返回 HTTP 200、完整流式 Mock 回复与 Token 统计。
+  - 自动化回归保持 20/20 个测试套件、157/157 项用例通过；`npm run lint` 与 `npm run build` 通过。
 - [x] **文档结构迁移 Step 1**：迁移协作规范、DoD 与当前状态（commits: 7ef7560, 0399fb3）。
 - [x] **文档结构迁移 Step 2**：迁移路线图、待办、历史与风险台账。
 - [x] **文档结构迁移 Step 3**：将测试台账移动至 `dev-docs/tests.md` 并修正相关引用。

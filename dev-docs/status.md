@@ -2,13 +2,14 @@
 
 ## 当前阶段
 
-Phase 3 —— 后端服务化（进行中）。Task 13 前端 Playground 改连、验收修复、开发代理 CORS 修复与架构平滑切换已完成；等待下一项明确授权。
+Phase 3 —— 后端服务化（进行中）。Task 13 前端 Playground 改连、空 Key Mock 降级验收、开发代理 CORS 修复与本地双服务运行验证已完成；等待下一项明确授权。
 
 ## 当前授权
 
-- **授权任务**：Task 13 开发代理 CORS 验收修复（已完成）。
-- **最近 commit**：d9247a7 fix(dev): preserve mock fallback through proxy
+- **授权任务**：Task 13 验收故障修复过程归档（已完成）。
+- **最近功能 commit**：d9247a7 fix(dev): preserve mock fallback through proxy
 - **当前测试基线**：20/20 个测试套件、157/157 项用例通过（`npm run test`）。
+- **当前运行验收**：前端 Vite 使用 3000，Express 后端使用 3001；服务端 `.env` 中 `GEMINI_API_KEY` 为空时，经浏览器同源代理可收到完整流式 `[Mock 回复]` 与 Token 统计。
 
 ## 下一步计划
 

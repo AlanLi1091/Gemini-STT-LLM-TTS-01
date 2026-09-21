@@ -10,6 +10,7 @@
 - [x] **Step 3（集成装配与全量回归）**：在 App.tsx 接入 RemoteChatAdapter 闭环流式体验；确保现有 152 项用例语义零漂移，新增用例同步登记 `dev-docs/tests.md`。
 - [x] **验收修复**：后端模式隐藏由服务端决定的 Provider 控件；鉴权错误按连接模式给出可执行指引；清理前端遗留的本地 Mock 文案。
 - [x] **开发代理 CORS 验收修复**：Vite 同源 `/api` 代理不再向内部 Express 转发浏览器 Origin，避免空 `ALLOWED_ORIGINS` 在 ChatAdapter 前误返回 403；空 `GEMINI_API_KEY` 时可正常进入服务端 Mock 流式降级。
+- [x] **本地双服务运行验收**：排除重复启动 Vite 自动递增并占用 3001 所造成的代理自循环 500；恢复 3000 Vite + 3001 Express 的正确拓扑，并完成接口及 APP 页面级 Mock 流式验收。
 
 ### Task 14：会话持久化与上下文管理
 
