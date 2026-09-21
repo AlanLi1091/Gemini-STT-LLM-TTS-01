@@ -166,8 +166,8 @@ describe('Task 8: 设置面板与模型切换组件行为测试', () => {
   it('⑦ settings 变更后 activeAdapter 依据 settings.provider / geminiApiKey / geminiModel 重新实例化', async () => {
     render(<App />);
 
-    // 初始状态为 Mock
-    expect(screen.getByText('Web Mock MVP')).toBeInTheDocument();
+    // 默认状态为后端服务
+    expect(screen.getByText('后端服务（SSE）')).toBeInTheDocument();
 
     // 打开设置并切换为 Gemini
     fireEvent.click(screen.getByRole('button', { name: /设置/i }));

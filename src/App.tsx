@@ -9,6 +9,7 @@ import { loadSettings, saveSettings } from './settings';
 import { AppSettings, ChatAdapter } from './types';
 import { MockChatAdapter } from '@core/adapters/MockChatAdapter';
 import { GeminiChatAdapter } from '@core/adapters/GeminiChatAdapter';
+import { RemoteChatAdapter } from './adapters/RemoteChatAdapter';
 
 export const App: React.FC = () => {
   // 设置状态管理与弹窗显隐控制 (ADR-006, Task 8)
@@ -17,6 +18,10 @@ export const App: React.FC = () => {
 
   // 根据当前 settings 动态创建对应的 ChatAdapter（UI 绑定层负责实例化，内核不感知 AppSettings）
   const activeAdapter = useMemo<ChatAdapter>(() => {
+    if (settings.connectionMode === 'server') {
+      return new RemoteChatAdapter();
+    }
+
     if (settings.provider === 'gemini' && settings.geminiApiKey.trim()) {
       return new GeminiChatAdapter({
         apiKey: settings.geminiApiKey.trim(),
@@ -24,7 +29,7 @@ export const App: React.FC = () => {
       });
     }
     return new MockChatAdapter();
-  }, [settings.provider, settings.geminiApiKey, settings.geminiModel]);
+  }, [settings.connectionMode, settings.provider, settings.geminiApiKey, settings.geminiModel]);
 
   const {
     messages,
@@ -55,7 +60,11 @@ export const App: React.FC = () => {
   };
 
   const isBusy = isLoading || isGenerating;
-  const subtitle = settings.provider === 'gemini' ? `Gemini (${settings.geminiModel})` : 'Web Mock MVP';
+  const subtitle = settings.connectionMode === 'server'
+    ? '后端服务（SSE）'
+    : settings.provider === 'gemini'
+      ? `Gemini (${settings.geminiModel})`
+      : 'Web Mock MVP';
 
   return (
     <div

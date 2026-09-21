@@ -1,7 +1,7 @@
 # 测试套件与测试用例台账
 
 > **维护规范**：
-> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（19 个套件）与具体测试用例（154 个断言项）。
+> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（20 个套件）与具体测试用例（156 个断言项）。
 > 2. **铁律联动**：后续开发中，每次有新功能开发、重构或测试内容更新时，**必须同步在此台账中维护新增或修改的测试项**，保持与实际测试套件 100% 同步。
 
 ## 1. 测试套件概览看板
@@ -27,7 +27,8 @@
 | 17 | `server/test/chat-stream.test.ts` | Task 12 | SSE 流式管道、心跳、续传声明与中断级联 | 7 | ✅ 通过 |
 | 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 3 | ✅ 通过 |
 | 19 | `src/test/remote-chat-adapter.test.ts` | Task 13 | RemoteChatAdapter 的 SSE 消费、错误映射与 AbortSignal 传递 | 6 | ✅ 通过 |
-| **合计** | **19 个测试文件** | **Phase 1, 2 & Phase 3** | **全链路领域内核、共享适配器、UI 交互与服务端流式管道** | **154** | **✅ 100% 通过** |
+| 20 | `src/test/app-remote-integration.test.tsx` | Task 13 Step 3 | App 的后端 SSE 装配与直连调试隔离 | 2 | ✅ 通过 |
+| **合计** | **20 个测试文件** | **Phase 1, 2 & Phase 3** | **全链路领域内核、共享适配器、UI 交互与服务端流式管道** | **156** | **✅ 100% 通过** |
 
 ---
 
@@ -333,3 +334,10 @@
 - [x] **应将 HTTP 状态映射为统一 ChatError**
 - [x] **应将网络失败映射为 NETWORK_ERROR**
 - [x] **应将 AbortSignal 传递给 fetch 并在中断时抛出 ABORTED**
+
+### 2.20 `src/test/app-remote-integration.test.tsx` (2 项)
+> **任务对应**：Task 13 Step 3 · App 远端 SSE 装配与直连调试隔离
+
+#### Task 13 Step 3: App 远端 SSE 装配
+- [x] **默认后端模式通过 SSE 服务流式展示回复**
+- [x] **前端直连 Mock 模式不请求后端服务**

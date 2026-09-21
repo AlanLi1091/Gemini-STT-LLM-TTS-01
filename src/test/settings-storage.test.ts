@@ -84,6 +84,7 @@ describe('Settings persistence and sanitization (ADR-006, Task 8)', () => {
 
     it('带首尾空白的 key 在 saveSettings 存入前与 loadSettings 读取后均保持干净 trim', () => {
       saveSettings({
+        connectionMode: 'direct',
         provider: 'gemini',
         geminiApiKey: '   AIzaSyKeyWithSpaces   ',
         geminiModel: 'gemini-3.8-flash',

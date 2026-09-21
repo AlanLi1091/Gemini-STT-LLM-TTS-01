@@ -3,10 +3,17 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { App } from '../App';
 import { generateMockReply } from '../services/mockChatService';
+import { SETTINGS_STORAGE_KEY } from '../settings';
 
 describe('Task 4: Mock 机器人响应引擎与思考态测试', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({
+      connectionMode: 'direct',
+      provider: 'mock',
+      geminiApiKey: '',
+      geminiModel: 'gemini-3.8-flash',
+    }));
   });
 
   afterEach(() => {

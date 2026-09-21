@@ -75,6 +75,13 @@ export default defineConfig(() => {
       },
     },
     server: {
+      // 前端开发服务器将同源 API 请求转发到本地 Express 服务，避免浏览器跨域配置。
+      proxy: {
+        '/api': {
+          target: process.env.VITE_API_PROXY_TARGET || 'http://localhost:3001',
+          changeOrigin: true,
+        },
+      },
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modifyâ€”file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
