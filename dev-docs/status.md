@@ -2,17 +2,17 @@
 
 ## 当前阶段
 
-Phase 3 —— 后端服务化（进行中）。Task 13 Step 1 RemoteChatAdapter 已完成；文档结构迁移已完成，等待下一项明确授权。
+Phase 3 —— 后端服务化（进行中）。Task 13 Step 2 设置面板连接模式适配已完成；等待下一项明确授权。
 
 ## 当前授权
 
-- **授权任务**：文档结构迁移：建立 `dev-docs/` 分层体系并将根目录 `AGENTS.md` 重写为文档索引（已完成）。
-- **最近 commit**：cea4ab4 feat(web): add remote chat SSE adapter (Task 13 Step 1)
-- **当前测试基线**：19/19 个测试套件、152/152 项用例通过（`npm run test`）。
+- **授权任务**：Task 13 Step 2（设置面板适配，已完成）。
+- **最近 commit**：b2d3b53 feat(web): add backend connection settings mode (Task 13 Step 2)
+- **当前测试基线**：19/19 个测试套件、154/154 项用例通过（`npm run test`）。
 
 ## 下一步计划
 
-文档结构迁移已完成；等待下一项明确授权。
+Task 13 Step 3（集成装配与全量回归）为未授权 Backlog 项；等待用户明确授权。
 
 ## 职责交接记录
 

@@ -38,6 +38,7 @@
 - [x] **Task 12 Step 2**：GeminiAdapter 服务端承载与 Key 收拢（commit: ef83d78）。
 - [x] **Task 12 Step 3**：Mock 降级复用与统一错误透传（commit: c2c2dc6）。
 - [x] **Task 13 Step 1**：RemoteChatAdapter 实现与契约测试（commit: cea4ab4）。
+- [x] **Task 13 Step 2**：设置面板连接模式适配；默认推荐后端服务、后端模式隐藏浏览器 API Key 并说明由服务端环境变量托管、保留前端直连调试模式及旧设置迁移（commit: b2d3b53）。
 - [x] **文档结构迁移 Step 1**：迁移协作规范、DoD 与当前状态（commits: 7ef7560, 0399fb3）。
 - [x] **文档结构迁移 Step 2**：迁移路线图、待办、历史与风险台账。
 - [x] **文档结构迁移 Step 3**：将测试台账移动至 `dev-docs/tests.md` 并修正相关引用。
