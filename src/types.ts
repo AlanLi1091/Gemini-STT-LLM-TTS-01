@@ -12,8 +12,10 @@ export {
 } from '@core/chat';
 
 export type ProviderType = 'mock' | 'gemini';
+export type ConnectionMode = 'server' | 'direct';
 
 export interface AppSettings {
+  connectionMode: ConnectionMode;
   provider: ProviderType;
   geminiApiKey: string;
   geminiModel: string;
@@ -26,6 +28,7 @@ export const AVAILABLE_GEMINI_MODELS = [
 ] as const;
 
 export const DEFAULT_SETTINGS: Readonly<AppSettings> = Object.freeze({
+  connectionMode: 'server',
   provider: 'mock',
   geminiApiKey: '',
   geminiModel: 'gemini-3.8-flash',

@@ -1,7 +1,7 @@
 # 测试套件与测试用例台账
 
 > **维护规范**：
-> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（19 个套件）与具体测试用例（152 个断言项）。
+> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（19 个套件）与具体测试用例（154 个断言项）。
 > 2. **铁律联动**：后续开发中，每次有新功能开发、重构或测试内容更新时，**必须同步在此台账中维护新增或修改的测试项**，保持与实际测试套件 100% 同步。
 
 ## 1. 测试套件概览看板
@@ -15,8 +15,8 @@
 | 5 | `src/test/task5-interactions.test.tsx` | Task 5 | 体验细节（ADR-005不可变ID / IME防误发 / 清空会话 / 触底滚动） | 7 | ✅ 通过 |
 | 6 | `src/test/chat-adapter-contract.test.ts` | Task 6 / 10 | ChatAdapter 通用契约测试套件（Mock & Gemini send/stream） | 14 | ✅ 通过 |
 | 7 | `src/test/gemini-adapter.test.ts` | Task 7 / 10 | GeminiChatAdapter send & stream 单测（网络全Mock/错误转译/用量提取） | 29 | ✅ 通过 |
-| 8 | `src/test/settings-storage.test.ts` | Task 8 | AppSettings 本地存储、防御性解析与不可见字符清洗 | 10 | ✅ 通过 |
-| 9 | `src/test/settings.test.tsx` | Task 8 | SettingsModal 弹窗交互、表单校验与 Adapter 联动 | 7 | ✅ 通过 |
+| 8 | `src/test/settings-storage.test.ts` | Task 8 / Task 13 Step 2 | AppSettings 本地存储、防御性解析、连接模式迁移与不可见字符清洗 | 11 | ✅ 通过 |
+| 9 | `src/test/settings.test.tsx` | Task 8 / Task 13 Step 2 | SettingsModal 弹窗交互、连接模式、表单校验与 Adapter 联动 | 8 | ✅ 通过 |
 | 10 | `src/hooks/useChat.test.ts` | Task 3 / 9 / 10 | useChat Hook 领域逻辑状态机（流式驱动/中断/重试/生命周期） | 13 | ✅ 通过 |
 | 11 | `src/test/error-and-usage-components.test.tsx` | Task 9 | TokenUsageBadge 徽章与 ChatErrorBanner 错误横幅纯组件测试 | 15 | ✅ 通过 |
 | 12 | `src/test/error-and-usage-integration.test.tsx` | Task 9 | 错误横幅展示/重试/设置联动及 Token 徽章端到端集成测试 | 3 | ✅ 通过 |
@@ -27,7 +27,7 @@
 | 17 | `server/test/chat-stream.test.ts` | Task 12 | SSE 流式管道、心跳、续传声明与中断级联 | 7 | ✅ 通过 |
 | 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 3 | ✅ 通过 |
 | 19 | `src/test/remote-chat-adapter.test.ts` | Task 13 | RemoteChatAdapter 的 SSE 消费、错误映射与 AbortSignal 传递 | 6 | ✅ 通过 |
-| **合计** | **19 个测试文件** | **Phase 1, 2 & Phase 3** | **全链路领域内核、共享适配器、UI 交互与服务端流式管道** | **152** | **✅ 100% 通过** |
+| **合计** | **19 个测试文件** | **Phase 1, 2 & Phase 3** | **全链路领域内核、共享适配器、UI 交互与服务端流式管道** | **154** | **✅ 100% 通过** |
 
 ---
 
@@ -173,8 +173,8 @@
 - [x] **流式迭代过程中抛出网络异常时转译为 NETWORK_ERROR**
 - [x] **流式调用 SDK 抛出 429 配额异常时转译为 RATE_LIMIT**
 
-### 2.8 `src/test/settings-storage.test.ts` (10 项)
-> **任务对应**：Task 8 · AppSettings 本地存储、防御性解析与不可见字符清洗
+### 2.8 `src/test/settings-storage.test.ts` (11 项)
+> **任务对应**：Task 8 / Task 13 Step 2 · AppSettings 本地存储、防御性解析、连接模式迁移与不可见字符清洗
 
 
 #### Settings persistence and sanitization (ADR-006, Task 8) > sanitizeSettings (防御性解析)
@@ -190,9 +190,10 @@
 - [x] **带首尾空白的 key 在 saveSettings 存入前与 loadSettings 读取后均保持干净 trim**
 - [x] **localStorage 存有损坏的 JSON 字符串时，优雅捕获并回退默认设置**
 - [x] **localStorage 缺少部分字段时，缺失字段自动补齐安全默认值**
+- [x] **新版非法连接模式回退后端服务，旧版配置迁移为前端直连调试模式**
 
-### 2.9 `src/test/settings.test.tsx` (7 项)
-> **任务对应**：Task 8 · SettingsModal 弹窗交互、表单校验与 Adapter 联动
+### 2.9 `src/test/settings.test.tsx` (8 项)
+> **任务对应**：Task 8 / Task 13 Step 2 · SettingsModal 弹窗交互、连接模式、表单校验与 Adapter 联动
 
 
 #### Task 8: 设置面板与模型切换组件行为测试
@@ -203,6 +204,7 @@
 - [x] **⑤ API Key 默认掩码 (password)，点击 eye 按钮切换为明文 (text)**
 - [x] **⑥ 符合无障碍要求：具备 role="dialog"、aria-modal 与 aria-labelledby**
 - [x] **⑦ settings 变更后 activeAdapter 依据 settings.provider / geminiApiKey / geminiModel 重新实例化**
+- [x] **⑧ 后端服务模式隐藏并清除浏览器 API Key，且允许无 Key 保存**
 
 ### 2.10 `src/hooks/useChat.test.ts` (13 项)
 > **任务对应**：Task 3 / 9 / 10 · useChat Hook 领域逻辑状态机（流式驱动/中断/重试/生命周期）

@@ -64,10 +64,12 @@ describe('Settings persistence and sanitization (ADR-006, Task 8)', () => {
       const settings = loadSettings();
       expect(settings).toEqual(DEFAULT_SETTINGS);
       expect(settings.provider).toBe('mock');
+      expect(settings.connectionMode).toBe('server');
     });
 
     it('正常写入并正确回读 (往返一致性)', () => {
       const newSettings = {
+        connectionMode: 'direct' as const,
         provider: 'gemini' as const,
         geminiApiKey: 'AIzaSyExampleKey',
         geminiModel: 'gemini-3.1-pro',
@@ -106,6 +108,12 @@ describe('Settings persistence and sanitization (ADR-006, Task 8)', () => {
       expect(settings.provider).toBe('gemini');
       expect(settings.geminiApiKey).toBe('');
       expect(settings.geminiModel).toBe(DEFAULT_SETTINGS.geminiModel);
+      expect(settings.connectionMode).toBe('direct');
+    });
+
+    it('新版非法连接模式回退后端服务，旧版配置迁移为前端直连调试模式', () => {
+      expect(sanitizeSettings({ connectionMode: 'unsupported' }).connectionMode).toBe('server');
+      expect(sanitizeSettings({ provider: 'gemini', geminiApiKey: 'legacy-key' }).connectionMode).toBe('direct');
     });
   });
 });

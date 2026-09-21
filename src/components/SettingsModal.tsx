@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Settings, Eye, EyeOff, X, KeyRound, Cpu, Sparkles, Check, AlertCircle } from 'lucide-react';
-import { AppSettings, AVAILABLE_GEMINI_MODELS, ProviderType } from '../types';
+import { Settings, Eye, EyeOff, X, KeyRound, Cpu, Sparkles, Check, AlertCircle, Server, Laptop } from 'lucide-react';
+import { AppSettings, AVAILABLE_GEMINI_MODELS, ConnectionMode, ProviderType } from '../types';
 
 export interface SettingsModalProps {
   isOpen: boolean;
@@ -16,6 +16,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onSave,
 }) => {
   // 草稿态状态管理 (Draft-Confirm 模式)
+  const [draftConnectionMode, setDraftConnectionMode] = useState<ConnectionMode>(settings.connectionMode);
   const [draftProvider, setDraftProvider] = useState<ProviderType>(settings.provider);
   const [draftApiKey, setDraftApiKey] = useState<string>(settings.geminiApiKey);
   const [draftModel, setDraftModel] = useState<string>(settings.geminiModel);
@@ -28,6 +29,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   // 当弹窗打开时，重置草稿态与错误，并捕获焦点
   useEffect(() => {
     if (isOpen) {
+      setDraftConnectionMode(settings.connectionMode);
       setDraftProvider(settings.provider);
       setDraftApiKey(settings.geminiApiKey);
       setDraftModel(settings.geminiModel);
@@ -61,15 +63,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     const cleanedKey = draftApiKey.trim().replace(/[^\x20-\x7E]/g, '');
 
     // 校验规则：provider 切到 gemini 且 key 为空 → 行内提示 + 阻止保存
-    if (draftProvider === 'gemini' && !cleanedKey) {
+    if (draftConnectionMode === 'direct' && draftProvider === 'gemini' && !cleanedKey) {
       setValidationError('切换为 Gemini 模型时，请输入有效的 API Key');
       return;
     }
 
     setValidationError(null);
     onSave({
+      connectionMode: draftConnectionMode,
       provider: draftProvider,
-      geminiApiKey: cleanedKey,
+      geminiApiKey: draftConnectionMode === 'server' ? '' : cleanedKey,
       geminiModel: draftModel,
     });
     onClose();
@@ -121,6 +124,56 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
         {/* 表单主体 */}
         <div className="p-5 space-y-4 text-sm">
+          {/* 连接模式切换 */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider">
+              连接模式
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                id="connection-server-btn"
+                onClick={() => {
+                  setDraftConnectionMode('server');
+                  setValidationError(null);
+                }}
+                className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
+                  draftConnectionMode === 'server'
+                    ? 'border-zinc-900 bg-zinc-900 text-white shadow-xs'
+                    : 'border-zinc-200 bg-zinc-50 text-zinc-700 hover:bg-zinc-100'
+                }`}
+              >
+                <Server className="w-3.5 h-3.5" />
+                <span>后端服务（推荐）</span>
+              </button>
+              <button
+                type="button"
+                id="connection-direct-btn"
+                onClick={() => {
+                  setDraftConnectionMode('direct');
+                  setValidationError(null);
+                }}
+                className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
+                  draftConnectionMode === 'direct'
+                    ? 'border-zinc-900 bg-zinc-900 text-white shadow-xs'
+                    : 'border-zinc-200 bg-zinc-50 text-zinc-700 hover:bg-zinc-100'
+                }`}
+              >
+                <Laptop className="w-3.5 h-3.5" />
+                <span>前端直连调试</span>
+              </button>
+            </div>
+          </div>
+
+          {draftConnectionMode === 'server' && (
+            <div
+              id="server-managed-credentials-notice"
+              className="p-2.5 rounded-xl bg-blue-50 border border-blue-100 text-[11px] text-blue-700 leading-relaxed"
+            >
+              后端服务模式下，API Key 由服务端环境变量托管，浏览器不会读取或保存密钥。
+            </div>
+          )}
+
           {/* Provider 切换 */}
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider">
@@ -162,7 +215,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
 
-          {/* Gemini 设置区（仅在选择 Gemini 或需要填写 key 时活跃，但均可预填） */}
+          {/* Gemini 设置区仅供前端直连调试使用 */}
+          {draftConnectionMode === 'direct' && (
           <div className={`space-y-3 pt-1 transition-opacity ${draftProvider === 'gemini' ? 'opacity-100' : 'opacity-60'}`}>
             {/* Gemini API Key */}
             <div className="space-y-1.5">
@@ -225,6 +279,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </select>
             </div>
           </div>
+          )}
 
           {/* 校验错误提示 */}
           {validationError && (
@@ -239,7 +294,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           {/* 边界提示 (ADR-006) */}
           <div className="p-2.5 rounded-xl bg-zinc-50 border border-zinc-100 text-[11px] text-zinc-500 leading-relaxed">
-            注意：当前仅支持在 Web Playground 本地调试直连，API Key 将明文存储于浏览器 localStorage，不入 Git 仓库与远端部署。
+            {draftConnectionMode === 'server'
+              ? '后端服务模式将使用服务器配置；前端直连调试模式仅供本地开发。'
+              : '直连调试模式会将 API Key 明文存储于浏览器 localStorage，不入 Git 仓库与远端部署。'}
           </div>
         </div>
 

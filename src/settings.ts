@@ -13,6 +13,13 @@ export function sanitizeSettings(raw: unknown): AppSettings {
 
   const record = raw as Record<string, unknown>;
 
+  // 旧版设置没有连接模式，保留其浏览器直连行为，避免升级后意外改变运行路径
+  const connectionMode = record.connectionMode === undefined
+    ? 'direct'
+    : record.connectionMode === 'direct'
+      ? 'direct'
+      : 'server';
+
   // 校验 provider
   const provider = record.provider === 'gemini' ? 'gemini' : 'mock';
 
@@ -30,6 +37,7 @@ export function sanitizeSettings(raw: unknown): AppSettings {
       : DEFAULT_SETTINGS.geminiModel;
 
   return {
+    connectionMode,
     provider,
     geminiApiKey,
     geminiModel,
