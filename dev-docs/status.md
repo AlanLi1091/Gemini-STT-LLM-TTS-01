@@ -2,13 +2,13 @@
 
 ## 当前阶段
 
-Phase 3 —— 后端服务化（进行中）。Task 13 前端 Playground 改连与架构平滑切换已完成；等待下一项明确授权。
+Phase 3 —— 后端服务化（进行中）。Task 13 前端 Playground 改连、验收修复与架构平滑切换已完成；等待下一项明确授权。
 
 ## 当前授权
 
-- **授权任务**：Task 13 Step 3（集成装配与全量回归，已完成）。
-- **最近 commit**：01630b4 feat(web): wire playground to backend SSE (Task 13 Step 3)
-- **当前测试基线**：20/20 个测试套件、156/156 项用例通过（`npm run test`）。
+- **授权任务**：Task 13 验收修复（已完成）。
+- **最近 commit**：731c749 fix(web): clarify backend service mode
+- **当前测试基线**：20/20 个测试套件、157/157 项用例通过（`npm run test`）。
 
 ## 下一步计划
 

@@ -40,6 +40,7 @@
 - [x] **Task 13 Step 1**：RemoteChatAdapter 实现与契约测试（commit: cea4ab4）。
 - [x] **Task 13 Step 2**：设置面板连接模式适配；默认推荐后端服务、后端模式隐藏浏览器 API Key 并说明由服务端环境变量托管、保留前端直连调试模式及旧设置迁移（commit: b2d3b53）。
 - [x] **Task 13 Step 3**：Playground 按连接模式装配 RemoteChatAdapter；默认后端 SSE 流式体验、直连调试保留、Vite 本地 API 代理与 App 集成回归（commit: 01630b4）。
+- [x] **Task 13 验收修复**：后端模式隐藏无效 Provider 控件；按连接模式引导鉴权错误；清理本地 Mock 残留文案并补充回归测试（commit: 731c749）。
 - [x] **文档结构迁移 Step 1**：迁移协作规范、DoD 与当前状态（commits: 7ef7560, 0399fb3）。
 - [x] **文档结构迁移 Step 2**：迁移路线图、待办、历史与风险台账。
 - [x] **文档结构迁移 Step 3**：将测试台账移动至 `dev-docs/tests.md` 并修正相关引用。
