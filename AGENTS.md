@@ -33,4 +33,4 @@
 
 ## 当前状态
 
-Phase 3 进行中；Task 13 Step 1 已完成（cea4ab4），等待下一项授权。详见 `dev-docs/status.md`。
+Phase 3 进行中；Task 13 前端 Playground 改连、空 `GEMINI_API_KEY` 的服务端 Mock 降级、开发代理 CORS 修复与本地双服务运行验收均已完成，并已随 `d307a2f` 合入 `main`。本次根状态更新仅提交至 `test`；下一项为尚未授权的 Task 14 Step 1。详见 `dev-docs/status.md` 与 `dev-docs/backlog.md`。
