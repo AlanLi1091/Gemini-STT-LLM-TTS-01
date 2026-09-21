@@ -80,6 +80,12 @@ export default defineConfig(() => {
         '/api': {
           target: process.env.VITE_API_PROXY_TARGET || 'http://localhost:3001',
           changeOrigin: true,
+          configure(proxy) {
+            proxy.on('proxyReq', (proxyReq) => {
+              // 浏览器到 Vite 是同源请求；内部转发属于服务间通信，不应再次触发后端 CORS 校验。
+              proxyReq.removeHeader('origin');
+            });
+          },
         },
       },
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
