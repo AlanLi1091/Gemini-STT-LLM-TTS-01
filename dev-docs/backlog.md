@@ -9,6 +9,7 @@
 - [x] **Step 2（设置面板适配）**：SettingsModal 扩展连接模式选择（“后端服务（推荐）”与“前端直连调试模式”）；选择后端模式时 API Key 输入区域隐藏或锁定并提示环境变量托管；直连模式去留于 Phase 3 结项时由用户决策。
 - [x] **Step 3（集成装配与全量回归）**：在 App.tsx 接入 RemoteChatAdapter 闭环流式体验；确保现有 152 项用例语义零漂移，新增用例同步登记 `dev-docs/tests.md`。
 - [x] **验收修复**：后端模式隐藏由服务端决定的 Provider 控件；鉴权错误按连接模式给出可执行指引；清理前端遗留的本地 Mock 文案。
+- [x] **开发代理 CORS 验收修复**：Vite 同源 `/api` 代理不再向内部 Express 转发浏览器 Origin，避免空 `ALLOWED_ORIGINS` 在 ChatAdapter 前误返回 403；空 `GEMINI_API_KEY` 时可正常进入服务端 Mock 流式降级。
 
 ### Task 14：会话持久化与上下文管理
 
