@@ -6,8 +6,8 @@
 
 ### Task 13：前端 Playground 改连与架构平滑切换
 
-- [ ] **Step 2（设置面板适配）**：SettingsModal 扩展连接模式选择（“后端服务（推荐）”与“前端直连调试模式”）；选择后端模式时 API Key 输入区域隐藏或锁定并提示环境变量托管；直连模式去留于 Phase 3 结项时由用户决策。
-- [ ] **Step 3（集成装配与全量回归）**：在 App.tsx 接入 RemoteChatAdapter 闭环流式体验；确保现有 152 项用例语义零漂移，新增用例同步登记 `dev-docs/tests.md`。
+- [x] **Step 2（设置面板适配）**：SettingsModal 扩展连接模式选择（“后端服务（推荐）”与“前端直连调试模式”）；选择后端模式时 API Key 输入区域隐藏或锁定并提示环境变量托管；直连模式去留于 Phase 3 结项时由用户决策。
+- [x] **Step 3（集成装配与全量回归）**：在 App.tsx 接入 RemoteChatAdapter 闭环流式体验；确保现有 152 项用例语义零漂移，新增用例同步登记 `dev-docs/tests.md`。
 
 ### Task 14：会话持久化与上下文管理
 
