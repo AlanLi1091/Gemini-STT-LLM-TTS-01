@@ -42,6 +42,7 @@ function isSession(value: unknown): value is Session {
   return (
     typeof candidate.id === 'string' &&
     Number.isFinite(candidate.createdAt) &&
+    (candidate.archivedAt === undefined || Number.isFinite(candidate.archivedAt)) &&
     Array.isArray(candidate.messages) &&
     candidate.messages.every(isValidMessage) &&
     new Set(candidate.messages.map((message) => message.id)).size === candidate.messages.length
@@ -93,6 +94,20 @@ export class JsonSessionStorage implements SessionStorage {
       };
       await this.writeSession(nextSession);
       return cloneSession(nextSession);
+    });
+  }
+
+  async archiveSession(sessionId: string): Promise<Session> {
+    this.assertSafeSessionId(sessionId);
+
+    return this.serializeWrite(sessionId, async () => {
+      const session = await this.readSession(sessionId);
+      if (!session) throw new SessionNotFoundError(sessionId);
+      if (session.archivedAt !== undefined) return cloneSession(session);
+
+      const archivedSession: Session = { ...session, archivedAt: Date.now() };
+      await this.writeSession(archivedSession);
+      return cloneSession(archivedSession);
     });
   }
 

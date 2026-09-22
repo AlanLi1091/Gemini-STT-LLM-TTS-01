@@ -5,6 +5,8 @@ export interface Session {
   id: string;
   createdAt: number;
   messages: Message[];
+  /** Soft-delete marker. Archived logs remain readable but cannot accept turns. */
+  archivedAt?: number;
 }
 
 /**
@@ -15,6 +17,7 @@ export interface SessionStorage {
   createSession(): Promise<Session>;
   getSession(sessionId: string): Promise<Session | undefined>;
   appendMessage(sessionId: string, message: Message): Promise<Session>;
+  archiveSession(sessionId: string): Promise<Session>;
 }
 
 export class SessionNotFoundError extends Error {

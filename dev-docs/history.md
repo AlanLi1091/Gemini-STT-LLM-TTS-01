@@ -49,6 +49,7 @@
   - 停止误占 3001 的第二个 Vite，并在 3001 正确启动 `npm run server:dev`；最终验证 `localhost:3000 → Vite /api proxy → Express:3001 → MockChatAdapter` 返回 HTTP 200、完整流式 Mock 回复与 Token 统计。
   - 自动化回归保持 20/20 个测试套件、157/157 项用例通过；`npm run lint` 与 `npm run build` 通过。
 - [x] **Task 14 Step 1**：定义 `SessionStorage` 会话持久化边界，默认实现每会话单 JSON 文件的 `JsonSessionStorage`；创建会话分配 UUID，消息日志严格仅追加并拒绝重复 ID，同会话并发追加串行化；新增 5 项 Node 单测，回归 21/21 个套件、162/162 项用例通过。
+- [x] **Task 14 Step 2**：提供会话创建、读取与归档 API；携带 `sessionId` 的流式请求按完整持久化历史调用模型，并严格追加本轮输入与最终回复；归档仅设置 `archivedAt`、保留物理消息日志并禁止新轮次；新增 4 项服务端集成测试，回归 22/22 个套件、166/166 项用例通过。
 - [x] **文档结构迁移 Step 1**：迁移协作规范、DoD 与当前状态（commits: 7ef7560, 0399fb3）。
 - [x] **文档结构迁移 Step 2**：迁移路线图、待办、历史与风险台账。
 - [x] **文档结构迁移 Step 3**：将测试台账移动至 `dev-docs/tests.md` 并修正相关引用。

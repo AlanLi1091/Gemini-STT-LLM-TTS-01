@@ -2,7 +2,8 @@
  * 前后端共享的聊天流式传输契约。
  *
  * Task 13 采用无状态请求：客户端发送完整 messages，sessionId 省略。
- * Task 14 启用持久化后可逐步携带 sessionId，而无需改变 SSE 事件结构。
+ * Task 14 带 sessionId 时，messages 是本轮待追加输入，服务端以该会话的
+ * 完整持久化历史作为模型上下文；SSE 事件结构保持不变。
  * 当前协议不支持通过 Last-Event-ID 断点续传，断线后必须发起全新请求。
  */
 
@@ -27,7 +28,7 @@ export interface ChatStreamMessage {
 
 export interface ChatStreamRequest {
   messages: ChatStreamMessage[];
-  /** Task 13 省略；Task 14 启用会话持久化后由客户端传入。 */
+  /** 省略时使用无状态模式；提供时由服务端寻址持久化会话。 */
   sessionId?: string;
 }
 
