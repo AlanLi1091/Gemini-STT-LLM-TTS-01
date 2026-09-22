@@ -2,18 +2,18 @@
 
 ## 当前阶段
 
-Phase 3 —— 后端服务化（进行中）。Task 13 前端 Playground 改连、空 Key Mock 降级验收、开发代理 CORS 修复与本地双服务运行验证已完成；等待下一项明确授权。
+Phase 3 —— 后端服务化（进行中）。Task 14 Step 1 持久化存储层抽象与 JSON 文件引擎已完成；等待下一项明确授权。
 
 ## 当前授权
 
-- **授权任务**：Task 13 验收故障修复过程归档（已完成）。
-- **最近功能 commit**：d9247a7 fix(dev): preserve mock fallback through proxy
-- **当前测试基线**：20/20 个测试套件、157/157 项用例通过（`npm run test`）。
-- **当前运行验收**：前端 Vite 使用 3000，Express 后端使用 3001；服务端 `.env` 中 `GEMINI_API_KEY` 为空时，经浏览器同源代理可收到完整流式 `[Mock 回复]` 与 Token 统计。
+- **授权任务**：Task 14 Step 1（已完成）。
+- **最近功能 commit**：Task 14 Step 1 的持久化存储层提交。
+- **当前测试基线**：21/21 个测试套件、162/162 项用例通过（`npm run test`）；`npm run lint` 通过。
+- **当前功能验收**：`SessionStorage` 抽象与默认 `JsonSessionStorage` 已落地；每会话单独 JSON 文件置于已忽略的 `data/` 目录，创建时分配 UUID，消息日志仅追加并拒绝重复 ID，同会话并发写入按调用顺序串行化。
 
 ## 下一步计划
 
-Task 14 Step 1（持久化存储层抽象与 JSON 文件引擎）为未授权 Backlog 项；等待用户明确授权。
+Task 14 Step 2（会话操作 API 与多轮上下文拼接）为未授权 Backlog 项；等待用户明确授权。
 
 ## 职责交接记录
 
