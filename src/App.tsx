@@ -1,4 +1,4 @@
-import React, { useRef, useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Header } from './components/Header';
 import { MessageList } from './components/MessageList';
 import { ChatInput, ChatInputHandle } from './components/ChatInput';
@@ -10,16 +10,29 @@ import { AppSettings, ChatAdapter } from './types';
 import { MockChatAdapter } from '@core/adapters/MockChatAdapter';
 import { GeminiChatAdapter } from '@core/adapters/GeminiChatAdapter';
 import { RemoteChatAdapter } from './adapters/RemoteChatAdapter';
+import {
+  archiveSession,
+  clearRecentSessionId,
+  createSession,
+  getSession,
+  loadRecentSessionId,
+  saveRecentSessionId,
+  SessionApiError,
+} from './services/sessionApi';
 
 export const App: React.FC = () => {
   // 设置状态管理与弹窗显隐控制 (ADR-006, Task 8)
   const [settings, setSettings] = useState<AppSettings>(() => loadSettings());
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [sessionId, setSessionId] = useState<string | undefined>();
+  const [isSessionReady, setIsSessionReady] = useState<boolean>(
+    () => loadSettings().connectionMode !== 'server',
+  );
 
   // 根据当前 settings 动态创建对应的 ChatAdapter（UI 绑定层负责实例化，内核不感知 AppSettings）
   const activeAdapter = useMemo<ChatAdapter>(() => {
     if (settings.connectionMode === 'server') {
-      return new RemoteChatAdapter();
+      return new RemoteChatAdapter({ sessionId });
     }
 
     if (settings.provider === 'gemini' && settings.geminiApiKey.trim()) {
@@ -29,7 +42,7 @@ export const App: React.FC = () => {
       });
     }
     return new MockChatAdapter();
-  }, [settings.connectionMode, settings.provider, settings.geminiApiKey, settings.geminiModel]);
+  }, [sessionId, settings.connectionMode, settings.provider, settings.geminiApiKey, settings.geminiModel]);
 
   const {
     messages,
@@ -42,6 +55,7 @@ export const App: React.FC = () => {
     retryFailedSend,
     stopGenerating,
     dismissError,
+    replaceMessages,
     clearMessages,
   } = useChat({
     adapter: activeAdapter,
@@ -49,7 +63,76 @@ export const App: React.FC = () => {
 
   const inputRef = useRef<ChatInputHandle>(null);
 
-  const handleClear = () => {
+  useEffect(() => {
+    let cancelled = false;
+
+    const restoreSession = async () => {
+      if (settings.connectionMode !== 'server') {
+        setSessionId(undefined);
+        setIsSessionReady(true);
+        return;
+      }
+
+      setIsSessionReady(false);
+      try {
+        const recentSessionId = loadRecentSessionId();
+        let session;
+        if (recentSessionId) {
+          try {
+            session = await getSession(recentSessionId);
+          } catch (error) {
+            if (!(error instanceof SessionApiError && error.status === 404)) throw error;
+          }
+        }
+        if (!session || session.archivedAt !== undefined) session = await createSession();
+        if (cancelled) return;
+
+        saveRecentSessionId(session.id);
+        setSessionId(session.id);
+        replaceMessages(session.messages);
+        setIsSessionReady(true);
+      } catch (error) {
+        if (cancelled) return;
+        console.error('Failed to restore chat session:', error);
+        setSessionId(undefined);
+        replaceMessages([]);
+        setIsSessionReady(false);
+      }
+    };
+
+    void restoreSession();
+    return () => {
+      cancelled = true;
+    };
+  }, [replaceMessages, settings.connectionMode]);
+
+  const handleClear = async () => {
+    if (settings.connectionMode === 'server' && sessionId) {
+      setIsSessionReady(false);
+      let archived = false;
+      try {
+        await archiveSession(sessionId);
+        archived = true;
+        clearRecentSessionId();
+        const newSession = await createSession();
+        saveRecentSessionId(newSession.id);
+        setSessionId(newSession.id);
+        clearMessages();
+        inputRef.current?.focus();
+        setIsSessionReady(true);
+        return;
+      } catch (error) {
+        console.error('Failed to archive chat session:', error);
+        if (archived) {
+          setSessionId(undefined);
+          setIsSessionReady(false);
+        } else {
+          setIsSessionReady(true);
+        }
+        return;
+      }
+    }
+
     clearMessages();
     inputRef.current?.focus();
   };
@@ -59,7 +142,7 @@ export const App: React.FC = () => {
     saveSettings(newSettings);
   };
 
-  const isBusy = isLoading || isGenerating;
+  const isBusy = isLoading || isGenerating || !isSessionReady;
   const subtitle = settings.connectionMode === 'server'
     ? '后端服务（SSE）'
     : settings.provider === 'gemini'
@@ -77,7 +160,7 @@ export const App: React.FC = () => {
         messageCount={messages.length}
         onClear={handleClear}
         onOpenSettings={() => setIsSettingsOpen(true)}
-        disabled={isBusy}
+        disabled={isLoading || isGenerating}
       />
 
       {/* 错误提示横幅 (Task 9) */}
@@ -101,7 +184,7 @@ export const App: React.FC = () => {
       <ChatInput
         ref={inputRef}
         value={inputText}
-        disabled={isLoading}
+        disabled={isLoading || !isSessionReady}
         isGenerating={isGenerating}
         onStop={stopGenerating}
         onChange={(e) => setInputText(e.target.value)}

@@ -4,10 +4,14 @@ import { App } from '../App';
 import { MessageList } from '../components/MessageList';
 import * as useChatModule from '../hooks/useChat';
 import { Message } from '../types';
+import { SETTINGS_STORAGE_KEY } from '../settings';
 
 describe('Task 10 Step 3: 流式 UI 交互与端到端集成测试', () => {
   beforeEach(() => {
     localStorage.clear();
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({
+      connectionMode: 'direct', provider: 'mock', geminiApiKey: '', geminiModel: 'gemini-3.8-flash',
+    }));
     vi.restoreAllMocks();
   });
 
@@ -50,6 +54,7 @@ describe('Task 10 Step 3: 流式 UI 交互与端到端集成测试', () => {
       retryFailedSend: vi.fn(),
       stopGenerating: vi.fn(),
       dismissError: vi.fn(),
+      replaceMessages: vi.fn(),
       clearMessages: vi.fn(),
     });
 
@@ -89,6 +94,7 @@ describe('Task 10 Step 3: 流式 UI 交互与端到端集成测试', () => {
       retryFailedSend: vi.fn(),
       stopGenerating: vi.fn(),
       dismissError: vi.fn(),
+      replaceMessages: vi.fn(),
       clearMessages: vi.fn(),
     });
 
@@ -111,6 +117,7 @@ describe('Task 10 Step 3: 流式 UI 交互与端到端集成测试', () => {
       retryFailedSend: vi.fn(),
       stopGenerating: stopGeneratingMock,
       dismissError: vi.fn(),
+      replaceMessages: vi.fn(),
       clearMessages: vi.fn(),
     });
 
@@ -142,6 +149,7 @@ describe('Task 10 Step 3: 流式 UI 交互与端到端集成测试', () => {
       retryFailedSend: vi.fn(),
       stopGenerating: vi.fn(),
       dismissError: vi.fn(),
+      replaceMessages: vi.fn(),
       clearMessages: vi.fn(),
     });
 

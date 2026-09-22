@@ -1,7 +1,7 @@
 # 测试套件与测试用例台账
 
 > **维护规范**：
-> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（22 个套件）与具体测试用例（166 个断言项）。
+> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（22 个套件）与具体测试用例（169 个断言项）。
 > 2. **铁律联动**：后续开发中，每次有新功能开发、重构或测试内容更新时，**必须同步在此台账中维护新增或修改的测试项**，保持与实际测试套件 100% 同步。
 
 ## 1. 测试套件概览看板
@@ -26,11 +26,11 @@
 | 16 | `server/test/cors.test.ts` | Task 11 | CORS 白名单解析、允许/拒绝策略与预检链路 | 5 | ✅ 通过 |
 | 17 | `server/test/chat-stream.test.ts` | Task 12 | SSE 流式管道、心跳、续传声明与中断级联 | 7 | ✅ 通过 |
 | 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 3 | ✅ 通过 |
-| 19 | `src/test/remote-chat-adapter.test.ts` | Task 13 | RemoteChatAdapter 的 SSE 消费、错误映射与 AbortSignal 传递 | 6 | ✅ 通过 |
-| 20 | `src/test/app-remote-integration.test.tsx` | Task 13 Step 3 | App 的后端 SSE 装配与直连调试隔离 | 2 | ✅ 通过 |
+| 19 | `src/test/remote-chat-adapter.test.ts` | Task 13 / Task 14 Step 3 | RemoteChatAdapter 的 SSE 消费、错误映射、AbortSignal 与 sessionId 模式 | 7 | ✅ 通过 |
+| 20 | `src/test/app-remote-integration.test.tsx` | Task 13 Step 3 / Task 14 Step 3 | App 的后端 SSE 装配、会话恢复、归档清空与直连调试隔离 | 4 | ✅ 通过 |
 | 21 | `server/test/json-session-storage.test.ts` | Task 14 Step 1 | JSON 会话文件、严格追加与并发写入串行化 | 5 | ✅ 通过 |
 | 22 | `server/test/session-api.test.ts` | Task 14 Step 2 | 会话 API、全量上下文、归档语义与无状态兼容 | 4 | ✅ 通过 |
-| **合计** | **22 个测试文件** | **Phase 1, 2 & Phase 3** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **166** | **✅ 100% 通过** |
+| **合计** | **22 个测试文件** | **Phase 1, 2 & Phase 3** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **169** | **✅ 100% 通过** |
 
 ---
 
@@ -327,22 +327,25 @@
 - [x] **缺少、空白或不可见字符 Key 时应自动降级共享 MockAdapter**
 - [x] **Gemini 错误应通过 SSE error 事件透传标准 code 与 message**
 
-### 2.19 `src/test/remote-chat-adapter.test.ts` (6 项)
-> **任务对应**：Task 13 Step 1 · RemoteChatAdapter 实现与契约测试
+### 2.19 `src/test/remote-chat-adapter.test.ts` (7 项)
+> **任务对应**：Task 13 Step 1 / Task 14 Step 3 · RemoteChatAdapter 实现、会话模式与契约测试
 
 #### Task 13 Step 1: RemoteChatAdapter 的 SSE 消费与错误映射
 - [x] **应以完整消息历史 POST 到服务端 SSE 端点**
+- [x] **会话模式应携带 sessionId，且只提交本轮最后一条消息**
 - [x] **应跨 ReadableStream 分段解析 chunk 与 done 事件及用量**
 - [x] **应保留服务端标准错误码与消息**
 - [x] **应将 HTTP 状态映射为统一 ChatError**
 - [x] **应将网络失败映射为 NETWORK_ERROR**
 - [x] **应将 AbortSignal 传递给 fetch 并在中断时抛出 ABORTED**
 
-### 2.20 `src/test/app-remote-integration.test.tsx` (2 项)
-> **任务对应**：Task 13 Step 3 · App 远端 SSE 装配与直连调试隔离
+### 2.20 `src/test/app-remote-integration.test.tsx` (4 项)
+> **任务对应**：Task 13 Step 3 / Task 14 Step 3 · App 远端 SSE 装配、会话恢复与归档清空
 
-#### Task 13 Step 3: App 远端 SSE 装配
-- [x] **默认后端模式通过 SSE 服务流式展示回复**
+#### Task 13 Step 3 / Task 14 Step 3: App 服务端会话装配
+- [x] **默认后端模式创建会话，并携带 sessionId 流式展示回复**
+- [x] **启动时恢复最近活动会话及其持久化消息**
+- [x] **清空对话会归档旧会话、创建新会话并清除本地消息**
 - [x] **前端直连 Mock 模式不请求后端服务**
 
 ### 2.21 `server/test/json-session-storage.test.ts` (5 项)

@@ -3,10 +3,14 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { App } from '../App';
 import { ChatError, ChatAdapter } from '../types';
 import * as useChatModule from '../hooks/useChat';
+import { SETTINGS_STORAGE_KEY } from '../settings';
 
 describe('Task 9: 错误提示与用量记录 UI 集成测试', () => {
   beforeEach(() => {
     localStorage.clear();
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({
+      connectionMode: 'direct', provider: 'mock', geminiApiKey: '', geminiModel: 'gemini-3.8-flash',
+    }));
     vi.restoreAllMocks();
   });
 
@@ -37,6 +41,7 @@ describe('Task 9: 错误提示与用量记录 UI 集成测试', () => {
       retryFailedSend: vi.fn(),
       stopGenerating: vi.fn(),
       dismissError: vi.fn(),
+      replaceMessages: vi.fn(),
       clearMessages: vi.fn(),
     });
 
@@ -51,9 +56,15 @@ describe('Task 9: 错误提示与用量记录 UI 集成测试', () => {
     expect(tokenBadge).toHaveAttribute('aria-label', expect.stringContaining('共 36 tokens'));
   });
 
-  it('当存在 lastError 时，顶部正确展示 ChatErrorBanner 错误横幅', () => {
+  it('当存在 lastError 时，顶部正确展示 ChatErrorBanner 错误横幅', async () => {
     const dismissErrorMock = vi.fn();
     const retryFailedSendMock = vi.fn();
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({
+      connectionMode: 'server', provider: 'mock', geminiApiKey: '', geminiModel: 'gemini-3.8-flash',
+    }));
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      id: 'test-session', createdAt: 1, messages: [],
+    }), { status: 201 })));
 
     vi.spyOn(useChatModule, 'useChat').mockReturnValue({
       messages: [
@@ -73,6 +84,7 @@ describe('Task 9: 错误提示与用量记录 UI 集成测试', () => {
       retryFailedSend: retryFailedSendMock,
       stopGenerating: vi.fn(),
       dismissError: dismissErrorMock,
+      replaceMessages: vi.fn(),
       clearMessages: vi.fn(),
     });
 
@@ -86,6 +98,7 @@ describe('Task 9: 错误提示与用量记录 UI 集成测试', () => {
 
     // 点击“重试”应触发 retryFailedSend
     const retryBtn = screen.getByRole('button', { name: /重试/i });
+    await waitFor(() => expect(retryBtn).not.toBeDisabled());
     fireEvent.click(retryBtn);
     expect(retryFailedSendMock).toHaveBeenCalledTimes(1);
 
@@ -113,6 +126,7 @@ describe('Task 9: 错误提示与用量记录 UI 集成测试', () => {
       retryFailedSend: vi.fn(),
       stopGenerating: vi.fn(),
       dismissError: vi.fn(),
+      replaceMessages: vi.fn(),
       clearMessages: vi.fn(),
     });
 
