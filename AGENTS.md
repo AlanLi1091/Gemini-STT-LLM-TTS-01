@@ -30,7 +30,7 @@
 | `dev-docs/risks.md` | 风险与阻塞台账 | 出现新风险时 |
 | `dev-docs/tests.md` | 测试台账与维护规范 | 新增测试时 |
 | `dev-docs/research/` | 预研与调研报告（决策输入文档） | 随预研任务产生 |
-| `dev-docs/adr/` | 架构决策记录 ADR-001 至 ADR-009 | 新决策时追加 |
+| `dev-docs/adr/` | 架构决策记录 ADR-001 至 ADR-010 | 新决策时追加 |
 
 ## 当前状态
 
