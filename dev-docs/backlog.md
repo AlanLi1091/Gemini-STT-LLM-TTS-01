@@ -2,7 +2,7 @@
 
 所有任务默认未授权。执行任何任务前，须由用户在 `dev-docs/status.md` 指派。
 
-## Phase 3（进行中，未授权项不得开工）
+## Phase 3（已完成，未授权项不得开工）
 
 ### Task 13：前端 Playground 改连与架构平滑切换
 
@@ -17,6 +17,14 @@
 - [x] **Step 1（持久化存储层抽象与 JSON 文件引擎）**：定义 `SessionStorage` 接口（遵循 ADR-005 唯一 ID 与严格追加语义）；默认实现 JSON 文件存储引擎（每会话单文件，存 `data/` 目录进 `.gitignore`）；编写存储层单测。
 - [x] **Step 2（会话操作 API 与多轮上下文拼接）**：实现会话获取与创建接口，支持 sessionId 寻址；上下文默认全量历史（截断策略推迟至 Phase 5）；清空对话定案为归档标记语义（Soft Delete / Archived），保持物理日志不可变。
 - [x] **Step 3（前端单会话自动恢复与状态联动）**：Playground 启动时恢复最近会话；清空对话联动后端归档；补充持久化集成测试；前端不做多会话管理 UI（Phase 5 范围）。
+
+### Phase 3 收尾实施
+
+- [x] **Step 1（部署与直连决策）**：记录 ADR-010、更新预研与 ADR-006 状态，并登记未授权的 VPS 部署实施项。
+- [x] **Step 2（前端直连模式整体移除）**：迁移旧设置、清除浏览器 Key，Playground 仅装配 RemoteChatAdapter；同步测试台账。
+- [x] **Step 3（开发端口冲突缓解）**：Vite 开发脚本增加 `--strictPort`，更新风险 12。
+- [x] **Step 4（本地 lockfile 政策）**：忽略 `package-lock.json`，在风险 10 固化未来受控环境生成政策。
+- [x] **Step 5（Phase 3 正式结项）**：同步路线图、历史、状态及根目录索引，Phase 4 继续等待授权。
 
 ## 后续阶段预研（未授权，仅规划）
 

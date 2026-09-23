@@ -56,3 +56,4 @@
 - [x] **文档结构迁移 Step 3**：将测试台账移动至 `dev-docs/tests.md` 并修正相关引用。
 - [x] **文档结构迁移 Step 4**：将 ADR-001 至 ADR-009 拆分至 `dev-docs/adr/`。
 - [x] **文档结构迁移 Step 5**：将根目录 `AGENTS.md` 重写为文档索引，完成 `dev-docs/` 分层体系。
+- [x] **Phase 3 收尾实施与正式结项**：用户裁决①未来部署平台为常驻 VPS（单体同源优先、JSON 文件置于持久磁盘、单实例单写者；实际部署未授权），②前端直连整体移除并清除浏览器 Key，③ Phase 3 正式结项且以 `--strictPort` 缓解风险 12，④本地 `package-lock.json` 纳入 `.gitignore`、未来部署需在受控 Linux/CI 环境生成干净版本。实施提交：ADR-010 与预研更新 `aa51b8f`；AGENTS ADR 索引 `faee1ca`；设置迁移 `d6a5660`；前端直连移除 `b0ad494`；端口修复 `1b5fff4`；lockfile 政策 `76eaaa1`。结项文档与 AGENTS 当前状态在随后两个独立提交中交付。回归 22/22 套件、160/160 用例，lint 与 build 通过。
