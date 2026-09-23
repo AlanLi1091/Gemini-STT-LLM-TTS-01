@@ -1,7 +1,7 @@
 # 测试套件与测试用例台账
 
 > **维护规范**：
-> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（22 个套件）与具体测试用例（169 个断言项）。
+> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（22 个套件）与具体测试用例（160 个断言项）。
 > 2. **铁律联动**：后续开发中，每次有新功能开发、重构或测试内容更新时，**必须同步在此台账中维护新增或修改的测试项**，保持与实际测试套件 100% 同步。
 
 ## 1. 测试套件概览看板
@@ -16,10 +16,10 @@
 | 6 | `src/test/chat-adapter-contract.test.ts` | Task 6 / 10 | ChatAdapter 通用契约测试套件（Mock & Gemini send/stream） | 14 | ✅ 通过 |
 | 7 | `src/test/gemini-adapter.test.ts` | Task 7 / 10 | GeminiChatAdapter send & stream 单测（网络全Mock/错误转译/用量提取） | 29 | ✅ 通过 |
 | 8 | `src/test/settings-storage.test.ts` | Phase 3 收尾 Step 2A | 旧直连配置迁移至后端模式并清除浏览器密钥 | 8 | ✅ 通过 |
-| 9 | `src/test/settings.test.tsx` | Task 8 / Task 13 Step 2 | SettingsModal 弹窗交互、连接模式、表单校验与 Adapter 联动 | 8 | ✅ 通过 |
+| 9 | `src/test/settings.test.tsx` | Phase 3 收尾 Step 2B | 后端连接信息面板与旧设置迁移 | 4 | ✅ 通过 |
 | 10 | `src/hooks/useChat.test.ts` | Task 3 / 9 / 10 | useChat Hook 领域逻辑状态机（流式驱动/中断/重试/生命周期） | 13 | ✅ 通过 |
-| 11 | `src/test/error-and-usage-components.test.tsx` | Task 9 / Task 13 验收修复 | TokenUsageBadge 徽章与 ChatErrorBanner 错误横幅纯组件测试 | 16 | ✅ 通过 |
-| 12 | `src/test/error-and-usage-integration.test.tsx` | Task 9 | 错误横幅展示/重试/设置联动及 Token 徽章端到端集成测试 | 3 | ✅ 通过 |
+| 11 | `src/test/error-and-usage-components.test.tsx` | Task 9 / Phase 3 收尾 Step 2B | TokenUsageBadge 与服务端错误指引组件测试 | 15 | ✅ 通过 |
+| 12 | `src/test/error-and-usage-integration.test.tsx` | Task 9 / Phase 3 收尾 Step 2B | 错误横幅展示/重试及 Token 徽章集成测试 | 2 | ✅ 通过 |
 | 13 | `src/test/streaming-ui.test.tsx` | Task 10 | 流式打字机光标动效、停止生成按钮、顶栏联动禁用与 Smart Sticky Bottom 触底滚动守卫 | 8 | ✅ 通过 |
 | 14 | `server/test/server-skeleton.test.ts` | Task 11 | Express 服务端骨架、双环境运行、根路径与健康检查响应 | 4 | ✅ 通过 |
 | 15 | `core/test/sse-contract.test.ts` | Task 11 | 共享 SSE 事件、错误载荷与 sessionId 演进契约 | 4 | ✅ 通过 |
@@ -27,10 +27,10 @@
 | 17 | `server/test/chat-stream.test.ts` | Task 12 | SSE 流式管道、心跳、续传声明与中断级联 | 7 | ✅ 通过 |
 | 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 3 | ✅ 通过 |
 | 19 | `src/test/remote-chat-adapter.test.ts` | Task 13 / Task 14 Step 3 | RemoteChatAdapter 的 SSE 消费、错误映射、AbortSignal 与 sessionId 模式 | 7 | ✅ 通过 |
-| 20 | `src/test/app-remote-integration.test.tsx` | Task 13 Step 3 / Task 14 Step 3 | App 的后端 SSE 装配、会话恢复、归档清空与直连调试隔离 | 4 | ✅ 通过 |
+| 20 | `src/test/app-remote-integration.test.tsx` | Task 13 Step 3 / Task 14 Step 3 / Phase 3 收尾 | App 的后端 SSE 装配、会话恢复、归档清空与旧配置迁移 | 4 | ✅ 通过 |
 | 21 | `server/test/json-session-storage.test.ts` | Task 14 Step 1 | JSON 会话文件、严格追加与并发写入串行化 | 5 | ✅ 通过 |
 | 22 | `server/test/session-api.test.ts` | Task 14 Step 2 | 会话 API、全量上下文、归档语义与无状态兼容 | 4 | ✅ 通过 |
-| **合计** | **22 个测试文件** | **Phase 1, 2 & Phase 3** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **166** | **⏳ 待 Step 2B 全量回归** |
+| **合计** | **22 个测试文件** | **Phase 1, 2 & Phase 3** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **160** | **✅ 100% 通过** |
 
 ---
 
@@ -81,7 +81,7 @@
 - [x] **应在指定延时后生成问候类 Mock 回复**
 - [x] **应在指定延时后生成兜底通用 Mock 回复**
 
-#### Task 4: Mock 机器人响应引擎与思考态测试 > App 思考态交互与自动化流转测试
+#### Task 4: Mock 机器人响应引擎与思考态测试 > App 经后端 Mock 响应的交互测试
 - [x] **用户发送消息后，立即进入思考态，输入框被禁用，并渲染思考动效指示器**
 
 ### 2.5 `src/test/task5-interactions.test.tsx` (7 项)
@@ -189,19 +189,14 @@
 - [x] **损坏的 JSON 被清除并回退默认设置**
 - [x] **运行时传入旧字段时保存仍只写入后端模式**
 
-### 2.9 `src/test/settings.test.tsx` (8 项)
-> **任务对应**：Task 8 / Task 13 Step 2 · SettingsModal 弹窗交互、连接模式、表单校验与 Adapter 联动
+### 2.9 `src/test/settings.test.tsx` (4 项)
+> **任务对应**：Phase 3 收尾 Step 2B · 后端连接信息面板与旧设置迁移
 
-
-#### Task 8: 设置面板与模型切换组件行为测试
-- [x] **① 无存储时点击顶栏“设置”按钮打开弹窗，显示默认 Mock 提供方与默认模型**
-- [x] **② 保存配置写入 localStorage 且往返一致，顶栏副标题同步更新**
-- [x] **③ 取消 / ESC / 点击遮罩丢弃草稿，不写入 localStorage**
-- [x] **④ 切到 Gemini 且 API Key 为空时，行内提示并阻止保存**
-- [x] **⑤ API Key 默认掩码 (password)，点击 eye 按钮切换为明文 (text)**
-- [x] **⑥ 符合无障碍要求：具备 role="dialog"、aria-modal 与 aria-labelledby**
-- [x] **⑦ settings 变更后 activeAdapter 依据 settings.provider / geminiApiKey / geminiModel 重新实例化**
-- [x] **⑧ 后端服务模式隐藏并清除浏览器 API Key，且允许无 Key 保存**
+#### Phase 3 收尾：后端连接信息面板
+- [x] **展示后端连接说明，且没有直连、模型或浏览器密钥控件**
+- [x] **打开应用时迁移旧直连设置并从存储中清除密钥**
+- [x] **关闭按钮、Esc 与遮罩均可关闭面板**
+- [x] **面板保留对话框语义和标题关联**
 
 ### 2.10 `src/hooks/useChat.test.ts` (13 项)
 > **任务对应**：Task 3 / 9 / 10 · useChat Hook 领域逻辑状态机（流式驱动/中断/重试/生命周期）
@@ -222,7 +217,7 @@
 - [x] **调用 stopGenerating 应立即打断流式传输，保留已上屏内容且不报错误**
 - [x] **流式过程中抛出异常应正确捕获 lastError 并结束生成状态**
 
-### 2.11 `src/test/error-and-usage-components.test.tsx` (16 项)
+### 2.11 `src/test/error-and-usage-components.test.tsx` (15 项)
 > **任务对应**：Task 9 / Task 13 验收修复 · TokenUsageBadge 徽章与 ChatErrorBanner 错误横幅纯组件测试
 
 
@@ -240,20 +235,18 @@
 - [x] **应正确匹配错误码 [MODEL_ERROR] 对应的标题文案**
 - [x] **应正确匹配错误码 [ABORTED] 对应的标题文案**
 - [x] **应正确匹配错误码 [UNKNOWN] 对应的标题文案**
-- [x] **AUTH_ERROR 时应提供“检查设置”按钮并能触发回调**
-- [x] **后端模式的 AUTH_ERROR 应引导检查服务端配置，而不展示“检查设置”按钮**
+- [x] **AUTH_ERROR 应引导检查服务端配置，且没有浏览器设置入口**
 - [x] **点击重试按钮应触发 onRetry 回调**
 - [x] **点击关闭按钮应触发 onDismiss 回调**
 - [x] **default 兜底分支测试**
 
-### 2.12 `src/test/error-and-usage-integration.test.tsx` (3 项)
-> **任务对应**：Task 9 · 错误横幅展示/重试/设置联动及 Token 徽章端到端集成测试
+### 2.12 `src/test/error-and-usage-integration.test.tsx` (2 项)
+> **任务对应**：Task 9 / Phase 3 收尾 Step 2B · 错误横幅展示/重试及 Token 徽章集成测试
 
 
 #### Task 9: 错误提示与用量记录 UI 集成测试
 - [x] **当 assistant 消息包含 usage 时，消息列表内应正确渲染 TokenUsageBadge 徽章**
 - [x] **当存在 lastError 时，顶部正确展示 ChatErrorBanner 错误横幅**
-- [x] **点击错误横幅中的“检查设置”按钮，能够联动打开设置弹窗**
 
 ### 2.13 `src/test/streaming-ui.test.tsx` (8 项)
 > **任务对应**：Task 10 · 流式打字机光标动效、停止生成按钮、顶栏联动禁用与 Smart Sticky Bottom 触底滚动守卫
@@ -340,7 +333,7 @@
 - [x] **默认后端模式创建会话，并携带 sessionId 流式展示回复**
 - [x] **启动时恢复最近活动会话及其持久化消息**
 - [x] **清空对话会归档旧会话、创建新会话并清除本地消息**
-- [x] **前端直连 Mock 模式不请求后端服务**
+- [x] **旧直连配置迁移后仍只请求后端会话与流式接口**
 
 ### 2.21 `server/test/json-session-storage.test.ts` (5 项)
 > **任务对应**：Task 14 Step 1 · JSON 文件会话持久化与 ADR-005 严格追加语义

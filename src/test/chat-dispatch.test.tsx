@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { App } from '../App';
 
@@ -22,8 +22,9 @@ describe('Task 3: 用户输入与消息派发完整交互测试', () => {
     expect(sendBtn).toBeDisabled();
   });
 
-  it('输入有效文字后发送按钮启用，提交表单后消息显示在列表中并清空输入框', () => {
+  it('输入有效文字后发送按钮启用，提交表单后消息显示在列表中并清空输入框', async () => {
     render(<App />);
+    await waitFor(() => expect(screen.getByRole('textbox', { name: '输入消息' })).not.toBeDisabled());
     const input = screen.getByRole('textbox', { name: '输入消息' });
     const sendBtn = screen.getByRole('button', { name: '发送消息' });
 
@@ -44,8 +45,9 @@ describe('Task 3: 用户输入与消息派发完整交互测试', () => {
     expect(sendBtn).toBeDisabled();
   });
 
-  it('使用键盘 Enter 提交表单可派发消息', () => {
+  it('使用键盘 Enter 提交表单可派发消息', async () => {
     render(<App />);
+    await waitFor(() => expect(screen.getByRole('textbox', { name: '输入消息' })).not.toBeDisabled());
     const input = screen.getByRole('textbox', { name: '输入消息' });
     const form = screen.getByRole('form', { name: '消息发送表单' });
 

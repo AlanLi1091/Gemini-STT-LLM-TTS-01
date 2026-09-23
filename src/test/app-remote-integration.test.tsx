@@ -113,25 +113,32 @@ describe('Task 13 Step 3 / Task 14 Step 3: App 服务端会话装配', () => {
     expect(screen.queryByText('将被归档')).not.toBeInTheDocument();
   });
 
-  it('前端直连 Mock 模式不请求后端服务', async () => {
+  it('旧直连配置迁移后仍只请求后端会话与流式接口', async () => {
     localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({
       connectionMode: 'direct',
-      provider: 'mock',
-      geminiApiKey: '',
+      provider: 'gemini',
+      geminiApiKey: 'legacy-browser-key',
       geminiModel: 'gemini-3.8-flash',
     }));
-    const fetchMock = vi.fn();
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (url === '/api/sessions') {
+        return Promise.resolve(sessionResponse({ id: 'migrated-session', createdAt: 1, messages: [] }, 201));
+      }
+      if (url === '/api/chat/stream') {
+        return Promise.resolve(sseResponse('event: done\ndata: {"content":"[Mock 回复] 已收到"}\n\n'));
+      }
+      throw new Error(`Unexpected URL: ${url}`);
+    });
     vi.stubGlobal('fetch', fetchMock);
     render(<App />);
 
-    expect(screen.getByText('Web Mock MVP')).toBeInTheDocument();
+    expect(screen.getByText('后端服务（SSE）')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('textbox', { name: '输入消息' })).not.toBeDisabled());
     fireEvent.change(screen.getByRole('textbox', { name: '输入消息' }), { target: { value: '你好' } });
     fireEvent.click(screen.getByRole('button', { name: '发送消息' }));
 
-    await waitFor(
-      () => expect(screen.getByText(/你好！我是你的角色扮演与对话助手/)).toBeInTheDocument(),
-      { timeout: 2_000 },
-    );
-    expect(fetchMock).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByText('[Mock 回复] 已收到')).toBeInTheDocument());
+    expect(localStorage.getItem(SETTINGS_STORAGE_KEY)).toBe(JSON.stringify({ connectionMode: 'server' }));
+    expect(fetchMock).toHaveBeenCalledWith('/api/chat/stream', expect.objectContaining({ method: 'POST' }));
   });
 });

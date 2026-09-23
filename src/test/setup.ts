@@ -1,16 +1,28 @@
 import '@testing-library/jest-dom/vitest';
-import { beforeEach } from 'vitest';
-import { SETTINGS_STORAGE_KEY } from '../settings';
+import { beforeEach, vi } from 'vitest';
+import { generateMockReply } from '../services/mockChatService';
 
-// Most legacy UI tests cover browser-direct behavior. Session-specific tests
-// explicitly replace this with server mode and mock the session API.
+// 默认模拟经后端 Mock 引擎返回的会话与 SSE；专门测试可覆盖 fetch。
 beforeEach(() => {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({
-    connectionMode: 'direct',
-    provider: 'mock',
-    geminiApiKey: '',
-    geminiModel: 'gemini-3.8-flash',
+  vi.stubGlobal('fetch', vi.fn(async (input: string, init?: RequestInit) => {
+    if (input === '/api/sessions' && init?.method === 'POST') {
+      return new Response(JSON.stringify({ id: 'mock-session', createdAt: 1, messages: [] }), { status: 201 });
+    }
+    if (input === '/api/sessions/mock-session') {
+      return new Response(JSON.stringify({ id: 'mock-session', createdAt: 1, messages: [] }));
+    }
+    if (input === '/api/sessions/mock-session/archive') {
+      return new Response(JSON.stringify({ id: 'mock-session', createdAt: 1, archivedAt: 2, messages: [] }));
+    }
+    if (input === '/api/chat/stream') {
+      const request = JSON.parse(String(init?.body)) as { messages: { content: string }[] };
+      const reply = await generateMockReply(request.messages.at(-1)?.content ?? '', { delayMs: 800 });
+      return new Response(`event: done\ndata: ${JSON.stringify({ content: reply })}\n\n`, {
+        headers: { 'Content-Type': 'text/event-stream' },
+      });
+    }
+    throw new Error(`Unexpected URL: ${input}`);
   }));
 });
 

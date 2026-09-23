@@ -5,10 +5,8 @@ import { ChatInput, ChatInputHandle } from './components/ChatInput';
 import { SettingsModal } from './components/SettingsModal';
 import { ChatErrorBanner } from './components/ChatErrorBanner';
 import { useChat } from './hooks/useChat';
-import { loadSettings, saveSettings } from './settings';
-import { AppSettings, ChatAdapter } from './types';
-import { MockChatAdapter } from '@core/adapters/MockChatAdapter';
-import { GeminiChatAdapter } from '@core/adapters/GeminiChatAdapter';
+import { loadSettings } from './settings';
+import { ChatAdapter } from './types';
 import { RemoteChatAdapter } from './adapters/RemoteChatAdapter';
 import {
   archiveSession,
@@ -21,28 +19,16 @@ import {
 } from './services/sessionApi';
 
 export const App: React.FC = () => {
-  // 设置状态管理与弹窗显隐控制 (ADR-006, Task 8)
-  const [settings, setSettings] = useState<AppSettings>(() => loadSettings());
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [sessionId, setSessionId] = useState<string | undefined>();
-  const [isSessionReady, setIsSessionReady] = useState<boolean>(
-    () => loadSettings().connectionMode !== 'server',
-  );
+  const [isSessionReady, setIsSessionReady] = useState<boolean>(false);
 
-  // 根据当前 settings 动态创建对应的 ChatAdapter（UI 绑定层负责实例化，内核不感知 AppSettings）
-  const activeAdapter = useMemo<ChatAdapter>(() => {
-    if (settings.connectionMode === 'server') {
-      return new RemoteChatAdapter({ sessionId });
-    }
+  useEffect(() => {
+    // 读取并清除浏览器里可能残留的旧版直连密钥配置。
+    loadSettings();
+  }, []);
 
-    if (settings.provider === 'gemini' && settings.geminiApiKey.trim()) {
-      return new GeminiChatAdapter({
-        apiKey: settings.geminiApiKey.trim(),
-        model: settings.geminiModel,
-      });
-    }
-    return new MockChatAdapter();
-  }, [sessionId, settings.connectionMode, settings.provider, settings.geminiApiKey, settings.geminiModel]);
+  const activeAdapter = useMemo<ChatAdapter>(() => new RemoteChatAdapter({ sessionId }), [sessionId]);
 
   const {
     messages,
@@ -67,12 +53,6 @@ export const App: React.FC = () => {
     let cancelled = false;
 
     const restoreSession = async () => {
-      if (settings.connectionMode !== 'server') {
-        setSessionId(undefined);
-        setIsSessionReady(true);
-        return;
-      }
-
       setIsSessionReady(false);
       try {
         const recentSessionId = loadRecentSessionId();
@@ -104,10 +84,10 @@ export const App: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [replaceMessages, settings.connectionMode]);
+  }, [replaceMessages]);
 
   const handleClear = async () => {
-    if (settings.connectionMode === 'server' && sessionId) {
+    if (sessionId) {
       setIsSessionReady(false);
       let archived = false;
       try {
@@ -137,17 +117,7 @@ export const App: React.FC = () => {
     inputRef.current?.focus();
   };
 
-  const handleSaveSettings = (newSettings: AppSettings) => {
-    setSettings(newSettings);
-    saveSettings(newSettings);
-  };
-
   const isBusy = isLoading || isGenerating || !isSessionReady;
-  const subtitle = settings.connectionMode === 'server'
-    ? '后端服务（SSE）'
-    : settings.provider === 'gemini'
-      ? `Gemini (${settings.geminiModel})`
-      : 'Web Mock MVP';
 
   return (
     <div
@@ -156,7 +126,7 @@ export const App: React.FC = () => {
     >
       {/* 顶部标题栏 */}
       <Header
-        subtitle={subtitle}
+        subtitle="后端服务（SSE）"
         messageCount={messages.length}
         onClear={handleClear}
         onOpenSettings={() => setIsSettingsOpen(true)}
@@ -167,10 +137,8 @@ export const App: React.FC = () => {
       <ChatErrorBanner
         error={lastError}
         onRetry={retryFailedSend}
-        onOpenSettings={() => setIsSettingsOpen(true)}
         onDismiss={dismissError}
         isRetrying={isBusy}
-        connectionMode={settings.connectionMode}
       />
 
       {/* 中间可滚动消息区 */}
@@ -191,12 +159,10 @@ export const App: React.FC = () => {
         onSubmit={() => sendMessage()}
       />
 
-      {/* 设置弹窗 (草稿-确认模式，仅在点击保存时落地) */}
+      {/* 后端连接说明 */}
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-        settings={settings}
-        onSave={handleSaveSettings}
       />
     </div>
   );

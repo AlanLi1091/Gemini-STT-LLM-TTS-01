@@ -3,17 +3,11 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { App } from '../App';
 import { generateMockReply } from '../services/mockChatService';
-import { SETTINGS_STORAGE_KEY } from '../settings';
 
 describe('Task 4: Mock 机器人响应引擎与思考态测试', () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({
-      connectionMode: 'direct',
-      provider: 'mock',
-      geminiApiKey: '',
-      geminiModel: 'gemini-3.8-flash',
-    }));
+    localStorage.clear();
   });
 
   afterEach(() => {
@@ -37,9 +31,10 @@ describe('Task 4: Mock 机器人响应引擎与思考态测试', () => {
     });
   });
 
-  describe('App 思考态交互与自动化流转测试', () => {
+  describe('App 经后端 Mock 响应的交互测试', () => {
     it('用户发送消息后，立即进入思考态，输入框被禁用，并渲染思考动效指示器', async () => {
       render(<App />);
+      await act(async () => { await vi.runAllTimersAsync(); });
       const input = screen.getByRole('textbox', { name: '输入消息' });
       const sendBtn = screen.getByRole('button', { name: '发送消息' });
 

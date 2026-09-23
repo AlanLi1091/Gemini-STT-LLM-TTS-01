@@ -68,23 +68,9 @@ describe('ChatErrorBanner 错误提示横幅组件测试', () => {
     });
   });
 
-  it('AUTH_ERROR 时应提供“检查设置”按钮并能触发回调', () => {
-    const onOpenSettings = vi.fn();
+  it('AUTH_ERROR 应引导检查服务端配置，且没有浏览器设置入口', () => {
     const err = new ChatError('PERMISSION_DENIED', 'AUTH_ERROR');
-
-    render(
-      <ChatErrorBanner error={err} onOpenSettings={onOpenSettings} />
-    );
-
-    const settingsBtn = screen.getByRole('button', { name: /检查设置/i });
-    expect(settingsBtn).toBeInTheDocument();
-    fireEvent.click(settingsBtn);
-    expect(onOpenSettings).toHaveBeenCalledTimes(1);
-  });
-
-  it('后端模式的 AUTH_ERROR 应引导检查服务端配置，而不展示“检查设置”按钮', () => {
-    const err = new ChatError('PERMISSION_DENIED', 'AUTH_ERROR');
-    render(<ChatErrorBanner error={err} connectionMode="server" onOpenSettings={vi.fn()} />);
+    render(<ChatErrorBanner error={err} />);
 
     expect(screen.getByText(/服务端鉴权或地区受限/)).toBeInTheDocument();
     expect(screen.getByText(/GEMINI_API_KEY/)).toBeInTheDocument();

@@ -12,7 +12,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   title = 'Chatbot Playground',
-  subtitle = 'Web Mock MVP',
+  subtitle = '后端服务（SSE）',
   messageCount = 0,
   onClear,
   onOpenSettings,
@@ -66,7 +66,7 @@ export const Header: React.FC<HeaderProps> = ({
             disabled={disabled}
             onClick={onOpenSettings}
             aria-label="设置"
-            title="模型与调试设置"
+            title="后端连接信息"
             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-zinc-700 hover:text-zinc-900 hover:bg-zinc-100 border border-zinc-200 transition-all disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-zinc-700 disabled:cursor-not-allowed cursor-pointer"
           >
             <Settings className="w-3.5 h-3.5" />
