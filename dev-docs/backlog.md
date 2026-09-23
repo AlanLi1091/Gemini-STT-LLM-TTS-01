@@ -20,7 +20,7 @@
 
 ## 后续阶段预研（未授权，仅规划）
 
-- [ ] **Phase 3 收尾预研**：部署方案（Cloud Run / VPS，显式声明不阻塞 Phase 3 退出条件）。
+- [x] **Phase 3 收尾预研**：部署方案（Cloud Run / VPS，显式声明不阻塞 Phase 3 退出条件）。
 - [ ] **Phase 4 预研**：discord.js 选型验证与最小网关 Demo。
 - [ ] **Phase 5 预研**：角色数据格式调研（自定义 schema vs Character Card V2）。
 - [ ] **消息重发/重生成与分支导航（基于 ADR-005 消息树模型）**（Phase 5）。
