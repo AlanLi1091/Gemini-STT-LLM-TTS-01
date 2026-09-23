@@ -15,7 +15,7 @@
 | 5 | `src/test/task5-interactions.test.tsx` | Task 5 | 体验细节（ADR-005不可变ID / IME防误发 / 清空会话 / 触底滚动） | 7 | ✅ 通过 |
 | 6 | `src/test/chat-adapter-contract.test.ts` | Task 6 / 10 | ChatAdapter 通用契约测试套件（Mock & Gemini send/stream） | 14 | ✅ 通过 |
 | 7 | `src/test/gemini-adapter.test.ts` | Task 7 / 10 | GeminiChatAdapter send & stream 单测（网络全Mock/错误转译/用量提取） | 29 | ✅ 通过 |
-| 8 | `src/test/settings-storage.test.ts` | Task 8 / Task 13 Step 2 | AppSettings 本地存储、防御性解析、连接模式迁移与不可见字符清洗 | 11 | ✅ 通过 |
+| 8 | `src/test/settings-storage.test.ts` | Phase 3 收尾 Step 2A | 旧直连配置迁移至后端模式并清除浏览器密钥 | 8 | ✅ 通过 |
 | 9 | `src/test/settings.test.tsx` | Task 8 / Task 13 Step 2 | SettingsModal 弹窗交互、连接模式、表单校验与 Adapter 联动 | 8 | ✅ 通过 |
 | 10 | `src/hooks/useChat.test.ts` | Task 3 / 9 / 10 | useChat Hook 领域逻辑状态机（流式驱动/中断/重试/生命周期） | 13 | ✅ 通过 |
 | 11 | `src/test/error-and-usage-components.test.tsx` | Task 9 / Task 13 验收修复 | TokenUsageBadge 徽章与 ChatErrorBanner 错误横幅纯组件测试 | 16 | ✅ 通过 |
@@ -30,7 +30,7 @@
 | 20 | `src/test/app-remote-integration.test.tsx` | Task 13 Step 3 / Task 14 Step 3 | App 的后端 SSE 装配、会话恢复、归档清空与直连调试隔离 | 4 | ✅ 通过 |
 | 21 | `server/test/json-session-storage.test.ts` | Task 14 Step 1 | JSON 会话文件、严格追加与并发写入串行化 | 5 | ✅ 通过 |
 | 22 | `server/test/session-api.test.ts` | Task 14 Step 2 | 会话 API、全量上下文、归档语义与无状态兼容 | 4 | ✅ 通过 |
-| **合计** | **22 个测试文件** | **Phase 1, 2 & Phase 3** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **169** | **✅ 100% 通过** |
+| **合计** | **22 个测试文件** | **Phase 1, 2 & Phase 3** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **166** | **⏳ 待 Step 2B 全量回归** |
 
 ---
 
@@ -176,24 +176,18 @@
 - [x] **流式迭代过程中抛出网络异常时转译为 NETWORK_ERROR**
 - [x] **流式调用 SDK 抛出 429 配额异常时转译为 RATE_LIMIT**
 
-### 2.8 `src/test/settings-storage.test.ts` (11 项)
-> **任务对应**：Task 8 / Task 13 Step 2 · AppSettings 本地存储、防御性解析、连接模式迁移与不可见字符清洗
+### 2.8 `src/test/settings-storage.test.ts` (8 项)
+> **任务对应**：Phase 3 收尾 Step 2A · 存量直连配置迁移至后端模式并清除密钥
 
-
-#### Settings persistence and sanitization (ADR-006, Task 8) > sanitizeSettings (防御性解析)
-- [x] **对于 null / undefined / 非对象一律回退 DEFAULT_SETTINGS**
-- [x] **非法 provider 枚举强制回退为 mock**
-- [x] **非法或不存在的 geminiModel 回退为默认模型**
-- [x] **非字符串的 apiKey 安全转为空字符串并修剪前后空格**
-- [x] **剔除 apiKey 中的不可见字符与非 ASCII 字符（防止 Headers 抛出 non ISO-8859-1 code point 异常）**
-
-#### Settings persistence and sanitization (ADR-006, Task 8) > loadSettings & saveSettings
-- [x] **localStorage 为空时返回默认设置**
-- [x] **正常写入并正确回读 (往返一致性)**
-- [x] **带首尾空白的 key 在 saveSettings 存入前与 loadSettings 读取后均保持干净 trim**
-- [x] **localStorage 存有损坏的 JSON 字符串时，优雅捕获并回退默认设置**
-- [x] **localStorage 缺少部分字段时，缺失字段自动补齐安全默认值**
-- [x] **新版非法连接模式回退后端服务，旧版配置迁移为前端直连调试模式**
+#### Settings migration to server-only mode (ADR-010)
+- [x] **空值与非对象均回退后端默认设置**
+- [x] **存量直连与含 Key 配置均迁移到后端模式且丢弃 Key**
+- [x] **非法连接模式回退后端模式**
+- [x] **localStorage 为空时返回默认设置且不创建记录**
+- [x] **后端设置正常写入并回读**
+- [x] **读取旧版配置时覆写 localStorage，清除直连与密钥字段**
+- [x] **损坏的 JSON 被清除并回退默认设置**
+- [x] **运行时传入旧字段时保存仍只写入后端模式**
 
 ### 2.9 `src/test/settings.test.tsx` (8 项)
 > **任务对应**：Task 8 / Task 13 Step 2 · SettingsModal 弹窗交互、连接模式、表单校验与 Adapter 联动
