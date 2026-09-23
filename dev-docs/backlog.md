@@ -20,6 +20,7 @@
 
 ## 后续阶段预研（未授权，仅规划）
 
+- [ ] **部署实施（未授权）**：VPS 单体部署；实施拆解见 [`research/phase3-deployment.md` 第 7 节](research/phase3-deployment.md#7-结论推荐倾向与实施拆解提案)与 [ADR-010](adr/0010-phase3-deployment-and-direct-connect.md)。
 - [x] **Phase 3 收尾预研**：部署方案（Cloud Run / VPS，显式声明不阻塞 Phase 3 退出条件）。
 - [ ] **Phase 4 预研**：discord.js 选型验证与最小网关 Demo。
 - [ ] **Phase 5 预研**：角色数据格式调研（自定义 schema vs Character Card V2）。
