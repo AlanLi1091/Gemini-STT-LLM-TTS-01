@@ -25,7 +25,7 @@
   - **应对**：排查确认为环境/Key 权限问题；同时沉淀四重通用防御（不可见字符与空白清洗、空 key 拦截、强触发重构），确保前端链路无隐形故障。
 - **风险 10（已发生，已缓解）**：本地跨平台执行环境（macOS ARM64）与 Rollup 原生依赖适配。
   - **事件**：本地 Apple Silicon 环境运行 Vitest 时，因 node_modules 仅包含 x64 版本、缺少 `@rollup/rollup-darwin-arm64` 原生二进制可选依赖，导致测试引擎在收集测试前启动失败。
-  - **应对与红线**：仅限在本地机器依赖目录修复补齐；严禁将特定平台的二进制依赖或平台污染的 `package-lock.json` commit / push；修复后本地 13/13 套件、118/118 用例通过。
+  - **应对与红线**：仅限在本地机器依赖目录修复补齐；严禁将特定平台的二进制依赖或平台污染的 `package-lock.json` commit / push；修复后本地 13/13 套件、118/118 用例通过。`package-lock.json` 在本地保持未跟踪，并由 `.gitignore` 忽略，作为当前既定政策。未来部署实施若需要 lockfile，须在受控 Linux/CI 环境生成干净版本后，再经单独授权移除忽略规则并提交。
 - **风险 11（已发生，待 AI Studio 恢复）**：Google AI Studio 重复出现 “Internal Error” 导致 Gemini 3.8 Flash 侧开发流程中断。
   - **事件**：用户反馈该错误持续出现且并非个例；Google AI Developers Forum 近期公开报告了 Gemini 3.8 Flash / AI Studio 的重复性 Internal Error（[2026-09-08 报告](https://discuss.ai.google.dev/t/repeated-an-internal-error-occurred-in-google-ai-studio-build-with-gemini-3-8-flash/181795)、[2026-09-14 报告](https://discuss.ai.google.dev/t/gemini-3-8-flash-down-an-internal-error-occurred-tool-calling-and-web-access-not-working/182668)）。
   - **应对与交接**：GPT-5.6 Sol 临时接替开发；待 AI Studio 恢复后，GPT-5.6 Sol 的开发任务暂时终止，由 Gemini 3.8 Flash 继续开发。该交接不改变 Phase 3 路线、任务边界或当前授权。
