@@ -33,4 +33,4 @@
 
 ## 当前状态
 
-Phase 3 进行中；Task 14 会话持久化与上下文管理按 `dev-docs/status.md` 记录已全部完成，下一步为尚未授权的 Phase 3 收尾预研（部署方案）。注意：`dev-docs/backlog.md` 仍将 Task 14 Step 1 标记为未完成，待后续核对同步。详见 `dev-docs/status.md` 与 `dev-docs/backlog.md`。
+Phase 3 进行中；Task 14 会话持久化与上下文管理全部完成，下一步为尚未授权的 Phase 3 收尾预研（部署方案）。详见 `dev-docs/status.md` 与 `dev-docs/backlog.md`。
