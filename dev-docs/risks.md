@@ -29,7 +29,6 @@
 - **风险 11（已发生，待 AI Studio 恢复）**：Google AI Studio 重复出现 “Internal Error” 导致 Gemini 3.8 Flash 侧开发流程中断。
   - **事件**：用户反馈该错误持续出现且并非个例；Google AI Developers Forum 近期公开报告了 Gemini 3.8 Flash / AI Studio 的重复性 Internal Error（[2026-09-08 报告](https://discuss.ai.google.dev/t/repeated-an-internal-error-occurred-in-google-ai-studio-build-with-gemini-3-8-flash/181795)、[2026-09-14 报告](https://discuss.ai.google.dev/t/gemini-3-8-flash-down-an-internal-error-occurred-tool-calling-and-web-access-not-working/182668)）。
   - **应对与交接**：GPT-5.6 Sol 临时接替开发；待 AI Studio 恢复后，GPT-5.6 Sol 的开发任务暂时终止，由 Gemini 3.8 Flash 继续开发。该交接不改变 Phase 3 路线、任务边界或当前授权。
-- **风险 12（已发生，运行态已恢复）**：Vite 自动递增端口可能占用 Express 后端端口并造成代理 500。
+- **风险 12（已发生，已缓解）**：Vite 自动递增端口可能占用 Express 后端端口并造成代理 500。
   - **事件**：3000 已存在 Vite 时重复运行 `npm run dev`，新 Vite 自动选择 3001；此时前端 `/api` 的默认代理目标也是 3001，导致请求进入第二个 Vite 而非 Express，并返回 HTTP 500。
-  - **当前应对**：本地开发保持单一 Vite 运行于 3000，并先确认 3001 未被占用后运行 `npm run server:dev`；用 `lsof -nP -iTCP:3000 -sTCP:LISTEN` 与 `lsof -nP -iTCP:3001 -sTCP:LISTEN` 核对进程类型。
-  - **后续建议（未授权）**：为 Vite 开发脚本增加 `--strictPort`，使 3000 被占用时立即失败，避免静默占用 3001；该建议不扩大当前任务范围。
+  - **当前应对**：Vite 开发脚本已增加 `--strictPort`，3000 被占用时立即失败，不再自动递增并占用 Express 的 3001；本地仍保持单一 Vite 运行于 3000，先确认 3001 未被占用后运行 `npm run server:dev`。可用 `lsof -nP -iTCP:3000 -sTCP:LISTEN` 与 `lsof -nP -iTCP:3001 -sTCP:LISTEN` 核对进程类型。
