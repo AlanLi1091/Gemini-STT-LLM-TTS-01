@@ -26,11 +26,38 @@
 - [x] **Step 4（本地 lockfile 政策）**：忽略 `package-lock.json`，在风险 10 固化未来受控环境生成政策。
 - [x] **Step 5（Phase 3 正式结项）**：同步路线图、历史、状态及根目录索引，Phase 4 继续等待授权。
 
+## Phase 4（Discord 文字接入，已拆解、未授权）
+
+依赖顺序：Task 15 → 16 → 17 → 18；Task 18 Step 1 依赖 VPS 部署实施（见下方"后续阶段预研"的部署实施项）先行完成。开工前待用户裁决：① 触发方式（@提及 vs 全量监听，Task 16 Step 1 前定）；② 进程拓扑（Task 15 Step 3 以 ADR-011 定案）；③ VPS 部署授权时机（Task 18 前，建议独立授权）。
+
+### Task 15：Discord 接入预研与架构定案
+
+- [ ] **Step 1（应用注册与 bot 上架）**：用户在 Discord Developer Portal 完成 Application/Bot 创建、开启 Message Content Intent、生成 Token 并邀请 bot 进测试服务器；Token 只进服务端环境变量；产出操作记录。
+- [ ] **Step 2（discord.js 最小网关 Demo）**：本地最小 bot——登录、监听消息、回显；观察断线重连与内存占用；确认 discord.js v14 与现有 Node 版本兼容；结论写入预研文档。
+- [ ] **Step 3（进程拓扑 ADR-011）**：基于 Demo 结论定案 bot 进程与 Express 的关系（倾向：独立进程 + localhost 调用现有 API，保持 Express 会话唯一写入者）；同步更新 backlog 与 status。
+
+### Task 16：Discord 文字对话闭环
+
+- [ ] **Step 1（Discord 通道适配层抽象）**：定义消息入口抽象（触发规则、消息标准化）；@提及触发（待裁决）；bot 进程骨架与 typing 状态展示；TDD，discord.js 以 mock 测试。
+- [ ] **Step 2（对话链路接入）**：触发后经 API 走完整对话链路；会话按频道（channelId → sessionId）管理，复用现有 SessionStorage；多轮上下文连续。
+- [ ] **Step 3（长消息分段）**：LLM 回复按 Discord 2000 字符上限分段发送；段落切分规则有测试覆盖。
+
+### Task 17：限流与错误处理
+
+- [ ] **Step 1（并发与排队）**：同频道请求串行排队、按用户冷却、Gemini 配额守卫；超限给用户可读提示。
+- [ ] **Step 2（错误处理与进程韧性）**：Gemini 调用失败 / Discord API 报错时进程不崩、给出可读反馈；错误路径有测试。
+- [ ] **Step 3（网关稳定性验证）**：断网/令牌失效/长时间运行下的重连行为验证（本地可模拟），记录已知边界。
+
+### Task 18：常驻上线与 Phase 4 结项
+
+- [ ] **Step 1（VPS 部署前置）**：执行 VPS 部署线（此前独立授权的加固、托管、systemd 等项），bot 与 Express 各自 systemd 单元上线；密钥经 `EnvironmentFile` 注入。
+- [ ] **Step 2（上线验收）**：连续在线 ≥24 小时、重启自恢复、Web Playground 与 bot 同时可用、全量测试回归。
+- [ ] **Step 3（Phase 4 正式结项）**：路线图退出条件逐项核对（网关稳定在线 / 文字对话闭环 / 限流与错误处理），同步 `status.md` / `history.md` / `backlog.md` / `tests.md`。
+
 ## 后续阶段预研（未授权，仅规划）
 
 - [ ] **部署实施（未授权）**：VPS 单体部署；实施拆解见 [`research/phase3-deployment.md` 第 7 节](research/phase3-deployment.md#7-结论推荐倾向与实施拆解提案)与 [ADR-010](adr/0010-phase3-deployment-and-direct-connect.md)。
 - [x] **Phase 3 收尾预研**：部署方案（Cloud Run / VPS，显式声明不阻塞 Phase 3 退出条件）。
-- [ ] **Phase 4 预研**：discord.js 选型验证与最小网关 Demo。
 - [ ] **Phase 5 预研**：角色数据格式调研（自定义 schema vs Character Card V2）。
 - [ ] **消息重发/重生成与分支导航（基于 ADR-005 消息树模型）**（Phase 5）。
 - [ ] **Phase 6 预研**：语音链路方案对比（Gemini 原生音频 vs Whisper+TTS；Discord 语音通话直播主入口可行性与端到端延迟验证；Web 麦克风调试通道；直播文字伴随输出承载选型）。
