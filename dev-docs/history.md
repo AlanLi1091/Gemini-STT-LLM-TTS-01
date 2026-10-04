@@ -61,3 +61,4 @@
 - [x] **Task 15 Step 2 自动化部分（2026-10-03，完整步骤待实测）**：新增本地 Discord 指定频道回显 Demo、连接事件与内存日志、服务端配置说明和 14 项 Mock 测试；23/23 套件、174/174 用例通过。真实登录、回显、重连、内存观察尚未验收，不代表 Step 2 完成。
 - [x] **Task 15 Step 1（2026-10-03）**：用户完成 AlanChatBot 注册、Message Content Intent 与 Guild Install 权限配置、邀请进入 AI CHAT SERVER；确认本地服务端环境已配置，后续真实网关登录通过，操作记录见 research/phase4-discord.md。
 - [x] **Task 15 Step 2 完整验收（2026-10-03）**：AlanChatBot 在 AI CHAT SERVER 的 general 频道在线并回显；用户断网约 65 秒后网关 resumed，恢复后回显成功；进程运行超过 10 分钟，堆内存从 29.8 MiB 到 23.4 MiB；SIGTERM 正常退出、重启再次 ready，最终停止测试进程。23/23 套件、174/174 用例、lint、服务端严格类型检查与 build 通过。短测不替代 Task 17 / 18 的长期验证。
+- [x] **Task 15 Step 3（2026-10-03）**：用户确认并落档 ADR-011，正式 Bot 独立进程通过同机 Express API 接入，Express 保持会话唯一写入者；衔接 ADR-009 的 workspaces 要求，明确 Task 16 的迁移、频道关联持久化与 Web / Discord 来源隔离。文档链接检查与 23/23 套件、174/174 用例、lint、服务端类型检查、build 通过；本步仅文档，Task 16–18 与 VPS 实施仍未授权。

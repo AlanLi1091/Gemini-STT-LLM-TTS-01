@@ -26,21 +26,21 @@
 - [x] **Step 4（本地 lockfile 政策）**：忽略 `package-lock.json`，在风险 10 固化未来受控环境生成政策。
 - [x] **Step 5（Phase 3 正式结项）**：同步路线图、历史、状态及根目录索引，Phase 4 继续等待授权。
 
-## Phase 4（Discord 文字接入，已拆解、未授权）
+## Phase 4（Discord 文字接入，Task 15 已完成，后续未授权）
 
-依赖顺序：Task 15 → 16 → 17 → 18；Task 18 Step 1 依赖 VPS 部署实施（见下方"后续阶段预研"的部署实施项）先行完成。开工前待用户裁决：① 触发方式（@提及 vs 全量监听，Task 16 Step 1 前定）；② 进程拓扑（Task 15 Step 3 以 ADR-011 定案）；③ VPS 部署授权时机（Task 18 前，建议独立授权）。
+依赖顺序：Task 15 → 16 → 17 → 18；Task 18 Step 1 依赖 VPS 部署实施（见下方"后续阶段预研"的部署实施项）先行完成。进程拓扑已由用户确认，以 [ADR-011](adr/0011-discord-process-topology.md)定案为独立 Bot + 同机 Express API，Express 保持会话唯一写入者。待用户裁决：① 触发方式（@提及 vs 全量监听，Task 16 Step 1 前定）；② VPS 部署授权时机（Task 18 前，建议独立授权）。
 
 ### Task 15：Discord 接入预研与架构定案
 
 - [x] **Step 1（应用注册与 bot 上架）**：用户在 Discord Developer Portal 完成 Application/Bot 创建、开启 Message Content Intent、生成 Token 并邀请 bot 进测试服务器；Token 只进服务端环境变量；产出操作记录。
 - [x] **Step 2（discord.js 最小网关 Demo）**：本地最小 bot——登录、监听消息、回显；观察断线重连与内存占用；确认 discord.js v14 与现有 Node 版本兼容；结论写入预研文档。
-  - 本轮已获用户确认并完成；23/23 套件、174/174 用例通过，真实登录、回显、约 65 秒断网后的恢复、超过 10 分钟内存观察、正常退出与重启通过，详见 [`research/phase4-discord.md`](research/phase4-discord.md)。其余后续步骤仍未授权。
-- [ ] **Step 3（进程拓扑 ADR-011）**：基于 Demo 结论定案 bot 进程与 Express 的关系（倾向：独立进程 + localhost 调用现有 API，保持 Express 会话唯一写入者）；同步更新 backlog 与 status。
+  - 已完成；23/23 套件、174/174 用例通过，真实登录、回显、约 65 秒断网后的恢复、超过 10 分钟内存观察、正常退出与重启通过，详见 [`research/phase4-discord.md`](research/phase4-discord.md)。
+- [x] **Step 3（进程拓扑 ADR-011）**：用户确认独立 Bot + 同机 Express API、Express 会话唯一写入者；ADR 与关联文档已落档，文档链接、23/23 套件与 174/174 用例、类型检查及构建通过；Task 16–18 与部署仍未授权。
 
 ### Task 16：Discord 文字对话闭环
 
-- [ ] **Step 1（Discord 通道适配层抽象）**：定义消息入口抽象（触发规则、消息标准化）；@提及触发（待裁决）；bot 进程骨架与 typing 状态展示；TDD，discord.js 以 mock 测试。
-- [ ] **Step 2（对话链路接入）**：触发后经 API 走完整对话链路；会话按频道（channelId → sessionId）管理，复用现有 SessionStorage；多轮上下文连续。
+- [ ] **Step 1（Discord 通道适配层抽象与 workspaces 迁移）**：按 ADR-009 / ADR-011 先落实正式独立 Bot 所需 npm workspaces 与依赖 / 编译边界，保留统一 test / lint / build 入口；定义触发规则与消息标准化（@提及待裁决），实现 bot 骨架与 typing；TDD，discord.js 以 mock 测试，迁移清单执行前另交计划。
+- [ ] **Step 2（对话链路接入）**：Bot 经同机 API 消费共享 SSE，提交本轮输入与 sessionId、done 后发送最终回复；Express 扩展按来源 / guildId / channelId 的会话关联持久化与原子解析，复用 SessionStorage；覆盖 Bot 重启恢复、多轮上下文、归档切换与 Playground 恢复的来源隔离，现有 API 不具备的能力须补齐；不自动重发失败聊天 POST。
 - [ ] **Step 3（长消息分段）**：LLM 回复按 Discord 2000 字符上限分段发送；段落切分规则有测试覆盖。
 
 ### Task 17：限流与错误处理

@@ -2,11 +2,11 @@
 
 ## 当前阶段
 
-Phase 3 —— 后端服务化（已完成、已结项）。Phase 4（Discord 文字接入）Task 15 Step 1–2 已完成：应用注册、本地最小网关 Demo 及真实验收通过；Step 3 与后续任务未授权。
+Phase 3 —— 后端服务化（已完成、已结项）。Phase 4 Task 15 Step 1–2 已完成，Step 3 进程拓扑落档已获用户确认、正在验证；Task 16–18 与 VPS 部署未授权。
 
 ## 当前授权
 
-- **授权任务**：本轮 Task 15 Step 2 最小网关 Demo、测试和文档已完成，Step 1 配置与操作记录同步闭环；功能提交 `1097970` 已推送到 `origin/test`。本轮授权结束，Step 3 与后续任务未授权；VPS 部署仍未授权。
+- **授权任务**：本轮 Task 15 Step 3：新增 ADR-011、衔接 ADR-009、同步预研 / backlog / status / history；用户已确认独立 Bot + 同机 Express API、Express 会话唯一写入者。本步只落档，不实施 workspaces、正式 Bot 对话链路或 VPS 部署；后续任务未授权。
 - **VPS 现状**：已采购开通（Vultr Seattle、1核1G、Ubuntu 26.04，含 Auto Backup），仅完成开机，未做加固与部署；在加固完成前不得对公网启动任何项目服务。
 - **最近功能 commit**：`1097970` — `feat(discord): add and validate minimal gateway demo`。
 - **当前测试基线**：23/23 个测试套件、174/174 项用例通过（`npm run test`）；`npm run lint` 与 `npm run build` 通过；与 [`tests.md`](tests.md) 一致。
@@ -14,7 +14,7 @@ Phase 3 —— 后端服务化（已完成、已结项）。Phase 4（Discord �
 
 ## 下一步计划
 
-等待用户授权 Task 15 Step 3（进程拓扑 ADR-011）。VPS 部署仍须独立授权，触发方式须在 Task 16 Step 1 前裁决。
+本步验证后提交推送至 test 并同步完成状态，然后停止。下一待办为 Task 16 Step 1（触发规则裁决、workspaces 迁移与正式 Bot 骨架），需另行授权；VPS 部署仍须独立授权。
 
 ## 本轮验收与遗留
 

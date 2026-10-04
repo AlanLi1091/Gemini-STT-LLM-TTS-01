@@ -1,6 +1,6 @@
 # Phase 4 Discord 最小网关预研
 
-日期：2026-10-03。当前仅 Task 15 Step 2 获授权；本文件不定案 ADR-011，也不授权 VPS 部署或生产对话接入。
+日期：2026-10-03。Step 1–2 已完成；用户随后授权 Task 15 Step 3 并确认拓扑，定案见 [ADR-011](../adr/0011-discord-process-topology.md)。后续正式 Bot、workspaces 与 VPS 实施仍未授权。
 
 ## 1. Step 1 操作记录
 
@@ -53,8 +53,12 @@
 
 ## 5. 后续决策输入
 
-真实网关验收后再讨论 Bot 与 Express 的进程关系、运行时版本以及部署资源要求。当前不据 Mock 或本机 Node 兼容性推断 VPS 已满足要求。
+真实网关验收已完成，Step 3 采用独立 Bot + 同机 Express API，由 Express 保持会话唯一写入者；理由与备选方案见 ADR-011。正式 Bot 引入时按 ADR-009 迁移 npm workspaces，并在 Express 补齐频道关联持久化与 Web / Discord 来源隔离；这些能力目前尚未实现。当前不据 Mock、本机 Node 兼容性或短时内存采样推断 VPS 已满足要求。
 
 实测边界：网络不可用时 SDK 连续发出 reconnecting 与 shard error 日志，恢复后可 resumed；Demo 没有增加自定义重试退避或日志节流，生产韧性与限流留给 Task 17。
 
 运行记录：验收通过 `node --import tsx server/discord-demo.ts` 启动同一入口（规避 tsx CLI 在沙箱内的 IPC 限制）；首次沙箱内无法连接 Discord，经批准在沙箱外真实登录成功。运行命令由终端使用，Token 从本地 .env 加载，未输出。
+
+## 6. Step 3 架构落档验证
+
+2026-10-03：ADR-011 与 ADR-009 衔接、后续任务拆解同步完成；本步只改文档。5 个相关文件的本地 Markdown 链接无缺失，git diff --check 通过；现有 23/23 个套件、174/174 项用例全通过，npm run lint、服务端严格类型检查与 npm run build 通过。测试文件与用例未变，tests.md 台账继续保持原基线；本步没有实施 workspaces、频道关联 API 或部署。
