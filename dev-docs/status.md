@@ -2,19 +2,19 @@
 
 ## 当前阶段
 
-Phase 3 —— 后端服务化（已完成、已结项）。Phase 4（Discord 文字接入）已完成任务拆解并落档（Task 15–18，见 [`backlog.md`](backlog.md)），全部未授权、未开工。
+Phase 3 —— 后端服务化（已完成、已结项）。Phase 4（Discord 文字接入）已完成任务拆解并落档（Task 15–18，见 [`backlog.md`](backlog.md)），Task 15 Step 2 已获用户确认，代码与自动化测试已落地，等待真实网关验收；其余后续步骤未授权。
 
 ## 当前授权
 
-- **授权任务**：Phase 4 任务拆解落档（Task 15–18 写入 `backlog.md` 并同步本文件，已完成）。Task 15–18 各 Step 均未授权；部署方向见 [ADR-010](adr/0010-phase3-deployment-and-direct-connect.md)，VPS 部署实施未授权。
+- **授权任务**：Phase 4 任务拆解落档（Task 15–18 写入 `backlog.md` 并同步本文件，已完成）。本轮授权：Task 15 Step 2 最小网关 Demo 及相关测试、文档；Step 1 网页操作已有截图证据，用户已确认本地环境配置，真实网关登录通过；其余后续 Step 未授权；部署方向见 [ADR-010](adr/0010-phase3-deployment-and-direct-connect.md)，VPS 部署实施未授权。
 - **VPS 现状**：已采购开通（Vultr Seattle、1核1G、Ubuntu 26.04，含 Auto Backup），仅完成开机，未做加固与部署；在加固完成前不得对公网启动任何项目服务。
 - **最近功能 commit**：Phase 3 收尾 Step 2B 的前端直连整体移除（`b0ad494`）。
-- **当前测试基线**：22/22 个测试套件、160/160 项用例通过（`npm run test`）；`npm run lint` 与 `npm run build` 通过；与 [`tests.md`](tests.md) 一致。
+- **当前测试基线**：23/23 个测试套件、174/174 项用例通过（`npm run test`）；`npm run lint` 与 `npm run build` 通过；与 [`tests.md`](tests.md) 一致。
 - **当前功能验收**：Playground 仅连接后端服务；启动时恢复最近活动会话，无可恢复会话时创建新会话。发送仅提交本轮输入与 `sessionId`，由服务端加载完整上下文；清空对话归档旧会话并切换至新会话。旧版直连设置迁移为后端模式并清除浏览器存储的 Key 字段。
 
 ## 下一步计划
 
-等待用户指派下一项工作：Task 15 Step 1（Discord 应用注册，含用户网页操作）或 VPS 部署实施（拆解见 [research/phase3-deployment.md 第 7 节](research/phase3-deployment.md#7-结论推荐倾向与实施拆解提案)）。开工前待裁决事项（触发方式 / 进程拓扑 / 部署授权时机）见 `backlog.md` Phase 4 节首。
+当前执行 Task 15 Step 2；真实 Discord 登录、回显、断线重连及内存观察通过后才完成交付。VPS 部署实施仍未授权（拆解见 [research/phase3-deployment.md 第 7 节](research/phase3-deployment.md#7-结论推荐倾向与实施拆解提案)）。开工前待裁决事项（触发方式 / 进程拓扑 / 部署授权时机）见 `backlog.md` Phase 4 节首。
 
 ## 职责交接记录
 

@@ -57,3 +57,7 @@
 - [x] **文档结构迁移 Step 4**：将 ADR-001 至 ADR-009 拆分至 `dev-docs/adr/`。
 - [x] **文档结构迁移 Step 5**：将根目录 `AGENTS.md` 重写为文档索引，完成 `dev-docs/` 分层体系。
 - [x] **Phase 3 收尾实施与正式结项**：用户裁决①未来部署平台为常驻 VPS（单体同源优先、JSON 文件置于持久磁盘、单实例单写者；实际部署未授权），②前端直连整体移除并清除浏览器 Key，③ Phase 3 正式结项且以 `--strictPort` 缓解风险 12，④本地 `package-lock.json` 纳入 `.gitignore`、未来部署需在受控 Linux/CI 环境生成干净版本。实施提交：ADR-010 与预研更新 `aa51b8f`；AGENTS ADR 索引 `faee1ca`；设置迁移 `d6a5660`；前端直连移除 `b0ad494`；端口修复 `1b5fff4`；lockfile 政策 `76eaaa1`。结项文档与 AGENTS 当前状态在随后两个独立提交中交付。回归 22/22 套件、160/160 用例，lint 与 build 通过。
+
+- [x] **Task 15 Step 2 自动化部分（2026-10-03，完整步骤待实测）**：新增本地 Discord 指定频道回显 Demo、连接事件与内存日志、服务端配置说明和 14 项 Mock 测试；23/23 套件、174/174 用例通过。真实登录、回显、重连、内存观察尚未验收，不代表 Step 2 完成。
+- [x] **Task 15 Step 1（2026-10-03）**：用户完成 AlanChatBot 注册、Message Content Intent 与 Guild Install 权限配置、邀请进入 AI CHAT SERVER；确认本地服务端环境已配置，后续真实网关登录通过，操作记录见 research/phase4-discord.md。
+- [x] **Task 15 Step 2 完整验收（2026-10-03）**：AlanChatBot 在 AI CHAT SERVER 的 general 频道在线并回显；用户断网约 65 秒后网关 resumed，恢复后回显成功；进程运行超过 10 分钟，堆内存从 29.8 MiB 到 23.4 MiB；SIGTERM 正常退出、重启再次 ready，最终停止测试进程。23/23 套件、174/174 用例、lint、服务端严格类型检查与 build 通过。短测不替代 Task 17 / 18 的长期验证。

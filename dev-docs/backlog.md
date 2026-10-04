@@ -32,8 +32,9 @@
 
 ### Task 15：Discord 接入预研与架构定案
 
-- [ ] **Step 1（应用注册与 bot 上架）**：用户在 Discord Developer Portal 完成 Application/Bot 创建、开启 Message Content Intent、生成 Token 并邀请 bot 进测试服务器；Token 只进服务端环境变量；产出操作记录。
-- [ ] **Step 2（discord.js 最小网关 Demo）**：本地最小 bot——登录、监听消息、回显；观察断线重连与内存占用；确认 discord.js v14 与现有 Node 版本兼容；结论写入预研文档。
+- [x] **Step 1（应用注册与 bot 上架）**：用户在 Discord Developer Portal 完成 Application/Bot 创建、开启 Message Content Intent、生成 Token 并邀请 bot 进测试服务器；Token 只进服务端环境变量；产出操作记录。
+- [x] **Step 2（discord.js 最小网关 Demo）**：本地最小 bot——登录、监听消息、回显；观察断线重连与内存占用；确认 discord.js v14 与现有 Node 版本兼容；结论写入预研文档。
+  - 本轮已获用户确认并完成；23/23 套件、174/174 用例通过，真实登录、回显、约 65 秒断网后的恢复、超过 10 分钟内存观察、正常退出与重启通过，详见 [`research/phase4-discord.md`](research/phase4-discord.md)。其余后续步骤仍未授权。
 - [ ] **Step 3（进程拓扑 ADR-011）**：基于 Demo 结论定案 bot 进程与 Express 的关系（倾向：独立进程 + localhost 调用现有 API，保持 Express 会话唯一写入者）；同步更新 backlog 与 status。
 
 ### Task 16：Discord 文字对话闭环
