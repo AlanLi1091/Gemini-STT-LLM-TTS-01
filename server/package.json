@@ -1,0 +1,14 @@
+{
+  "name": "@gemini-chat/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2",
+    "@gemini-chat/core": "*"
+  }
+}

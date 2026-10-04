@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Client, Events, type ClientEvents } from 'discord.js';
-import { readDemoConfig, startDemo } from '../discord-demo';
+import { readDemoConfig, startDemo } from '../../bot/demo';
 
 const config = { token: 'test-secret', channelId: '123456789012345678' };
 const stops: Array<() => void> = [];

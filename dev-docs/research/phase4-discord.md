@@ -1,6 +1,6 @@
 # Phase 4 Discord 最小网关预研
 
-日期：2026-10-03。Step 1–2 已完成；用户随后授权 Task 15 Step 3 并确认拓扑，定案见 [ADR-011](../adr/0011-discord-process-topology.md)。后续正式 Bot、workspaces 与 VPS 实施仍未授权。
+日期：2026-10-03。Task 15 已完成，拓扑见 [ADR-011](../adr/0011-discord-process-topology.md)。本轮 Task 16 Step 1 已获授权，用户裁决为仅直接 @Bot 触发；Task 16 Step 2–3、Task 17–18 与 VPS 实施仍未授权。
 
 ## 1. Step 1 操作记录
 
@@ -20,7 +20,7 @@
 - [discord.js 14.27.0 文档](https://discord.js.org/docs/packages/discord.js/14.27.0)、[npm 官方元数据](https://registry.npmjs.org/discord.js/14.27.0)。
 - 安装结果：新增 21、移除 3、更新 47 个本地依赖包；无受控 lockfile 时 npm 会重新解析现有范围依赖，故本次执行全量回归。按既有政策不提交 package-lock.json。
 - npm audit 报告 0 vulnerabilities；npm 提示部分安装脚本被阻止，当前测试和构建已可运行，未放开这些脚本。
-- Demo 放在现有 server 目录，是可单独运行的预研入口，不属于定案后的独立 Bot 分发单元；不提前实施 npm workspaces 或进程拓扑决策。
+- Task 15 实测时 Demo 放在 server 目录，作为预研入口，当时未实施 npm workspaces 或进程拓扑迁移；Task 16 Step 1 已将其迁移到 bot/demo.ts，见第 7 节。
 - 仅在指定服务器文字频道回显所有非空的人类消息；忽略机器人、Webhook、私信及其他频道；此行为仅供 Demo 验证，不裁决 Task 16 的 @提及 / 全量监听方式。
 - 回复关闭提及解析与回复提醒；超过 2000 UTF-16 code units 时截断并避免残留高代理字符，正式长回复分段留给 Task 16 Step 3。
 - 不连接 Gemini、Express 或会话存储，不输出消息原文及 SDK 错误原文；不启动任何公网监听端口。
@@ -53,7 +53,7 @@
 
 ## 5. 后续决策输入
 
-真实网关验收已完成，Step 3 采用独立 Bot + 同机 Express API，由 Express 保持会话唯一写入者；理由与备选方案见 ADR-011。正式 Bot 引入时按 ADR-009 迁移 npm workspaces，并在 Express 补齐频道关联持久化与 Web / Discord 来源隔离；这些能力目前尚未实现。当前不据 Mock、本机 Node 兼容性或短时内存采样推断 VPS 已满足要求。
+真实网关验收已完成，Step 3 采用独立 Bot + 同机 Express API，由 Express 保持会话唯一写入者；理由与备选方案见 ADR-011。Task 16 Step 1 已按 ADR-009 迁移 npm workspaces；Express 的频道关联持久化与 Web / Discord 来源隔离仍待 Step 2 实现。当前不据 Mock、本机 Node 兼容性或短时内存采样推断 VPS 已满足要求。
 
 实测边界：网络不可用时 SDK 连续发出 reconnecting 与 shard error 日志，恢复后可 resumed；Demo 没有增加自定义重试退避或日志节流，生产韧性与限流留给 Task 17。
 
@@ -62,3 +62,23 @@
 ## 6. Step 3 架构落档验证
 
 2026-10-03：ADR-011 与 ADR-009 衔接、后续任务拆解同步完成；本步只改文档。5 个相关文件的本地 Markdown 链接无缺失，git diff --check 通过；现有 23/23 个套件、174/174 项用例全通过，npm run lint、服务端严格类型检查与 npm run build 通过。测试文件与用例未变，tests.md 台账继续保持原基线；本步没有实施 workspaces、频道关联 API 或部署。
+
+## 7. Task 16 Step 1：workspaces 与 @ 触发骨架
+
+文件计划及仅 @Bot 触发已获用户确认。本轮建立 src / server / core / bot 四个 npm workspaces，运行依赖按职责声明，根目录保留 npm run dev / server:dev / build / server:build / test / lint；新增 bot:dev / bot:build，各 workspace 可单独执行类型检查。既有 @core 路径别名与测试路径保留，根统一入口覆盖全部包。
+
+最小 Demo 迁移至 bot/demo.ts，仍使用原有 npm run discord:demo，原 server/test/discord-demo.test.ts 路径保留、导入路径更新。当前手动使用 Node import 启动 Demo 的命令为 node --import tsx bot/demo.ts；上文旧路径是 Task 15 的历史实测记录。
+
+网关骨架以可注入输入解析与处理函数实现 typing（立即发送，处理中每 7 秒刷新，完成 / 停止时清理）、回复提醒抑制、错误日志脱敏、重连事件及退出中止。正式入口 bot/index.ts 仅对配置频道内的直接用户提及触发，清除普通 / 昵称形式的 Bot 提及并保留正文格式；排除机器人、Webhook、私信、其他频道、无正文输入、角色 / 全体提及以及回复产生的隐式提及。Discord 的用户提及集合也须确认包含 Bot，不仅凭文本匹配触发。
+
+Step 1 的处理函数只发送“已收到你的消息。文字对话功能将在下一步接入。”，不回显输入、不调用 Express / Gemini、不访问会话存储。真实模型对话与频道映射属于 Step 2。本步不增加排队或配额策略，留给 Task 17。
+
+启动命令均从项目根目录运行，以保持现有 .env、data 与静态产物位置；复用 DISCORD_BOT_TOKEN 和 DISCORD_TEST_CHANNEL_ID，无需重新生成 Token。运行 npm run bot:dev 或先 bot:build 后 node dist/bot.js；构建产物为 ESM，discord.js / dotenv 保持外部依赖。不要同时运行正式 Bot 和最小回显 Demo，否则测试频道会出现两套行为。
+
+| 验证项 | 结果 |
+| :--- | :--- |
+| 全量回归 | 25/25 套件、199/199 用例；新增入口 14 项、网关 11 项，先写失败测试再实现 |
+| 类型检查 | 根与四个 workspace 的 npm run lint 通过，保留 core 测试的类型检查 |
+| 构建 | Web、Express 与 Bot 构建通过；Bot 空配置构建产物启动给出指引、退出码 1 |
+| 正式启动 | npm run bot:dev 出现 ready；用户确认普通文字无回复、直接 @Bot 收到入口确认反馈；Ctrl+C 正常停止 |
+| 范围 | Step 1 验收完成；Step 2–3 及部署未启动 |

@@ -28,7 +28,7 @@
 
 ## Phase 4（Discord 文字接入，Task 15 已完成，后续未授权）
 
-依赖顺序：Task 15 → 16 → 17 → 18；Task 18 Step 1 依赖 VPS 部署实施（见下方"后续阶段预研"的部署实施项）先行完成。进程拓扑已由用户确认，以 [ADR-011](adr/0011-discord-process-topology.md)定案为独立 Bot + 同机 Express API，Express 保持会话唯一写入者。待用户裁决：① 触发方式（@提及 vs 全量监听，Task 16 Step 1 前定）；② VPS 部署授权时机（Task 18 前，建议独立授权）。
+依赖顺序：Task 15 → 16 → 17 → 18；Task 18 Step 1 依赖 VPS 部署实施（见下方"后续阶段预研"的部署实施项）先行完成。进程拓扑已由用户确认，以 [ADR-011](adr/0011-discord-process-topology.md)定案为独立 Bot + 同机 Express API，Express 保持会话唯一写入者。触发方式已裁决为指定频道内直接 @Bot；待用户裁决：VPS 部署授权时机（Task 18 前，建议独立授权）。
 
 ### Task 15：Discord 接入预研与架构定案
 
@@ -39,7 +39,8 @@
 
 ### Task 16：Discord 文字对话闭环
 
-- [ ] **Step 1（Discord 通道适配层抽象与 workspaces 迁移）**：按 ADR-009 / ADR-011 先落实正式独立 Bot 所需 npm workspaces 与依赖 / 编译边界，保留统一 test / lint / build 入口；定义触发规则与消息标准化（@提及待裁决），实现 bot 骨架与 typing；TDD，discord.js 以 mock 测试，迁移清单执行前另交计划。
+- [x] **Step 1（Discord 通道适配层抽象与 workspaces 迁移）**：按 ADR-009 / ADR-011 落实四个 npm workspaces 与依赖 / 编译边界，保留根统一入口；实现指定频道直接 @Bot 触发、消息标准化、正式 bot 骨架与 typing；TDD 与 mock 测试通过。
+  - 25/25 套件与 199/199 用例、四包类型检查及 Web / Express / Bot 构建通过；用户确认普通文字无回复、直接 @Bot 收到入口确认反馈，Ctrl+C 正常停止。Step 2 尚未接入 LLM 或频道会话。
 - [ ] **Step 2（对话链路接入）**：Bot 经同机 API 消费共享 SSE，提交本轮输入与 sessionId、done 后发送最终回复；Express 扩展按来源 / guildId / channelId 的会话关联持久化与原子解析，复用 SessionStorage；覆盖 Bot 重启恢复、多轮上下文、归档切换与 Playground 恢复的来源隔离，现有 API 不具备的能力须补齐；不自动重发失败聊天 POST。
 - [ ] **Step 3（长消息分段）**：LLM 回复按 Discord 2000 字符上限分段发送；段落切分规则有测试覆盖。
 

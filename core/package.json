@@ -1,0 +1,16 @@
+{
+  "name": "@gemini-chat/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@google/genai": "^2.4.0"
+  },
+  "exports": {
+    ".": "./index.ts",
+    "./contracts/sse": "./contracts/sse.ts"
+  }
+}

@@ -2,19 +2,19 @@
 
 ## 当前阶段
 
-Phase 3 —— 后端服务化（已完成、已结项）。Phase 4 Task 15 Step 1–3 已完成：应用注册、最小网关预研与进程拓扑定案；Task 16–18 与 VPS 部署未授权。
+Phase 3 —— 后端服务化（已完成、已结项）。Phase 4 Task 15 已完成，Task 16 Step 1 文件计划已获用户确认、正在实施；用户已裁决仅直接 @Bot 触发，入口与启动装配已完成，正在验收。Task 16 Step 2–3、Task 17–18 与 VPS 部署未授权。
 
 ## 当前授权
 
-- **授权任务**：本轮 Task 15 Step 3 已完成，架构提交 `a3945a2` 已推送到 `origin/test`；新增 ADR-011、衔接 ADR-009、同步预研 / backlog / history。用户确认独立 Bot + 同机 Express API、Express 会话唯一写入者。本轮授权结束；后续 workspaces、正式 Bot 对话链路与 VPS 实施未授权。
+- **授权任务**：Task 16 Step 1 文件计划已确认：workspaces 迁移、消息入口、正式 Bot 骨架及对应测试与文档。触发方式已裁决为指定频道内直接 @Bot；入口、启动装配、网关与 workspaces 迁移已落地，验收后 commit / push test。后续任务未授权。
 - **VPS 现状**：已采购开通（Vultr Seattle、1核1G、Ubuntu 26.04，含 Auto Backup），仅完成开机，未做加固与部署；在加固完成前不得对公网启动任何项目服务。
 - **最近功能 commit**：`1097970` — `feat(discord): add and validate minimal gateway demo`。
-- **当前测试基线**：23/23 个测试套件、174/174 项用例通过（`npm run test`）；`npm run lint` 与 `npm run build` 通过；与 [`tests.md`](tests.md) 一致。
+- **当前测试基线**：当前工作区 25/25 个测试套件、199/199 项用例通过（`npm run test`，本步未提交）；`npm run lint` 与 `npm run build` 通过；与 [`tests.md`](tests.md) 一致。
 - **当前功能验收**：Playground 仅连接后端服务；启动时恢复最近活动会话，无可恢复会话时创建新会话。发送仅提交本轮输入与 `sessionId`，由服务端加载完整上下文；清空对话归档旧会话并切换至新会话。旧版直连设置迁移为后端模式并清除浏览器存储的 Key 字段。
 
 ## 下一步计划
 
-等待用户授权 Task 16 Step 1（触发规则裁决、workspaces 迁移与正式 Bot 骨架）。@提及或全量监听仍待用户裁决，执行前须另交文件改动计划；VPS 部署仍须独立授权。
+当前完成 Task 16 Step 1 的真实 @ 触发验收与交付。完成本步后停止，Task 16 Step 2 需另行授权。
 
 ## 本轮验收与遗留
 
