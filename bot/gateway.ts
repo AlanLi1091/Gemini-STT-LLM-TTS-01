@@ -1,5 +1,6 @@
 import { Client, Events, GatewayIntentBits, type ClientEvents } from 'discord.js';
 import type { BotInput } from './message-entry';
+import { BackendError } from './backend-client';
 
 export interface GatewayOptions {
   token: string;
@@ -48,6 +49,7 @@ export async function startGateway(options: GatewayOptions) {
     try {
       const input = options.resolveInput(message, client.user?.id ?? '');
       if (!input) return;
+      log('[bot] input accepted');
       controller = new AbortController();
       const typing = async () => {
         try { await message.channel.sendTyping(); }
@@ -59,11 +61,18 @@ export async function startGateway(options: GatewayOptions) {
       void typing();
       const content = await options.handleInput(input, controller.signal);
       if (!stopped && !controller.signal.aborted && content.trim()) {
-        await message.reply({ content, allowedMentions: { parse: [], repliedUser: false } });
+        await message.reply({
+          content: content.length > 2000 ? '回复过长，暂时无法在频道显示。请尝试简短问题。' : content,
+          allowedMentions: { parse: [], repliedUser: false },
+        });
         log('[bot] input handled');
       }
-    } catch {
+    } catch (error) {
       log('[bot] input failed');
+      if (error instanceof BackendError && controller && !stopped && !controller.signal.aborted) {
+        try { await message.reply({ content: error.message, allowedMentions: { parse: [], repliedUser: false } }); }
+        catch { log('[bot] error feedback failed'); }
+      }
     } finally {
       if (controller) { clearInterval(requests.get(controller)); requests.delete(controller); }
     }

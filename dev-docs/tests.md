@@ -1,7 +1,7 @@
 # 测试套件与测试用例台账
 
 > **维护规范**：
-> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（25 个套件）与具体测试用例（199 个断言项）。
+> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（26 个套件）与具体测试用例（220 个断言项）。
 > 2. **铁律联动**：后续开发中，每次有新功能开发、重构或测试内容更新时，**必须同步在此台账中维护新增或修改的测试项**，保持与实际测试套件 100% 同步。
 
 ## 1. 测试套件概览看板
@@ -22,18 +22,19 @@
 | 12 | `src/test/error-and-usage-integration.test.tsx` | Task 9 / Phase 3 收尾 Step 2B | 错误横幅展示/重试及 Token 徽章集成测试 | 2 | ✅ 通过 |
 | 13 | `src/test/streaming-ui.test.tsx` | Task 10 | 流式打字机光标动效、停止生成按钮、顶栏联动禁用与 Smart Sticky Bottom 触底滚动守卫 | 8 | ✅ 通过 |
 | 14 | `server/test/server-skeleton.test.ts` | Task 11 | Express 服务端骨架、双环境运行、根路径与健康检查响应 | 4 | ✅ 通过 |
-| 15 | `core/test/sse-contract.test.ts` | Task 11 | 共享 SSE 事件、错误载荷与 sessionId 演进契约 | 4 | ✅ 通过 |
+| 15 | `core/test/sse-contract.test.ts` | Task 11 | 共享 SSE 事件、错误载荷与 sessionId 演进契约 | 5 | ✅ 通过 |
 | 16 | `server/test/cors.test.ts` | Task 11 | CORS 白名单解析、允许/拒绝策略与预检链路 | 5 | ✅ 通过 |
 | 17 | `server/test/chat-stream.test.ts` | Task 12 | SSE 流式管道、心跳、续传声明与中断级联 | 7 | ✅ 通过 |
 | 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 3 | ✅ 通过 |
 | 19 | `src/test/remote-chat-adapter.test.ts` | Task 13 / Task 14 Step 3 | RemoteChatAdapter 的 SSE 消费、错误映射、AbortSignal 与 sessionId 模式 | 7 | ✅ 通过 |
-| 20 | `src/test/app-remote-integration.test.tsx` | Task 13 Step 3 / Task 14 Step 3 / Phase 3 收尾 | App 的后端 SSE 装配、会话恢复、归档清空与旧配置迁移 | 4 | ✅ 通过 |
-| 21 | `server/test/json-session-storage.test.ts` | Task 14 Step 1 | JSON 会话文件、严格追加与并发写入串行化 | 5 | ✅ 通过 |
-| 22 | `server/test/session-api.test.ts` | Task 14 Step 2 | 会话 API、全量上下文、归档语义与无状态兼容 | 4 | ✅ 通过 |
+| 20 | `src/test/app-remote-integration.test.tsx` | Task 13 Step 3 / Task 14 Step 3 / Phase 3 收尾 | App 的后端 SSE 装配、会话恢复、归档清空与旧配置迁移 | 5 | ✅ 通过 |
+| 21 | `server/test/json-session-storage.test.ts` | Task 14 Step 1 / Task 16 Step 2 | JSON 会话、频道关联、重启恢复与严格追加 | 8 | ✅ 通过 |
+| 22 | `server/test/session-api.test.ts` | Task 14 Step 2 / Task 16 Step 2 | 会话 API、频道上下文、归档与来源隔离 | 7 | ✅ 通过 |
 | 23 | `server/test/discord-demo.test.ts` | Task 15 Step 2 | 配置、测试频道回显、连接事件、日志脱敏与退出清理（网络 Mock） | 14 | ✅ 通过 |
-| 24 | `bot/test/gateway.test.ts` | Task 16 Step 1 | 正式入口配置、网关输入注入、typing 生命周期、错误日志与退出清理（网络 Mock） | 11 | ✅ 通过 |
+| 24 | `bot/test/gateway.test.ts` | Task 16 Step 1 | 正式入口配置、网关输入注入、typing 生命周期、错误日志与退出清理（网络 Mock） | 13 | ✅ 通过 |
 | 25 | `bot/test/message-entry.test.ts` | Task 16 Step 1 | 指定频道直接 @Bot、提及清理与消息过滤 | 14 | ✅ 通过 |
-| **合计** | **25 个测试文件** | **Phase 1–4** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **199** | **✅ 100% 通过** |
+| 26 | `bot/test/backend-client.test.ts` | Task 16 Step 2 | 本机 HTTP / SSE、最终回复、错误、中止与重启解析 | 12 | ✅ 通过 |
+| **合计** | **26 个测试文件** | **Phase 1–4** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **220** | **✅ 100% 通过** |
 
 ---
 
@@ -278,7 +279,7 @@
 #### Task 11 Step 2: 健康检查接口
 - [x] **GET /api/health 应返回 200 状态码与共享健康状态结构**
 
-### 2.15 `core/test/sse-contract.test.ts` (4 项)
+### 2.15 `core/test/sse-contract.test.ts` (5 项)
 > **任务对应**：Task 11 Step 2 · 共享 SSE 协议与无状态到会话化的演进契约
 
 #### Task 11 Step 2: 共享 SSE 契约
@@ -286,6 +287,7 @@
 - [x] **done 事件应携带最终文本与可选 Token 用量**
 - [x] **error 事件应内嵌 ChatError 的 code 与 message**
 - [x] **应声明 Task 13 无状态请求向 Task 14 sessionId 的兼容演进路径**
+- [x] **应声明 15 秒默认心跳且明确不支持断点续传**
 
 ### 2.16 `server/test/cors.test.ts` (5 项)
 > **任务对应**：Task 11 Step 3 · CORS 白名单与环境隔离
@@ -329,8 +331,8 @@
 - [x] **应将网络失败映射为 NETWORK_ERROR**
 - [x] **应将 AbortSignal 传递给 fetch 并在中断时抛出 ABORTED**
 
-### 2.20 `src/test/app-remote-integration.test.tsx` (4 项)
-> **任务对应**：Task 13 Step 3 / Task 14 Step 3 · App 远端 SSE 装配、会话恢复与归档清空
+### 2.20 `src/test/app-remote-integration.test.tsx` (5 项)
+> **任务对应**：Task 16 Step 2 / Task 13 Step 3 / Task 14 Step 3 · App 远端 SSE 装配、会话恢复与归档清空
 
 #### Task 13 Step 3 / Task 14 Step 3: App 服务端会话装配
 - [x] **默认后端模式创建会话，并携带 sessionId 流式展示回复**
@@ -338,8 +340,10 @@
 - [x] **清空对话会归档旧会话、创建新会话并清除本地消息**
 - [x] **旧直连配置迁移后仍只请求后端会话与流式接口**
 
-### 2.21 `server/test/json-session-storage.test.ts` (5 项)
-> **任务对应**：Task 14 Step 1 · JSON 文件会话持久化与 ADR-005 严格追加语义
+- [x] **最近记录指向 Discord 会话时创建 Web 会话而不恢复频道历史**
+
+### 2.21 `server/test/json-session-storage.test.ts` (8 项)
+> **任务对应**：Task 16 Step 2 / Task 14 Step 1 · JSON 文件会话持久化与 ADR-005 严格追加语义
 
 #### Task 14 Step 1: JSON 会话存储层
 - [x] **创建 UUID 会话，并为每个会话写入单独 JSON 文件**
@@ -348,14 +352,22 @@
 - [x] **隔离不同会话，并对不存在的会话拒绝追加**
 - [x] **串行化同一会话的并发追加，避免丢失消息**
 
-### 2.22 `server/test/session-api.test.ts` (4 项)
-> **任务对应**：Task 14 Step 2 · 会话 API、多轮全量上下文与归档语义
+- [x] **频道关联并发解析保持唯一，重启后恢复同一会话**
+- [x] **隔离不同频道，归档后关联新会话并保留原日志**
+- [x] **拒绝无效频道和损坏关联文件，不静默创建替代会话**
+
+### 2.22 `server/test/session-api.test.ts` (7 项)
+> **任务对应**：Task 16 Step 2 / Task 14 Step 2 · 会话 API、多轮全量上下文与归档语义
 
 #### Task 14 Step 2: 会话 API 与多轮上下文
 - [x] **创建、读取并归档会话；归档仅写标记而保留消息日志**
 - [x] **按 sessionId 加载全量历史，并严格追加本轮输入与最终回复**
 - [x] **归档后保留可读取日志，但拒绝继续追加会话轮次**
 - [x] **未携带 sessionId 时保留无状态流式兼容**
+
+- [x] **Bot 经真实 HTTP/SSE 多轮对话并按频道复用持久化上下文**
+- [x] **解析 API 归档后切换会话，并显式区分 Web 来源**
+- [x] **解析 API 拒绝无效频道和浏览器 Origin 请求**
 
 ### 2.23 `server/test/discord-demo.test.ts` (14 项)
 > **任务对应**：Task 15 Step 2 · 最小网关 Demo（Task 16 Step 1 实现移至 bot/demo.ts，测试路径保留）；所有 Discord 网络调用均 Mock，不能替代真实网关验收。
@@ -375,8 +387,8 @@
 - [x] **会话失效时停止，SDK 错误原文不进入日志**
 - [x] **退出信号在登录期间也能清理网关资源**
 
-### 2.24 `bot/test/gateway.test.ts` (11 项)
-> **任务对应**：Task 16 Step 1 · 配置与网关骨架，网络调用全 Mock。
+### 2.24 `bot/test/gateway.test.ts` (13 项)
+> **任务对应**：Task 16 Step 2 / Task 16 Step 1 · 配置与网关骨架，网络调用全 Mock。
 
 - [x] **正式入口读取根目录环境配置并清理空白**
 - [x] **缺少 Token 或无效频道时给出配置指引**
@@ -389,6 +401,9 @@
 - [x] **退出信号在登录过程中也能停止网关**
 - [x] **登录失败返回安全指引并清理资源**
 - [x] **记录恢复事件并在致命配置错误时停止**
+
+- [x] **后端错误给出可读反馈并继续处理后续消息**
+- [x] **未实现分段时过长回复发送简短指引，保留后端完整结果**
 
 ### 2.25 `bot/test/message-entry.test.ts` (14 项)
 > **任务对应**：Task 16 Step 1 · 用户裁决：只对指定频道内直接 @Bot 的有效正文触发。
@@ -407,3 +422,19 @@
 - [x] **忽略机器人消息**
 - [x] **忽略Webhook消息**
 - [x] **Bot 身份尚未就绪时不处理消息**
+
+### 2.26 `bot/test/backend-client.test.ts` (12 项)
+> **任务对应**：Task 16 Step 2 · 注入 fetch / ReadableStream 验证；真实本机 HTTP 集成见 2.22。
+
+- [x] **跨 UTF-8 字节边界读取中文最终回复**
+- [x] **读取未结束的 SSE 时超时会取消 reader 并清理请求**
+- [x] **解析频道后只提交本轮输入，忽略心跳和 chunk，等待 done**
+- [x] **新 Bot 实例重新解析服务端关联，不保存本地会话文件**
+- [x] **服务端 error 转成可读错误，不自动重发聊天 POST**
+- [x] **拒绝结束缺少 done**
+- [x] **拒绝损坏 JSON**
+- [x] **拒绝无效 done**
+- [x] **HTTP 或网络失败给出固定指引且不暴露响应原文**
+- [x] **中止和超时结束请求，不重试**
+- [x] **只接受无凭据的本机后端地址**
+- [x] **拒绝无效的会话解析响应**

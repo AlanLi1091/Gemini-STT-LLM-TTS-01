@@ -1,4 +1,4 @@
-import type { Message } from '@core/index';
+import type { Message, SessionOrigin } from '@core/index';
 
 export const RECENT_SESSION_STORAGE_KEY = 'recent_chat_session_id_v1';
 
@@ -7,6 +7,7 @@ export interface PersistedSession {
   createdAt: number;
   messages: Message[];
   archivedAt?: number;
+  origin?: SessionOrigin;
 }
 
 export class SessionApiError extends Error {
@@ -37,6 +38,13 @@ async function readSessionResponse(response: Response): Promise<PersistedSession
   const body: unknown = await response.json();
   if (!isPersistedSession(body)) {
     throw new SessionApiError('Chat session service returned an invalid response.');
+  }
+  if (body.origin?.type === 'discord') {
+    // App already treats a missing recent session as a request to create a Web session.
+    throw new SessionApiError('Recent session belongs to a Discord channel.', 404);
+  }
+  if (body.origin && body.origin.type !== 'web') {
+    throw new SessionApiError('Chat session service returned an invalid origin.');
   }
   return body;
 }

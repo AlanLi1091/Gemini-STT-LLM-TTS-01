@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import type { Message } from '@core/index';
+import type { Message, SessionOrigin } from '@core/index';
 import {
   DuplicateMessageIdError,
   type Session,
@@ -14,6 +14,7 @@ const SESSION_FILE_SUFFIX = '.json';
 function cloneSession(session: Session): Session {
   return {
     ...session,
+    ...(session.origin ? { origin: { ...session.origin } } : {}),
     messages: session.messages.map((message) => ({
       ...message,
       ...(message.usage ? { usage: { ...message.usage } } : {}),
@@ -42,11 +43,19 @@ function isSession(value: unknown): value is Session {
   return (
     typeof candidate.id === 'string' &&
     Number.isFinite(candidate.createdAt) &&
+    (candidate.origin === undefined || isOrigin(candidate.origin)) &&
     (candidate.archivedAt === undefined || Number.isFinite(candidate.archivedAt)) &&
     Array.isArray(candidate.messages) &&
     candidate.messages.every(isValidMessage) &&
     new Set(candidate.messages.map((message) => message.id)).size === candidate.messages.length
   );
+}
+
+function isOrigin(value: unknown): value is SessionOrigin {
+  if (!value || typeof value !== 'object') return false;
+  const origin = value as Partial<{ type: string; guildId: string; channelId: string }>;
+  return origin.type === 'web' || (origin.type === 'discord' &&
+    /^\d{17,20}$/.test(origin.guildId ?? '') && /^\d{17,20}$/.test(origin.channelId ?? ''));
 }
 
 /**
@@ -58,16 +67,54 @@ export class JsonSessionStorage implements SessionStorage {
 
   constructor(private readonly dataDirectory = 'data') {}
 
-  async createSession(): Promise<Session> {
+  async createSession(origin: SessionOrigin = { type: 'web' }): Promise<Session> {
+    if (!isOrigin(origin)) throw new TypeError('Invalid session origin');
     await mkdir(this.dataDirectory, { recursive: true });
 
     const session: Session = {
       id: randomUUID(),
       createdAt: Date.now(),
       messages: [],
+      origin: { ...origin },
     };
     await this.writeSession(session);
     return cloneSession(session);
+  }
+
+  async resolveDiscordSession(guildId: string, channelId: string): Promise<Session> {
+    const origin: SessionOrigin = { type: 'discord', guildId, channelId };
+    if (!isOrigin(origin)) throw new TypeError('Invalid Discord channel');
+    // One writer instance in Express. Serialize the binding read/create/write transaction.
+    return this.serializeWrite('discord-bindings', async () => {
+      const path = join(this.dataDirectory, 'discord-bindings.json');
+      let bindings: Record<string, string> = {};
+      try {
+        const parsed: unknown = JSON.parse(await readFile(path, 'utf8'));
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) ||
+            !Object.entries(parsed).every(([key, id]) => /^\d{17,20}:\d{17,20}$/.test(key) &&
+              typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id))) {
+          throw new TypeError('Invalid Discord bindings');
+        }
+        bindings = parsed as Record<string, string>;
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      }
+      const key = `${guildId}:${channelId}`;
+      if (bindings[key]) {
+        const existing = await this.getSession(bindings[key]);
+        if (!existing) throw new SessionNotFoundError(bindings[key]);
+        if (existing.origin?.type !== 'discord' || existing.origin.guildId !== guildId || existing.origin.channelId !== channelId) {
+          throw new TypeError('Discord binding origin mismatch');
+        }
+        if (existing.archivedAt === undefined) return existing;
+      }
+      const session = await this.createSession(origin);
+      bindings[key] = session.id;
+      const temporary = `${path}.${randomUUID()}.tmp`;
+      await writeFile(temporary, `${JSON.stringify(bindings, null, 2)}\n`, 'utf8');
+      await rename(temporary, path);
+      return session;
+    });
   }
 
   async getSession(sessionId: string): Promise<Session | undefined> {

@@ -9,6 +9,7 @@ import { createApp } from '../app';
 import { createSessionChatStreamSource } from '../chat-adapter-stream-source';
 import { SessionService } from '../session-service';
 import { JsonSessionStorage } from '../storage/json-session-storage';
+import { BackendClient } from '../../bot/backend-client';
 
 const temporaryDirectories: string[] = [];
 
@@ -38,7 +39,7 @@ async function createTestContext() {
     sessionService,
     chatStreamSource: createSessionChatStreamSource(adapter, sessionService),
   });
-  return { app, adapter };
+  return { app, adapter, sessionService, dataDirectory };
 }
 
 afterEach(async () => {
@@ -46,6 +47,38 @@ afterEach(async () => {
 });
 
 describe('Task 14 Step 2: 会话 API 与多轮上下文', () => {
+  it('Bot 经真实 HTTP/SSE 多轮对话并按频道复用持久化上下文', async () => {
+    const { app, adapter } = await createTestContext();
+    const server = app.listen(0, '127.0.0.1');
+    await new Promise<void>(resolve => server.once('listening', resolve));
+    const address = server.address() as { port: number };
+    const baseUrl = `http://127.0.0.1:${address.port}`;
+    const input = { id: 'm1', userId: 'u1', guildId: '111111111111111111', channelId: '222222222222222222', content: '第一轮' };
+    try {
+      expect(await new BackendClient({ baseUrl }).chat(input)).toBe('回复');
+      expect(await new BackendClient({ baseUrl }).chat({ ...input, id: 'm2', content: '第二轮' })).toBe('回复');
+      expect(adapter.histories.map(history => history.map(value => value.content))).toEqual([
+        ['第一轮'], ['第一轮', '回复', '第二轮'],
+      ]);
+    } finally { await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve())); }
+  });
+  it('解析 API 归档后切换会话，并显式区分 Web 来源', async () => {
+    const { app, sessionService } = await createTestContext();
+    const body = { guildId: '111111111111111111', channelId: '222222222222222222' };
+    const first = await request(app).post('/api/discord/sessions/resolve').send(body).expect(200);
+    await sessionService.archiveSession(first.body.sessionId);
+    const next = await request(app).post('/api/discord/sessions/resolve').send(body).expect(200);
+    expect(next.body.sessionId).not.toBe(first.body.sessionId);
+    expect((await sessionService.getSession(next.body.sessionId))?.origin?.type).toBe('discord');
+    const web = await request(app).post('/api/sessions').expect(201);
+    expect(web.body.origin).toEqual({ type: 'web' });
+  });
+  it('解析 API 拒绝无效频道和浏览器 Origin 请求', async () => {
+    const { app } = await createTestContext();
+    await request(app).post('/api/discord/sessions/resolve').send({ guildId: 'bad', channelId: 'bad' }).expect(400);
+    await request(app).post('/api/discord/sessions/resolve').send({}).expect(400);
+    await request(app).post('/api/discord/sessions/resolve').set('Origin', 'https://browser.example').send({}).expect(403);
+  });
   it('创建、读取并归档会话；归档仅写标记而保留消息日志', async () => {
     const { app } = await createTestContext();
     const created = await request(app).post('/api/sessions');

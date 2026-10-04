@@ -21,6 +21,10 @@ export class SessionService {
     return this.storage.createSession();
   }
 
+  resolveDiscordSession(guildId: string, channelId: string): Promise<Session> {
+    return this.storage.resolveDiscordSession(guildId, channelId);
+  }
+
   getSession(sessionId: string): Promise<Session | undefined> {
     return this.storage.getSession(sessionId);
   }

@@ -40,8 +40,9 @@
 ### Task 16：Discord 文字对话闭环
 
 - [x] **Step 1（Discord 通道适配层抽象与 workspaces 迁移）**：按 ADR-009 / ADR-011 落实四个 npm workspaces 与依赖 / 编译边界，保留根统一入口；实现指定频道直接 @Bot 触发、消息标准化、正式 bot 骨架与 typing；TDD 与 mock 测试通过。
-  - 25/25 套件与 199/199 用例、四包类型检查及 Web / Express / Bot 构建通过；用户确认普通文字无回复、直接 @Bot 收到入口确认反馈，Ctrl+C 正常停止。Step 2 尚未接入 LLM 或频道会话。
-- [ ] **Step 2（对话链路接入）**：Bot 经同机 API 消费共享 SSE，提交本轮输入与 sessionId、done 后发送最终回复；Express 扩展按来源 / guildId / channelId 的会话关联持久化与原子解析，复用 SessionStorage；覆盖 Bot 重启恢复、多轮上下文、归档切换与 Playground 恢复的来源隔离，现有 API 不具备的能力须补齐；不自动重发失败聊天 POST。
+  - 25/25 套件与 199/199 用例、四包类型检查及 Web / Express / Bot 构建通过；用户确认普通文字无回复、直接 @Bot 收到入口确认反馈，Ctrl+C 正常停止。Step 1 当时尚未接入 LLM 或频道会话，后续接入见 Step 2。
+- [x] **Step 2（对话链路接入）**：Bot 经同机 API 消费共享 SSE，提交本轮输入与 sessionId、done 后发送最终回复；Express 扩展按来源 / guildId / channelId 的会话关联持久化与原子解析，复用 SessionStorage；覆盖 Bot 重启恢复、多轮上下文、归档切换与 Playground 恢复的来源隔离，现有 API 不具备的能力须补齐；不自动重发失败聊天 POST。
+  - 26/26 套件、220/220 用例、根与四包类型检查、Web / Express / Bot 构建通过；用户截图确认连续直接 @Bot 获得真实对话回复，网关 input handled；测试进程已停止，详见 [`research/phase4-discord.md`](research/phase4-discord.md#8-task-16-step-2后端对话与频道持久化)。
 - [ ] **Step 3（长消息分段）**：LLM 回复按 Discord 2000 字符上限分段发送；段落切分规则有测试覆盖。
 
 ### Task 17：限流与错误处理

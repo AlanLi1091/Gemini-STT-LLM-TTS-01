@@ -31,6 +31,23 @@ describe('Task 13 Step 3 / Task 14 Step 3: App 服务端会话装配', () => {
 
   afterEach(() => vi.unstubAllGlobals());
 
+  it('最近记录指向 Discord 会话时创建 Web 会话而不恢复频道历史', async () => {
+    localStorage.setItem(RECENT_SESSION_STORAGE_KEY, 'discord-session');
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (url.endsWith('/discord-session')) return Promise.resolve(sessionResponse({
+        id: 'discord-session', createdAt: 1,
+        origin: { type: 'discord', guildId: '111111111111111111', channelId: '222222222222222222' },
+        messages: [{ id: 'm1', role: 'user', content: '频道私有历史', createdAt: 1 }],
+      }));
+      if (url === '/api/sessions') return Promise.resolve(sessionResponse({ id: 'new-web', createdAt: 1, messages: [], origin: { type: 'web' } }, 201));
+      throw new Error('Unexpected request');
+    });
+    vi.stubGlobal('fetch', fetchMock); render(<App />);
+    await waitFor(() => expect(localStorage.getItem(RECENT_SESSION_STORAGE_KEY)).toBe('new-web'));
+    expect(screen.queryByText('频道私有历史')).not.toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: '输入消息' })).not.toBeDisabled();
+  });
+
   it('默认后端模式创建会话，并携带 sessionId 流式展示回复', async () => {
     const fetchMock = vi.fn().mockImplementation((url: string) => {
       if (url === '/api/sessions') {

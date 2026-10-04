@@ -24,6 +24,34 @@ afterEach(async () => {
 });
 
 describe('Task 14 Step 1: JSON 会话存储层', () => {
+  it('频道关联并发解析保持唯一，重启后恢复同一会话', async () => {
+    const { storage, dataDirectory } = await createStorage();
+    const guildId = '111111111111111111', channelId = '222222222222222222';
+    const sessions = await Promise.all(Array.from({ length: 8 }, () => storage.resolveDiscordSession(guildId, channelId)));
+    expect(new Set(sessions.map(value => value.id)).size).toBe(1);
+    expect(sessions[0].origin).toEqual({ type: 'discord', guildId, channelId });
+    const reloaded = new JsonSessionStorage(dataDirectory);
+    expect((await reloaded.resolveDiscordSession(guildId, channelId)).id).toBe(sessions[0].id);
+  });
+  it('隔离不同频道，归档后关联新会话并保留原日志', async () => {
+    const { storage } = await createStorage();
+    const first = await storage.resolveDiscordSession('111111111111111111', '222222222222222222');
+    const second = await storage.resolveDiscordSession('111111111111111111', '333333333333333333');
+    expect(second.id).not.toBe(first.id);
+    await storage.appendMessage(first.id, message('original', '原日志'));
+    await storage.archiveSession(first.id);
+    const next = await storage.resolveDiscordSession('111111111111111111', '222222222222222222');
+    expect(next.id).not.toBe(first.id);
+    expect(next.messages).toEqual([]);
+    expect((await storage.getSession(first.id))?.messages).toEqual([message('original', '原日志')]);
+  });
+  it('拒绝无效频道和损坏关联文件，不静默创建替代会话', async () => {
+    const { storage, dataDirectory } = await createStorage();
+    await expect(storage.resolveDiscordSession('../bad', '222222222222222222')).rejects.toThrow();
+    const { writeFile } = await import('node:fs/promises');
+    await writeFile(join(dataDirectory, 'discord-bindings.json'), '{bad');
+    await expect(storage.resolveDiscordSession('111111111111111111', '222222222222222222')).rejects.toThrow();
+  });
   it('创建 UUID 会话，并为每个会话写入单独 JSON 文件', async () => {
     const { storage, dataDirectory } = await createStorage();
     const session = await storage.createSession();

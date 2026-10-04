@@ -1,6 +1,6 @@
 # Phase 4 Discord 最小网关预研
 
-日期：2026-10-03。Task 15 已完成，拓扑见 [ADR-011](../adr/0011-discord-process-topology.md)。本轮 Task 16 Step 1 已获授权，用户裁决为仅直接 @Bot 触发；Task 16 Step 2–3、Task 17–18 与 VPS 实施仍未授权。
+日期：2026-10-03。Task 15 已完成，拓扑见 [ADR-011](../adr/0011-discord-process-topology.md)。Task 16 Step 1 已完成，用户裁决为仅直接 @Bot 触发；本轮 Task 16 Step 2 已完成，自动化与真实频道验收通过。Task 16 Step 3、Task 17–18 与 VPS 实施仍未授权。
 
 ## 1. Step 1 操作记录
 
@@ -82,3 +82,23 @@ Step 1 的处理函数只发送“已收到你的消息。文字对话功能将�
 | 构建 | Web、Express 与 Bot 构建通过；Bot 空配置构建产物启动给出指引、退出码 1 |
 | 正式启动 | npm run bot:dev 出现 ready；用户确认普通文字无回复、直接 @Bot 收到入口确认反馈；Ctrl+C 正常停止 |
 | 范围 | Step 1 验收完成；Step 2–3 及部署未启动 |
+
+## 8. Task 16 Step 2：后端对话与频道持久化
+
+Bot 每轮先 POST /api/discord/sessions/resolve（guildId / channelId），再 POST /api/chat/stream（sessionId 与本轮 user 输入）。Bot 不保存会话文件、历史或模型密钥；Express 加载完整历史，通过共享适配器输出 SSE。Bot 解析 UTF-8 与 LF / CRLF 帧，忽略心跳和中间 chunk，只在 done 后发送最终回复。缺 done、格式错误、服务端 error、网络错误给固定可读反馈，不自动重发聊天 POST；请求总超时 120 秒，退出或超时取消 fetch / reader 并清理 typing。
+
+Express 为新 Web 会话写 origin.type=web，为频道会话写 origin.type=discord 与 guildId / channelId；旧版无 origin 的记录仍视为 Web。data/discord-bindings.json 关联服务器 / 频道与 UUID。单 Express 存储实例串行执行关联读取、创建、写回，并用临时文件 rename 更新索引；不同频道隔离，新实例恢复同一关联，归档后建立新会话并保留旧日志。关联文件损坏、目标缺失或来源不一致报错，不静默覆盖。该方案仍依赖 ADR-011 的单进程唯一写者，不提供跨进程锁；会话创建后、关联写回前崩溃可能留下未关联的空会话。
+
+Playground 不恢复 Discord 来源的最近会话，转为创建 Web 会话；这是恢复入口的来源隔离，不是会话鉴权。内部解析路由要求无 Origin 且来自本机连接；未来部署时须避免通过公网反向代理开放该路由，当前未实施部署或新增鉴权系统。
+
+项目根目录先运行 npm run server:dev，再运行 npm run bot:dev；复用现有 Token 与频道配置。DISCORD_BACKEND_URL 可选，默认 http://127.0.0.1:3001，仅允许无凭据的本机 HTTP 地址；无需修改已有 .env。后端沿用已有适配器选择规则，有效 Key 使用 Gemini，否则使用 Mock，不在 Bot 内配置模型。
+
+| 验证项 | 结果 |
+| :--- | :--- |
+| 全量回归 | 26/26 套件、220/220 用例通过；新增 21 项，包含真实本机 HTTP / SSE 的两轮上下文集成 |
+| 持久化与隔离 | 并发解析唯一、新存储实例恢复、归档切换、频道隔离、损坏关联报错、Playground 不恢复 Discord 历史均通过 |
+| 类型与构建 | 根与四包类型检查、Web / Express / Bot 构建通过 |
+| 真实频道 | 用户截图确认连续两条直接 @Bot 获得对话回复；网关记录三次 input handled。前期无回复是同名角色提及（REST 元数据为 1 个 role、0 个 user），直接成员提及后成功；Ctrl+C 后 Bot stopped，后端也已停止 |
+| 范围边界 | 长回复分段属于 Step 3；本步超过 2000 字符只发送简短指引，完整回复保留在后端日志；并发排队与冷却属于 Task 17 |
+
+本轮未新增或修改模型版本；截图中的模型自述不是具体模型身份的独立证明。本轮验收证明真实频道触发、后端生成与最终回复链路可用；多轮历史装配、重启关联恢复由自动化验证。测试台账同时补齐已有 SSE 心跳契约条目的历史漏记，实际新增用例仍为 21 项。

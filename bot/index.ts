@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { startGateway } from './gateway';
 import { normalizeMessage } from './message-entry';
+import { BackendClient, validateBackendUrl } from './backend-client';
 
 export function readBotConfig(env: NodeJS.ProcessEnv) {
   const token = env.DISCORD_BOT_TOKEN?.trim();
@@ -11,7 +12,7 @@ export function readBotConfig(env: NodeJS.ProcessEnv) {
   if (!channelId || !/^\d{17,20}$/.test(channelId)) {
     throw new Error('请配置有效的 DISCORD_TEST_CHANNEL_ID（频道 ID）。');
   }
-  return { token, channelId };
+  return { token, channelId, backendUrl: validateBackendUrl(env.DISCORD_BACKEND_URL?.trim() || undefined) };
 }
 
 async function main() {
@@ -23,13 +24,13 @@ async function main() {
   process.once('SIGTERM', shutdown);
   try {
     const config = readBotConfig(process.env);
+    const backend = new BackendClient({ baseUrl: config.backendUrl });
     await startGateway({
       token: config.token,
       signal: controller.signal,
       onFatal: () => { process.exitCode = 1; },
       resolveInput: (message, botId) => normalizeMessage(message, { botId, channelId: config.channelId }),
-      // Task 16 Step 1 validates the entry only; Express / LLM integration is Step 2.
-      handleInput: async () => '已收到你的消息。文字对话功能将在下一步接入。',
+      handleInput: (input, signal) => backend.chat(input, signal),
     });
   } catch (error) {
     process.off('SIGINT', shutdown);

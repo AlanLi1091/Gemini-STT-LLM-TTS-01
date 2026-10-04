@@ -63,6 +63,26 @@ export function createApp(options: AppOptions = {}): Express {
     }
   });
 
+  app.post('/api/discord/sessions/resolve', async (req: Request, res: Response) => {
+    const address = req.socket.remoteAddress;
+    if (req.get('Origin') || !['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(address ?? '')) {
+      res.status(403).json({ error: 'Discord session resolution is local only.' });
+      return;
+    }
+    if (!options.sessionService) {
+      res.status(503).json({ error: 'Chat session storage is not configured.' });
+      return;
+    }
+    const { guildId, channelId } = req.body ?? {};
+    if (typeof guildId !== 'string' || typeof channelId !== 'string') {
+      res.status(400).json({ error: 'Invalid Discord channel.' }); return;
+    }
+    try {
+      const session = await options.sessionService.resolveDiscordSession(guildId, channelId);
+      res.json({ sessionId: session.id });
+    } catch (error) { sendSessionError(error, res); }
+  });
+
   app.get('/api/sessions/:sessionId', async (req: Request, res: Response) => {
     if (!options.sessionService) {
       res.status(503).json({ error: 'Chat session storage is not configured.' });

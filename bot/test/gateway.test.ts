@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Client, Events, type ClientEvents } from 'discord.js';
 import { startGateway } from '../gateway';
 import { readBotConfig } from '../index';
+import { BackendError } from '../backend-client';
 
 const input = { id: 'm1', guildId: 'g1', channelId: 'c1', userId: 'u1', content: 'hello' };
 const stops: Array<() => void> = [];
@@ -27,9 +28,23 @@ function emit(client: Client, value: ReturnType<typeof message>) {
 const flush = async () => { for (let i = 0; i < 8; i++) await Promise.resolve(); };
 
 describe('Task 16 Step 1: Bot 网关骨架', () => {
+  it('后端错误给出可读反馈并继续处理后续消息', async () => {
+    const { client, handleInput } = await setup();
+    handleInput.mockRejectedValueOnce(new BackendError('后端暂不可用'));
+    const first = message(); emit(client, first); await flush();
+    expect(first.reply).toHaveBeenCalledWith(expect.objectContaining({ content: '后端暂不可用' }));
+    const next = message(); emit(client, next); await flush();
+    expect(next.reply).toHaveBeenCalledOnce();
+  });
+  it('未实现分段时过长回复发送简短指引，保留后端完整结果', async () => {
+    const { client } = await setup({ handleInput: async () => '长'.repeat(2001) });
+    const msg = message(); emit(client, msg); await flush();
+    expect(msg.reply.mock.calls[0][0].content.length).toBeLessThanOrEqual(2000);
+    expect(msg.reply.mock.calls[0][0].content).toContain('过长');
+  });
   it('正式入口读取根目录环境配置并清理空白', () => {
     expect(readBotConfig({ DISCORD_BOT_TOKEN: ' fake-secret ', DISCORD_TEST_CHANNEL_ID: ' 123456789012345678 ' }))
-      .toEqual({ token: 'fake-secret', channelId: '123456789012345678' });
+      .toEqual({ token: 'fake-secret', channelId: '123456789012345678', backendUrl: 'http://127.0.0.1:3001' });
   });
   it('缺少 Token 或无效频道时给出配置指引', () => {
     expect(() => readBotConfig({})).toThrow('DISCORD_BOT_TOKEN');
