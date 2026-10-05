@@ -24,13 +24,16 @@ export async function startGateway(options: GatewayOptions) {
   const listeners: Array<() => void> = [];
   const requests = new Map<AbortController, ReturnType<typeof setInterval>>();
   let stopped = false;
+  let memoryTimer: ReturnType<typeof setInterval> | undefined;
   const on = <E extends keyof ClientEvents>(event: E, listener: (...args: ClientEvents[E]) => void) => {
-    client.on(event, listener); listeners.push(() => client.off(event, listener));
+    const guarded = (...args: ClientEvents[E]) => { if (!stopped) listener(...args); };
+    client.on(event, guarded); listeners.push(() => client.off(event, guarded));
   };
   const stop = () => {
     if (stopped) return;
     stopped = true;
     scheduler.stop();
+    clearInterval(memoryTimer);
     options.signal?.removeEventListener('abort', stop);
     for (const [controller, timer] of requests) { controller.abort(); clearInterval(timer); }
     requests.clear(); listeners.forEach(remove => remove());
@@ -51,16 +54,35 @@ export async function startGateway(options: GatewayOptions) {
       await message.channel.send(payload);
     } catch { log('[bot] error feedback failed'); }
   };
-  const fatal = () => { stop(); options.onFatal?.(); };
-  on(Events.ClientReady, () => log('[bot] ready'));
-  on(Events.ShardReconnecting, () => log('[bot] reconnecting'));
-  on(Events.ShardResume, () => log('[bot] resumed'));
+  const fatal = () => {
+    if (stopped) return;
+    stop(); options.onFatal?.();
+  };
+  const memory = () => {
+    const { rss, heapUsed } = process.memoryUsage();
+    log(`[bot] memory rssMiB=${(rss / 1048576).toFixed(1)} heapUsedMiB=${(heapUsed / 1048576).toFixed(1)}`);
+  };
+  on(Events.ClientReady, () => {
+    log('[bot] ready');
+    memory();
+    // One sampler per process, regardless of the number of reconnects.
+    if (!memoryTimer) { memoryTimer = setInterval(memory, 30000); memoryTimer.unref(); }
+  });
+  on(Events.ShardReady, id => log(`[bot] shard ready shard=${id}`));
+  on(Events.ShardReconnecting, id => log(`[bot] reconnecting shard=${id}`));
+  on(Events.ShardResume, (id, replayed) => log(`[bot] resumed shard=${id} replayed=${replayed}`));
   on(Events.Error, () => log('[bot] client error'));
-  on(Events.ShardError, () => log('[bot] shard error'));
-  on(Events.Invalidated, fatal);
-  on(Events.ShardDisconnect, event => {
-    log(`[bot] disconnected code=${event.code}`);
-    if ([4004, 4013, 4014].includes(event.code)) fatal();
+  on(Events.ShardError, (_error, id) => log(`[bot] shard error shard=${id}`));
+  // SDK invalidation is terminal; protocol opcode 9 is handled by the SDK itself.
+  on(Events.Invalidated, () => {
+    log('[bot] session invalidated; 请检查配置后重新启动。'); fatal();
+  });
+  on(Events.ShardDisconnect, (event, id) => {
+    log(`[bot] disconnected shard=${id} code=${event.code}`);
+    // Discord's non-reconnectable authentication / configuration close codes.
+    if ([4004, 4010, 4011, 4012, 4013, 4014].includes(event.code)) {
+      log('[bot] fatal gateway configuration; 请检查 Token、分片与 Intent 后重新启动。'); fatal();
+    }
   });
   on(Events.MessageCreate, async message => {
     if (stopped) return;

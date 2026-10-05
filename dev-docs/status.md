@@ -2,11 +2,11 @@
 
 ## 当前阶段
 
-Phase 3 —— 后端服务化（已完成、已结项）。Phase 4 Task 15 与 Task 16 Step 1 已完成；Task 16 Step 2 已完成：Bot 后端对话、频道持久化与来源隔离通过自动化及真实频道验收。Task 16 Step 3 已完成，Task 16 文字对话三步全部验收通过；Task 17 Step 1 已完成：频道串行、用户冷却及 Gemini 请求预算通过自动化与真实验收；Task 17 Step 2 已完成：错误反馈、流异常与请求恢复通过自动化及真实验收；Task 17 Step 3、Task 18 与 VPS 部署未授权。
+Phase 3 —— 后端服务化（已完成、已结项）。Phase 4 Task 15 与 Task 16 Step 1 已完成；Task 16 Step 2 已完成：Bot 后端对话、频道持久化与来源隔离通过自动化及真实频道验收。Task 16 Step 3 已完成，Task 16 文字对话三步全部验收通过；Task 17 Step 1 已完成：频道串行、用户冷却及 Gemini 请求预算通过自动化与真实验收；Task 17 Step 2 已完成：错误反馈、流异常与请求恢复通过自动化及真实验收；本轮已授权 Task 17 Step 3（网关稳定性验证）；Task 18 与 VPS 部署未授权。
 
 ## 当前授权
 
-- **授权任务**：Task 17 Step 2 已完成；后端断开提示与同进程恢复验收通过，功能提交 `fab670b` 已推送至 `origin/test`，本轮授权结束。
+- **授权任务**：Task 17 Step 3 开发与文件计划已获用户确认；正在完成模拟验证、边界记录及单步提交闭环。
 - **VPS 现状**：已采购开通（Vultr Seattle、1核1G、Ubuntu 26.04，含 Auto Backup），仅完成开机，未做加固与部署；在加固完成前不得对公网启动任何项目服务。
 - **最近功能 commit**：`fab670b` — `fix(discord): contain request failures and provide safe error feedback`。
 - **当前测试基线**：30/30 个测试套件、272/272 项用例通过（`npm run test`）；根与四包 `npm run lint`、本步 Bot / Express 构建通过（Web 无代码变更）；与 [`tests.md`](tests.md) 一致。
@@ -14,7 +14,7 @@ Phase 3 —— 后端服务化（已完成、已结项）。Phase 4 Task 15 与 
 
 ## 下一步计划
 
-等待用户指派 Task 17 Step 3（网关稳定性验证）；实施前另交文件计划。Task 17 Step 3、Task 18 与 VPS 部署仍未授权。
+完成本轮 Task 17 Step 3；Task 18 与 VPS 部署仍未授权。
 
 ## 本轮验收与遗留
 

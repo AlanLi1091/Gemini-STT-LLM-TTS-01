@@ -15,9 +15,11 @@ async function setup(options: Partial<Parameters<typeof startGateway>[0]> = {}) 
   const log = vi.fn();
   const resolveInput = vi.fn(() => input);
   const handleInput = vi.fn().mockResolvedValue('已收到；模型对话将在下一步接入。');
+  const listenerBaseline = () => Object.fromEntries(client.eventNames().map(event => [event, client.listenerCount(event)]));
+  const originalListeners = listenerBaseline();
   const gateway = await startGateway({ token: 'fake-secret', schedulerOptions: { cooldownMs: 0 }, client, log, resolveInput, handleInput, ...options });
   stops.push(gateway.stop);
-  return { client, destroy, log, resolveInput, handleInput, ...gateway };
+  return { client, destroy, log, resolveInput, handleInput, listenerBaseline, originalListeners, ...gateway };
 }
 function message() {
   return { channel: { isSendable: () => true, sendTyping: vi.fn().mockResolvedValue(undefined), send: vi.fn().mockResolvedValue({}) }, reply: vi.fn().mockResolvedValue({}) };
@@ -216,6 +218,92 @@ describe('Task 16 Step 1: Bot 网关骨架', () => {
     const onFatal = vi.fn(); const { client, log, destroy } = await setup({ onFatal });
     client.emit(Events.ShardReconnecting, 0); client.emit(Events.ShardResume, 0, 1);
     client.emit(Events.ShardDisconnect, { code: 4014 } as ClientEvents[Events.ShardDisconnect][0], 0);
-    expect(log).toHaveBeenCalledWith('[bot] resumed'); expect(onFatal).toHaveBeenCalledOnce(); expect(destroy).toHaveBeenCalledOnce();
+    expect(log).toHaveBeenCalledWith('[bot] resumed shard=0 replayed=1'); expect(onFatal).toHaveBeenCalledOnce(); expect(destroy).toHaveBeenCalledOnce();
+  });
+});
+
+
+describe('Task 17 Step 3: 网关稳定性', () => {
+  it.each([1006, 4000, 4007, 4009])('可恢复断线 %i 后继续处理且不重新 login', async code => {
+    const onFatal = vi.fn(); const { client, log, destroy } = await setup({ onFatal });
+    client.emit(Events.ShardDisconnect, { code, reason: 'fake-secret' } as ClientEvents[Events.ShardDisconnect][0], 0);
+    client.emit(Events.ShardError, new Error('fake-secret'), 0);
+    client.emit(Events.ShardReconnecting, 0);
+    client.emit(Events.ShardResume, 0, 2);
+    const next = message(); emit(client, next); await flush();
+    expect(next.reply).toHaveBeenCalledOnce(); expect(client.login).toHaveBeenCalledOnce();
+    expect(destroy).not.toHaveBeenCalled(); expect(onFatal).not.toHaveBeenCalled();
+    expect(log).toHaveBeenCalledWith('[bot] resumed shard=0 replayed=2');
+    expect(JSON.stringify(log.mock.calls)).not.toContain('fake-secret');
+  });
+  it.each([4004, 4010, 4011, 4012, 4013, 4014])('不可恢复关闭 %i 清理活动与排队请求', async code => {
+    vi.useFakeTimers(); let finish!: (text: string) => void; let signal!: AbortSignal;
+    const onFatal = vi.fn(); const handler = vi.fn((_input, value: AbortSignal) => {
+      signal = value; return new Promise<string>(resolve => { finish = resolve; });
+    });
+    const { client, destroy, listenerBaseline, originalListeners } = await setup({ onFatal, handleInput: handler });
+    const active = message(), queued = message(); emit(client, active); emit(client, queued); await flush();
+    const disconnect = client.listeners(Events.ShardDisconnect).at(-1)!;
+    disconnect({ code, reason: 'fake-secret' }, 0); disconnect({ code }, 0);
+    finish('完成'); await flush();
+    expect(signal.aborted).toBe(true); expect(handler).toHaveBeenCalledOnce();
+    expect(active.reply).not.toHaveBeenCalled(); expect(queued.reply).not.toHaveBeenCalled();
+    expect(destroy).toHaveBeenCalledOnce(); expect(onFatal).toHaveBeenCalledOnce();
+    expect(listenerBaseline()).toEqual(originalListeners); expect(vi.getTimerCount()).toBe(0);
+  });
+  it('SDK invalidated 仅通知一次且停止后不再接收输入', async () => {
+    const onFatal = vi.fn(); const { client, destroy, handleInput, log } = await setup({ onFatal });
+    const invalidated = client.listeners(Events.Invalidated)[0]; invalidated(); invalidated();
+    emit(client, message()); await flush();
+    expect(onFatal).toHaveBeenCalledOnce(); expect(destroy).toHaveBeenCalledOnce();
+    expect(handleInput).not.toHaveBeenCalled(); expect(log).toHaveBeenCalledWith(expect.stringContaining('session invalidated'));
+  });
+  it('全新 shard ready 与 resume 均可观测且不增加监听器', async () => {
+    const { client, log } = await setup(); const count = client.eventNames().map(event => client.listenerCount(event));
+    client.listeners(Events.ClientReady).at(-1)!(client as Client<true>);
+    client.emit(Events.ShardReady, 0, new Set());
+    client.emit(Events.ShardResume, 0, 0);
+    expect(log).toHaveBeenCalledWith('[bot] shard ready shard=0');
+    expect(client.eventNames().map(event => client.listenerCount(event))).toEqual(count);
+    client.listeners(Events.ClientReady).at(-1)!(client as Client<true>);
+    expect(client.eventNames().map(event => client.listenerCount(event))).toEqual(count);
+  });
+  it('模拟 24 小时与 100 次重连后定时器及监听器保持有界', async () => {
+    vi.useFakeTimers(); const memory = vi.spyOn(process, 'memoryUsage');
+    const { client, stop, listenerBaseline, originalListeners } = await setup();
+    const sdkTimerCount = vi.getTimerCount();
+    client.listeners(Events.ClientReady).at(-1)!(client as Client<true>);
+    const counts = client.eventNames().map(event => client.listenerCount(event));
+    for (let i = 0; i < 100; i++) {
+      client.emit(Events.ShardReconnecting, 0); client.emit(Events.ShardResume, 0, 0);
+      const msg = message(); emit(client, msg); await flush(); expect(msg.reply).toHaveBeenCalledOnce();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(vi.getTimerCount()).toBe(sdkTimerCount + 1);
+    }
+    await vi.advanceTimersByTimeAsync(24 * 60 * 60 * 1000);
+    expect(memory).toHaveBeenCalledTimes(2881);
+    expect(client.eventNames().map(event => client.listenerCount(event))).toEqual(counts);
+    stop(); expect(vi.getTimerCount()).toBe(0); expect(listenerBaseline()).toEqual(originalListeners);
+    await vi.advanceTimersByTimeAsync(60000); expect(memory).toHaveBeenCalledTimes(2881);
+  });
+  it('退出后已排入事件回调不再产生日志或致命通知', async () => {
+    const onFatal = vi.fn(); const { client, log, stop } = await setup({ onFatal });
+    const resume = client.listeners(Events.ShardResume)[0], fatal = client.listeners(Events.Invalidated)[0];
+    stop(); const count = log.mock.calls.length; resume(0, 1); fatal();
+    expect(log).toHaveBeenCalledTimes(count); expect(onFatal).not.toHaveBeenCalled();
+  });
+});
+
+
+describe('Task 17 Step 3: 活动请求跨重连', () => {
+  it('非致命断线不中止或重发已提交请求，恢复后仅回复一次', async () => {
+    let finish!: (text: string) => void; let signal!: AbortSignal;
+    const handler = vi.fn((_input, value: AbortSignal) => { signal = value; return new Promise<string>(resolve => { finish = resolve; }); });
+    const { client } = await setup({ handleInput: handler }); const msg = message(); emit(client, msg); await flush();
+    client.emit(Events.ShardDisconnect, { code: 1006 } as ClientEvents[Events.ShardDisconnect][0], 0);
+    client.emit(Events.ShardReconnecting, 0); client.emit(Events.ShardResume, 0, 0);
+    expect(signal.aborted).toBe(false); finish('完成'); await flush();
+    expect(handler).toHaveBeenCalledOnce(); expect(msg.reply).toHaveBeenCalledOnce();
+    expect(client.login).toHaveBeenCalledOnce();
   });
 });

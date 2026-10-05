@@ -1,6 +1,6 @@
 # Phase 4 Discord 最小网关预研
 
-日期：2026-10-03。Task 15 已完成，拓扑见 [ADR-011](../adr/0011-discord-process-topology.md)。Task 16 Step 1 已完成，用户裁决为仅直接 @Bot 触发；本轮 Task 16 Step 2 已完成，自动化与真实频道验收通过。Task 16 Step 3 本轮已完成并通过验收；本轮 Task 17 Step 1 已完成并通过验收；本轮 Task 17 Step 2 已完成并通过验收；Task 17 Step 3、Task 18 与 VPS 实施仍未授权。
+日期：2026-10-03。Task 15 已完成，拓扑见 [ADR-011](../adr/0011-discord-process-topology.md)。Task 16 Step 1 已完成，用户裁决为仅直接 @Bot 触发；本轮 Task 16 Step 2 已完成，自动化与真实频道验收通过。Task 16 Step 3 本轮已完成并通过验收；本轮 Task 17 Step 1 已完成并通过验收；本轮 Task 17 Step 2 已完成并通过验收；Task 17 Step 3 已完成本地模拟验证；Task 18 与 VPS 实施仍未授权。
 
 ## 1. Step 1 操作记录
 
@@ -152,3 +152,37 @@ Express 的无状态 / 会话流若在 done 前结束，返回 MODEL_ERROR；中
 | 后端 / 会话 | 鉴权 / 网络 / 模型错误分类、HTTP 鉴权、流读取中止取消、缺 done / 中途抛错无半截助手日志并恢复均通过 |
 | 类型 / 构建 | 根与四包类型检查、Bot / Express 构建通过 |
 | 真实验收 | 用户确认后端未运行时收到连接失败提示且 Bot 在线；启动后端后同一 Bot 记录 input handled，Discord 元数据确认失败提示之后发送了非空回复（30 字符、无提及）；未重启 Bot，最终 Bot / 后端测试进程已停止 |
+
+
+## 12. Task 17 Step 3：网关稳定性验证
+
+2026-10-04：用户授权本步并确认文件计划；验证采用本地 Client 事件注入与假时钟，所有新增 Discord 网络调用均 Mock，不修改真实 Token、Intent、频道权限或系统网络。真实断网约 65 秒后 resumed 与超过 10 分钟内存观察仍是 Task 15 Demo 的历史证据（第 4 节），本轮未重新进行正式 Bot 真实断网或真实长时在线验收。
+
+### 实现与依据
+
+- 连接日志包含 shardId，恢复日志包含 replayed 数；ShardReady 表示新会话握手成功，ShardResume 表示恢复成功。应用不额外调用 login 或重发聊天 POST，SDK 负责心跳、Resume / Identify 和重连。
+- 补齐 4004 / 4010 / 4011 / 4012 / 4013 / 4014 不可恢复关闭码，给固定配置指引并停止；入口已有 onFatal 将退出码设为 1。重复 / 已排入回调仅通知一次，中止活动请求、取消等待、移除应用监听器并清理 typing 和内存采样。
+- ClientReady 立即记录 RSS / heapUsed，之后每 30 秒采样；重复 ready 不增加采样定时器，定时器 unref，stop 清理。
+- 关闭码依据 [Discord 官方 Gateway 状态码](https://docs.discord.com/developers/topics/opcodes-and-status-codes#gateway-close-event-codes)。本地安装的 @discordjs/ws 在 onClose 对上述六码不重连，其 InvalidSession（协议 opcode 9）分支可 Resume 或重新 Identify；协议 opcode 9 与 discord.js 的 Client invalidated 事件不同，应用仅把后者视为终止信号。
+
+### 验证结果
+
+| 验证项 | 结果及证据范围 |
+| :--- | :--- |
+| 可恢复断线 | 模拟 1006 / 4000 / 4007 / 4009 → shard error / reconnecting → resume 后可处理下一条消息，login 仅一次；仅验证应用事件处理，不验证 SDK 的实际网络恢复 |
+| 活动请求跨重连 | 模拟断线不中止已提交请求，恢复后回复一次，后端处理函数与 login 均仅一次 |
+| Token / 配置失效 | 六种致命关闭码分别覆盖活动、排队请求及重复回调；全部中止 / 取消，无后续回复；销毁与 onFatal 各一次，应用监听器恢复到启动前基线，定时器归零 |
+| SDK invalidated | 通知一次，停止后新输入不处理，固定安全日志 |
+| 重复事件 / 退出 | shard ready 与 resume 均可观测；重复 ready 不增加监听器，停止后捕获的事件回调无日志或致命通知 |
+| 长时本地模拟 | 假时钟推进 24 小时，100 次恢复与 100 条输入后监听器保持固定；SDK 原有定时器加一个应用采样定时器，2881 次内存采样（首次 + 2880 个周期）；停止后定时器归零、应用监听器移除且不再采样 |
+| 全量回归 | 30/30 套件、287/287 用例；新增 15 项，网关共 42 项；根与四包 npm run lint、Bot 构建通过 |
+
+全量测试首次在沙箱中因本地 listen EPERM 失败，经批准在沙箱外通过；没有修改 HTTP 集成测试规避限制。
+
+### 已知边界
+
+1. 事件注入只验证正式 Bot 对 SDK 事件的响应；不证明真实断网、DNS / TLS 故障或 SDK 重连退避时长。1006 等可恢复关闭交由 SDK，应用不保证恢复时间；网络永久断开会持续不可用，当前无进程级自动重启策略。
+2. 假时钟 24 小时不等于真实 24 小时，也不证明 RSS / 堆内存无泄漏；未测实际高负载、Discord 缓存增长、VPS 1 GiB 内存或 OOM。Task 18 的真实连续在线 ≥24 小时及 systemd 重启验收仍未授权。
+3. Token 失效需人工修复服务端配置后重启；启动期登录失败使用已有安全指引与退出码 1。未轮换真实 Token，也未验证 Discord 实际撤销传播时间。
+4. 网关恢复可能重放 Discord 事件，应用无跨重启消息去重或离线持久队列；发送失败仍遵循 Step 2 不自动重发策略，长断线期间的消息与 REST 送达不保证，断线时后端请求仍受已有 120 秒总超时约束。
+5. 日志采样用于本地观察，不包含 Token、消息正文或 SDK 错误原文；尚无日志轮转 / 聚合与生产告警。退出中止客户端请求不保证撤销服务端已持久化输入，沿用现有会话语义。
