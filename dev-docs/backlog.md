@@ -43,7 +43,8 @@
   - 25/25 套件与 199/199 用例、四包类型检查及 Web / Express / Bot 构建通过；用户确认普通文字无回复、直接 @Bot 收到入口确认反馈，Ctrl+C 正常停止。Step 1 当时尚未接入 LLM 或频道会话，后续接入见 Step 2。
 - [x] **Step 2（对话链路接入）**：Bot 经同机 API 消费共享 SSE，提交本轮输入与 sessionId、done 后发送最终回复；Express 扩展按来源 / guildId / channelId 的会话关联持久化与原子解析，复用 SessionStorage；覆盖 Bot 重启恢复、多轮上下文、归档切换与 Playground 恢复的来源隔离，现有 API 不具备的能力须补齐；不自动重发失败聊天 POST。
   - 26/26 套件、220/220 用例、根与四包类型检查、Web / Express / Bot 构建通过；用户截图确认连续直接 @Bot 获得真实对话回复，网关 input handled；测试进程已停止，详见 [`research/phase4-discord.md`](research/phase4-discord.md#8-task-16-step-2后端对话与频道持久化)。
-- [ ] **Step 3（长消息分段）**：LLM 回复按 Discord 2000 字符上限分段发送；段落切分规则有测试覆盖。
+- [x] **Step 3（长消息分段）**：LLM 回复按 Discord 2000 字符上限分段发送；段落切分规则有测试覆盖。
+  - 27/27 套件、234/234 用例、根与四包类型检查及 Bot 构建通过；真实频道发出 3 段（1947 / 1912 / 1856 字符），首段回复原消息、后续频道发送且无提及，验收后停止测试进程。
 
 ### Task 17：限流与错误处理
 

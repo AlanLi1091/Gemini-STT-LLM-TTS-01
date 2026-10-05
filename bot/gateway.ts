@@ -1,6 +1,7 @@
 import { Client, Events, GatewayIntentBits, type ClientEvents } from 'discord.js';
 import type { BotInput } from './message-entry';
 import { BackendError } from './backend-client';
+import { splitMessage } from './split-message';
 
 export interface GatewayOptions {
   token: string;
@@ -61,10 +62,18 @@ export async function startGateway(options: GatewayOptions) {
       void typing();
       const content = await options.handleInput(input, controller.signal);
       if (!stopped && !controller.signal.aborted && content.trim()) {
-        await message.reply({
-          content: content.length > 2000 ? '回复过长，暂时无法在频道显示。请尝试简短问题。' : content,
-          allowedMentions: { parse: [], repliedUser: false },
-        });
+        const parts = splitMessage(content);
+        let first = true;
+        for (const part of parts) {
+          if (stopped || controller.signal.aborted) return;
+          // Discord rejects whitespace-only messages; substantive text is preserved.
+          if (!part.trim()) continue;
+          const payload = { content: part, allowedMentions: { parse: [], repliedUser: false } };
+          if (first) await message.reply(payload);
+          else if (message.channel.isSendable()) await message.channel.send(payload);
+          else throw new Error('Channel cannot send messages');
+          first = false;
+        }
         log('[bot] input handled');
       }
     } catch (error) {
