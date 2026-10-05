@@ -2,21 +2,23 @@
 
 ## 当前阶段
 
-Phase 3 —— 后端服务化（已完成、已结项）。Phase 4 Task 15 与 Task 16 Step 1 已完成；Task 16 Step 2 已完成：Bot 后端对话、频道持久化与来源隔离通过自动化及真实频道验收。Task 16 Step 3 已完成，Task 16 文字对话三步全部验收通过；Task 17 Step 1 已完成：频道串行、用户冷却及 Gemini 请求预算通过自动化与真实验收；Task 17 Step 2 已完成：错误反馈、流异常与请求恢复通过自动化及真实验收；本轮已授权 Task 17 Step 3（网关稳定性验证）；Task 18 与 VPS 部署未授权。
+Phase 3 —— 后端服务化（已完成、已结项）。Phase 4 Task 15 与 Task 16 Step 1 已完成；Task 16 Step 2 已完成：Bot 后端对话、频道持久化与来源隔离通过自动化及真实频道验收。Task 16 Step 3 已完成，Task 16 文字对话三步全部验收通过；Task 17 Step 1 已完成：频道串行、用户冷却及 Gemini 请求预算通过自动化与真实验收；Task 17 Step 2 已完成：错误反馈、流异常与请求恢复通过自动化及真实验收；Task 17 Step 3 已完成本地模拟验证与边界记录，Task 17 三步已完成；Task 18 与 VPS 部署未授权。
 
 ## 当前授权
 
-- **授权任务**：Task 17 Step 3 开发与文件计划已获用户确认；正在完成模拟验证、边界记录及单步提交闭环。
+- **授权任务**：Task 17 Step 3 已完成；功能提交 `64d8b12` 已推送至 `origin/test`，本轮授权结束。
 - **VPS 现状**：已采购开通（Vultr Seattle、1核1G、Ubuntu 26.04，含 Auto Backup），仅完成开机，未做加固与部署；在加固完成前不得对公网启动任何项目服务。
-- **最近功能 commit**：`fab670b` — `fix(discord): contain request failures and provide safe error feedback`。
-- **当前测试基线**：30/30 个测试套件、272/272 项用例通过（`npm run test`）；根与四包 `npm run lint`、本步 Bot / Express 构建通过（Web 无代码变更）；与 [`tests.md`](tests.md) 一致。
+- **最近功能 commit**：`64d8b12` — `fix(discord): validate gateway stability and bound lifecycle resources`。
+- **当前测试基线**：30/30 个测试套件、287/287 项用例通过（`npm run test`）；根与四包 `npm run lint`、本步 Bot 构建通过（Web / Express 无代码变更）；与 [`tests.md`](tests.md) 一致。
 - **当前功能验收**：Playground 仅连接后端服务；启动时恢复最近活动会话，无可恢复会话时创建新会话。发送仅提交本轮输入与 `sessionId`，由服务端加载完整上下文；清空对话归档旧会话并切换至新会话。旧版直连设置迁移为后端模式并清除浏览器存储的 Key 字段。
 
 ## 下一步计划
 
-完成本轮 Task 17 Step 3；Task 18 与 VPS 部署仍未授权。
+等待用户另行指派；下一个待办为 Task 18 Step 1，其 VPS 部署前置须独立授权。Task 18 与 VPS 部署仍未授权。
 
 ## 本轮验收与遗留
+
+- **Task 17 Step 3 验收**：30/30 套件、287/287 用例、类型检查、Bot 构建及文档检查通过；新增 15 项事件注入 / 假时钟测试，验证可恢复关闭、六种致命关闭、重复回调、活动请求跨重连与模拟 24 小时 / 100 次恢复下资源清理。补齐致命关闭码、单次退出通知、shard / replayed 日志及 30 秒内存采样。功能提交 `64d8b12` 已推送至 `origin/test`；未启动真实 Bot / 后端测试进程，未修改真实 Token / 网络。模拟不证明真实 SDK 重连或长期内存稳定，真实断网与超过 10 分钟观察仍为 Task 15 Demo 历史证据，边界详见 [第 12 节](research/phase4-discord.md#12-task-17-step-3网关稳定性验证)。
 
 - **Task 17 Step 2 验收**：30/30 套件、272/272 用例、类型检查与 Bot / Express 构建及文档检查通过。用户确认后端未运行时收到连接失败提示、Bot 在线；后端恢复后同一 Bot 记录 input handled，Discord 元数据确认失败提示之后发送非空回复（30 字符、无提及）。Discord 权限 / 消息失效与反馈失败由 Mock 验证，未修改真实 Token 或频道权限。测试进程已停止，完成标记与记录已同步，功能提交 `fab670b` 已推送至 `origin/test`。
 
