@@ -1,6 +1,6 @@
 # Phase 3 收尾预研：Express 后端与 Playground 部署方案
 
-> 状态：预研完成；用户已选定常驻 VPS（见 [ADR-010](../adr/0010-phase3-deployment-and-direct-connect.md)），部署实施未授权。外部平台参数及价格为预研时点参考，**以官方文档和实际报价为准**。
+> 状态：预研完成；用户已选定常驻 VPS（见 [ADR-010](../adr/0010-phase3-deployment-and-direct-connect.md)），本轮 Task 18 Step 1 与 VPS 私有部署已获授权并完成，见第 9 节。外部平台参数及价格为预研时点参考，**以官方文档和实际报价为准**。
 
 ## 1. 部署目标与形态
 
@@ -82,3 +82,50 @@ Cloud Run 的超时、缩零与收费方式以[请求超时](https://cloud.googl
 本预研**不阻塞 Phase 3 退出条件**：按[路线图](../roadmap.md)，Phase 3 的退出条件是 Task 11–14 完成、Node.js 服务承载领域内核、Playground 改连后端且原有测试语义零漂移、会话 JSON 文件持久化、密钥收拢至服务端环境变量；[Backlog 原条目](../backlog.md)亦明确“部署方案……不阻塞 Phase 3 退出条件”。正式结项仍待用户授权。
 
 本任务只产出文档；不创建代码、Dockerfile、配置或 CI，不部署、不申请云资源、不选择最终平台、不修改直连模式，也不执行 Phase 3 正式结项或 Phase 4 工作。
+
+
+## 9. Task 18 Step 1：私有 VPS 实施记录
+
+用户确认文件计划并独立授权 VPS 加固 / 部署，进一步确认没有域名、Playground 仅本人使用。因此落实 ADR-010 的 Express 静态托管与 ADR-011 的独立 Bot / Express，以 SSH 隧道代替公网反向代理 / TLS；本步未开启公网 HTTP 服务。Task 18 Step 2–3 尚未实施。
+
+### 实际拓扑与加固
+
+- Vultr Seattle，149.28.13.41，Ubuntu 26.04.1 LTS x64，1 vCPU / 950 MiB 可用物理内存量级 / 25 GB 磁盘，原有约 2.4 GB swap 和 Auto Backup。
+- 初始核查已启用 UFW、仅放行 22/tcp，但允许 root / 密码 SSH。建立 gemini-admin 并沿用现有授权公钥；独立连接验证 sudo 后，关闭 root / 密码 / 键盘交互登录，仅允许该管理用户与至 127.0.0.1:3001 的本地转发。管理用户有免密 sudo，不改变本机私钥。
+- 升级 12 项系统包并安装新内核；应用启动前重启，确认 7.0.0-38-generic、SSH 管理入口与防火墙生效。应用上线后的主机重启自恢复测试仍属于 Step 2。
+- 官方 Node v24.21.0 / npm 11.19.0，Linux x64 官方包经同源 SHA-256 校验；安装至 /opt/node，未复制 Mac node_modules 或 lockfile。
+- 发行物 /opt/gemini-chat/releases/task18-20261005-01，current 符号链接指向它；构建在 Linux 进行，之后代码归 root 且应用不可写。Linux lockfile 保留在发行物，不解除仓库既有忽略规则。
+- gemini-server 写入 /var/lib/gemini-chat（0700），gemini-bot 为独立账号，验证无法读取会话目录；两个 EnvironmentFile 均 root:root 0600。检查运行进程环境变量名称，确认 Gemini Key 只在 Express、Discord Token 只在 Bot，不输出值。
+- 两个 systemd 单元 active / enabled，Restart=on-failure、15 秒间隔、5 分钟内至多 5 次，达到启动限制需修复后 reset-failed。Express 仅监听 127.0.0.1:3001，IPv4 / IPv6 公网仍仅 SSH。
+
+### 代码与部署验证
+
+- readServerConfig 默认 loopback、验证端口、可配置持久目录与独立 dist/web 静态目录；静态产物缺失拒绝启动。API 不进入页面回退，点文件 / 目录穿越与 Web 目录之外服务端 bundle 不提供。
+- 服务端 SIGINT / SIGTERM 停止接收请求，最多等待 15 秒再关闭活动连接；SSE 保留既有断线中止语义。备份期间实测 server stopping / stopped 与 Bot stopped，无异常退出。
+- 根默认 server:build 产物命名与 type=module 不适配实际 Node 启动，生产构建按 deploy/README.md 输出 server.cjs；没有修改既有根脚本。Web 构建仅清理 dist/web，保留两个服务端产物。
+- Bot 初次启动因为 current 符号链接与 import.meta 真路径不一致，入口守卫未执行；修正 systemd 为在 WorkingDirectory 内调用 dist/bot.js。之后真实 shard ready / ready，备份恢复后再次 ready；未修改 Bot Token 或入口代码。
+- 本机及受控 Linux 均 31/31 套件、294/294 用例，新增部署 7 项；两环境根与四包类型检查通过；Linux Web / Express / Bot 构建通过，裁剪为生产依赖后 npm audit --omit=dev 报 0 vulnerabilities。
+- SSH 隧道仅监听 Mac 127.0.0.1:18080，真实页面完成 Gemini 回复“连接成功”（145 total tokens）；服务备份重启后页面刷新恢复同一轮对话。截图留在 /private/tmp/task18-playground.jpg，仅为本轮本机验收附件，不提交仓库。
+- systemd 初次启动 / 手动修复与备份期间的正常停止不计为自动故障重启；最终两个单元 NRestarts=0。短时观察不证明长期内存稳定，Step 2 仍须真实 ≥24 小时。
+
+### 备份与恢复证据
+
+运行 deploy/backup.sh，停止两个服务后生成 /var/backups/gemini-chat/data-20261005T071538Z.tar.gz 与校验文件；权限 0600，服务自动恢复。备份解压至隔离临时目录，与现网全部持久文件一致，未覆盖 / 回退现网日志。经 SSH 下载至本机被 Git 忽略的 data/vps-backups，SHA-256 再次验证通过；本机副本与云端备份位于不同主机。现有本地开发会话未迁移至 VPS。
+
+关键发行物 SHA-256：
+
+| 文件 | SHA-256 |
+| :--- | :--- |
+| dist/server.cjs | 2817e5a454f22b42a9a4a67f26b952b74983d738eba3b94a80bba5695fcc2b9d |
+| dist/bot.js | 7e3fb22a485869525626d94d3e4d042f8aa241259390d2f7b67d7b389e2cbda3 |
+| Linux package-lock.json | 109d0970ac63dbbcd775f7631153581622630d80d42820f1356503fd0e4a985f |
+
+验证上线九个源码 / 部署配置文件与本机逐文件 SHA-256 一致。运维入口、访问方式、发布回滚与恢复流程见 [deploy/README.md](../../deploy/README.md)。
+
+### 遗留与范围
+
+- 连续 ≥24 小时、上线后主机重启自恢复、Web 与真实 Discord 消息同时对话，以及 Phase 4 正式结项仍待后续步骤。本步仅验证 Bot 登录，不主动在 Discord 发送测试消息。
+- Linux 新解析的依赖在既有 UI 测试中产生 React act 警告，全部断言仍通过；未越界改动历史 UI 测试。npm 报部分依赖安装脚本未授权，实际测试 / 三构建 / 运行通过，未额外放开脚本；后续发布用本 release Linux lockfile 与 npm ci 保持版本一致。
+- systemd-analyze verify 返回成功，但系统自带 XFS 两个单元报告 CPUAccounting 已废弃；本项目两个单元未使用该配置，不修改无关系统单元。
+- 此版本为首次部署，尚无上一发布版本可回滚；保留旧内核与云端控制台恢复入口。自动定时备份 / 保留周期未配置，手动一致性备份、异机副本和隔离恢复已验证；备份会暂停服务，长期验收中需记录计划停机。
+- SSH 隧道是本人私有访问边界，不实现公网身份认证；未来开放公网需另行授权访问控制、TLS 与反向代理，不可直接把监听地址改为公网。

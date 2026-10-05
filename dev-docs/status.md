@@ -2,19 +2,19 @@
 
 ## 当前阶段
 
-Phase 3 —— 后端服务化（已完成、已结项）。Phase 4 Task 15 与 Task 16 Step 1 已完成；Task 16 Step 2 已完成：Bot 后端对话、频道持久化与来源隔离通过自动化及真实频道验收。Task 16 Step 3 已完成，Task 16 文字对话三步全部验收通过；Task 17 Step 1 已完成：频道串行、用户冷却及 Gemini 请求预算通过自动化与真实验收；Task 17 Step 2 已完成：错误反馈、流异常与请求恢复通过自动化及真实验收；Task 17 Step 3 已完成本地模拟验证与边界记录，Task 17 三步已完成；Task 18 与 VPS 部署未授权。
+Phase 3 —— 后端服务化（已完成、已结项）。Phase 4 Task 15 与 Task 16 Step 1 已完成；Task 16 Step 2 已完成：Bot 后端对话、频道持久化与来源隔离通过自动化及真实频道验收。Task 16 Step 3 已完成，Task 16 文字对话三步全部验收通过；Task 17 Step 1 已完成：频道串行、用户冷却及 Gemini 请求预算通过自动化与真实验收；Task 17 Step 2 已完成：错误反馈、流异常与请求恢复通过自动化及真实验收；Task 17 Step 3 已完成本地模拟验证与边界记录，Task 17 三步已完成；本轮已授权 Task 18 Step 1 与 VPS 加固 / 私有部署；Step 2–3 尚未启动。
 
 ## 当前授权
 
-- **授权任务**：Task 17 Step 3 已完成；功能提交 `64d8b12` 已推送至 `origin/test`，本轮授权结束。
-- **VPS 现状**：已采购开通（Vultr Seattle、1核1G、Ubuntu 26.04，含 Auto Backup），仅完成开机，未做加固与部署；在加固完成前不得对公网启动任何项目服务。
+- **授权任务**：用户确认调整后的文件计划，授权 Task 18 Step 1 与 VPS 加固 / 部署；无域名、Playground 仅本人使用，采用 SSH 隧道访问。正在完成双服务上线、备份恢复与验证。
+- **VPS 现状**：Vultr Seattle、1核1G、Ubuntu 26.04.1、Auto Backup 已开启；已验证 gemini-admin 密钥管理入口，关闭 root / 密码登录，UFW 仅开放 SSH；Node 24 已安装，Linux 构建完成，正在完成内核更新与双服务启动。
 - **最近功能 commit**：`64d8b12` — `fix(discord): validate gateway stability and bound lifecycle resources`。
 - **当前测试基线**：30/30 个测试套件、287/287 项用例通过（`npm run test`）；根与四包 `npm run lint`、本步 Bot 构建通过（Web / Express 无代码变更）；与 [`tests.md`](tests.md) 一致。
 - **当前功能验收**：Playground 仅连接后端服务；启动时恢复最近活动会话，无可恢复会话时创建新会话。发送仅提交本轮输入与 `sessionId`，由服务端加载完整上下文；清空对话归档旧会话并切换至新会话。旧版直连设置迁移为后端模式并清除浏览器存储的 Key 字段。
 
 ## 下一步计划
 
-等待用户另行指派；下一个待办为 Task 18 Step 1，其 VPS 部署前置须独立授权。Task 18 与 VPS 部署仍未授权。
+完成本轮 Task 18 Step 1 单步闭环后停止；Step 2 连续在线 ≥24 小时与重启验收、Step 3 正式结项等待下一轮指派。
 
 ## 本轮验收与遗留
 

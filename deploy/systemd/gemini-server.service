@@ -1,0 +1,35 @@
+[Unit]
+Description=Gemini Chat server
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=gemini-server
+Group=gemini-server
+WorkingDirectory=/opt/gemini-chat/current
+Environment=NODE_ENV=production
+EnvironmentFile=/etc/gemini-chat/server.env
+ExecStart=/opt/node/bin/node /opt/gemini-chat/current/dist/server.cjs
+Restart=on-failure
+RestartSec=15
+TimeoutStopSec=25
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+StateDirectory=gemini-chat
+StateDirectoryMode=0700
+ReadWritePaths=/var/lib/gemini-chat
+
+[Install]
+WantedBy=multi-user.target

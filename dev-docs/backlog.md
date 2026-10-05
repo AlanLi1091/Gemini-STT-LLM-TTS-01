@@ -28,7 +28,7 @@
 
 ## Phase 4（Discord 文字接入，Task 15 已完成，后续未授权）
 
-依赖顺序：Task 15 → 16 → 17 → 18；Task 18 Step 1 依赖 VPS 部署实施（见下方"后续阶段预研"的部署实施项）先行完成。进程拓扑已由用户确认，以 [ADR-011](adr/0011-discord-process-topology.md)定案为独立 Bot + 同机 Express API，Express 保持会话唯一写入者。触发方式已裁决为指定频道内直接 @Bot；待用户裁决：VPS 部署授权时机（Task 18 前，建议独立授权）。
+依赖顺序：Task 15 → 16 → 17 → 18；Task 18 Step 1 的 VPS 前置部署已在本轮独立授权并完成（SSH 隧道私有访问）。进程拓扑已由用户确认，以 [ADR-011](adr/0011-discord-process-topology.md)定案为独立 Bot + 同机 Express API，Express 保持会话唯一写入者。触发方式已裁决为指定频道内直接 @Bot；Task 18 Step 2–3 等待下一轮指派。
 
 ### Task 15：Discord 接入预研与架构定案
 
@@ -57,13 +57,14 @@
 
 ### Task 18：常驻上线与 Phase 4 结项
 
-- [ ] **Step 1（VPS 部署前置）**：执行 VPS 部署线（此前独立授权的加固、托管、systemd 等项），bot 与 Express 各自 systemd 单元上线；密钥经 `EnvironmentFile` 注入。
+- [x] **Step 1（VPS 部署前置）**：执行 VPS 部署线（本轮独立授权的加固、托管、systemd 等项），bot 与 Express 各自 systemd 单元上线；密钥经 `EnvironmentFile` 注入。
+  - 私有 loopback + SSH 隧道，无域名 / 公网 HTTP；新内核与非 root 管理入口生效，Bot 真实 ready、Playground 真实回复与会话恢复、一致性备份 / 隔离恢复 / 本机异地副本通过；本机与 Linux 31/31 套件、294/294 用例通过，详见 [`research/phase3-deployment.md`](research/phase3-deployment.md#9-task-18-step-1私有-vps-实施记录)。
 - [ ] **Step 2（上线验收）**：连续在线 ≥24 小时、重启自恢复、Web Playground 与 bot 同时可用、全量测试回归。
 - [ ] **Step 3（Phase 4 正式结项）**：路线图退出条件逐项核对（网关稳定在线 / 文字对话闭环 / 限流与错误处理），同步 `status.md` / `history.md` / `backlog.md` / `tests.md`。
 
 ## 后续阶段预研（未授权，仅规划）
 
-- [ ] **部署实施（未授权）**：VPS 单体部署；实施拆解见 [`research/phase3-deployment.md` 第 7 节](research/phase3-deployment.md#7-结论推荐倾向与实施拆解提案)与 [ADR-010](adr/0010-phase3-deployment-and-direct-connect.md)。
+- [x] **部署实施（本人私有访问）**：本轮独立授权并随 Task 18 Step 1 完成 VPS 单体部署，采用 SSH 隧道；公网反代 / TLS 不适用于当前私有范围，未来开放公网须另行授权；实施拆解见 [`research/phase3-deployment.md` 第 7 节](research/phase3-deployment.md#7-结论推荐倾向与实施拆解提案)与 [ADR-010](adr/0010-phase3-deployment-and-direct-connect.md)。
 - [x] **Phase 3 收尾预研**：部署方案（Cloud Run / VPS，显式声明不阻塞 Phase 3 退出条件）。
 - [ ] **Phase 5 预研**：角色数据格式调研（自定义 schema vs Character Card V2）。
 - [ ] **消息重发/重生成与分支导航（基于 ADR-005 消息树模型）**（Phase 5）。

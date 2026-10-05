@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { resolve, extname } from 'node:path';
 import express, { Express, Request, Response } from 'express';
 import { CORE_VERSION, type HealthResponse } from '@core/index';
 import { createCorsMiddleware } from './cors';
@@ -6,10 +8,25 @@ import { SessionService } from './session-service';
 import { SessionNotFoundError } from './storage/session-storage';
 
 export interface AppOptions {
+  staticDirectory?: string;
   allowedOrigins?: readonly string[];
   chatStreamSource?: ChatStreamSource;
   chatStreamHeartbeatIntervalMs?: number;
   sessionService?: SessionService;
+}
+
+/** Private deployment: only SSH-forwardable loopback listeners are accepted. */
+export function readServerConfig(env: NodeJS.ProcessEnv) {
+  const host = env.HOST?.trim() || '127.0.0.1';
+  const port = env.PORT === undefined ? 3001 : Number(env.PORT);
+  if (!['127.0.0.1', '::1'].includes(host)) throw new Error('HOST must be a loopback address.');
+  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Invalid server PORT.');
+  const dataDirectory = resolve(env.SESSION_DATA_DIR?.trim() || 'data');
+  const staticDirectory = env.STATIC_DIRECTORY?.trim() ? resolve(env.STATIC_DIRECTORY.trim()) : undefined;
+  if (staticDirectory && !existsSync(resolve(staticDirectory, 'index.html'))) {
+    throw new Error('Build the Playground before setting STATIC_DIRECTORY.');
+  }
+  return { host, port, dataDirectory, staticDirectory };
 }
 
 function sendSessionError(error: unknown, res: Response): void {
@@ -35,7 +52,7 @@ export function createApp(options: AppOptions = {}): Express {
   app.use(express.json());
 
   // 基础根路由，用于服务骨架与版本探测
-  app.get('/', (_req: Request, res: Response) => {
+  if (!options.staticDirectory) app.get('/', (_req: Request, res: Response) => {
     res.json({
       status: 'ok',
       service: 'gemini-chat-server',
@@ -120,5 +137,21 @@ export function createApp(options: AppOptions = {}): Express {
     }),
   );
 
+  if (options.staticDirectory) {
+    const directory = resolve(options.staticDirectory);
+    // API misses never return HTML. Deploy only dist/web, not server / Bot bundles.
+    app.use('/api', (_req, res) => { res.status(404).json({ error: 'API route not found.' }); });
+    app.use((req, res, next) => {
+      let path: string;
+      try { path = decodeURIComponent(req.path); } catch { res.sendStatus(400); return; }
+      if (path.split('/').some(part => part.startsWith('.'))) { res.sendStatus(404); return; }
+      next();
+    });
+    app.use(express.static(directory, { dotfiles: 'deny', index: 'index.html', redirect: false }));
+    app.get('*', (req, res, next) => {
+      if (extname(req.path) || !req.accepts('html')) { next(); return; }
+      res.sendFile(resolve(directory, 'index.html'));
+    });
+  }
   return app;
 }
