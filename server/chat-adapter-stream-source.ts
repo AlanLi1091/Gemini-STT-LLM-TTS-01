@@ -10,14 +10,18 @@ import {
 import type { ChatStreamSource } from './chat-stream';
 import { SessionArchivedError, SessionService } from './session-service';
 import { SessionNotFoundError, type SessionStorage } from './storage/session-storage';
+import { guardStreamSource, RequestBudget } from './request-budget';
 
 export interface ServerChatEnvironment {
   GEMINI_API_KEY?: string;
+  GEMINI_REQUESTS_PER_MINUTE?: string;
+  GEMINI_RATE_LIMIT_COOLDOWN_MS?: string;
 }
 
 export interface ServerChatStreamSourceOptions {
   mockAdapterOptions?: MockChatAdapterOptions;
   sessionStorage?: SessionStorage;
+  requestBudget?: RequestBudget;
 }
 
 /** 将任意共享 ChatAdapter 映射为服务端 SSE 流源。 */
@@ -135,7 +139,11 @@ export function createChatStreamSourceFromEnv(
     ? new GeminiChatAdapter({ apiKey })
     : new MockChatAdapter(options.mockAdapterOptions);
 
-  return options.sessionStorage
+  const source = options.sessionStorage
     ? createSessionChatStreamSource(adapter, new SessionService(options.sessionStorage))
     : createAdapterStreamSource(adapter);
+  return apiKey ? guardStreamSource(source, options.requestBudget ?? new RequestBudget({
+    requestsPerMinute: environment.GEMINI_REQUESTS_PER_MINUTE === undefined ? undefined : Number(environment.GEMINI_REQUESTS_PER_MINUTE),
+    cooldownMs: environment.GEMINI_RATE_LIMIT_COOLDOWN_MS === undefined ? undefined : Number(environment.GEMINI_RATE_LIMIT_COOLDOWN_MS),
+  })) : source;
 }

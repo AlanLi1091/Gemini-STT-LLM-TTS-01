@@ -3,6 +3,11 @@ import { GoogleGenAI } from '@google/genai';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChatSseEvent } from '@core/contracts/sse';
 import { createChatStreamSourceFromEnv } from '../chat-adapter-stream-source';
+import { RequestBudget } from '../request-budget';
+import { JsonSessionStorage } from '../storage/json-session-storage';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 const mockGenerateContentStream = vi.fn();
 
@@ -32,6 +37,43 @@ async function collectEvents(
 describe('Task 12 Step 3: Adapter 自动选择与统一错误透传', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('Web 与频道共用预算，超限不调用 SDK 或追加会话输入', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'gemini-budget-'));
+    try {
+      const storage = new JsonSessionStorage(directory); const session = await storage.resolveDiscordSession('111111111111111111', '222222222222222222');
+      mockGenerateContentStream.mockResolvedValueOnce((async function* () { yield { text: '回复' }; })());
+      const source = createChatStreamSourceFromEnv({ GEMINI_API_KEY: 'fake' }, { sessionStorage: storage, requestBudget: new RequestBudget({ requestsPerMinute: 1 }) });
+      await collectEvents(source);
+      const events = [];
+      for await (const event of source({ sessionId: session.id, messages: [{ role: 'user', content: '不应写入' }] }, { signal: new AbortController().signal })) events.push(event);
+      expect(events).toEqual([expect.objectContaining({ event: 'error', data: { error: { code: 'RATE_LIMIT', message: expect.stringContaining('预算') } } })]);
+      expect(mockGenerateContentStream).toHaveBeenCalledOnce(); expect((await storage.getSession(session.id))?.messages).toEqual([]);
+    } finally { await rm(directory, { recursive: true }); }
+  });
+  it('上游 429 后暂停，期间不调用 SDK，到期可恢复', async () => {
+    let now = 0; const budget = new RequestBudget({ now: () => now });
+    const source = createChatStreamSourceFromEnv({ GEMINI_API_KEY: 'fake' }, { requestBudget: budget });
+    mockGenerateContentStream.mockRejectedValueOnce({ status: 429 }); await collectEvents(source);
+    await collectEvents(source); expect(mockGenerateContentStream).toHaveBeenCalledOnce();
+    now = 60000; mockGenerateContentStream.mockResolvedValueOnce((async function* () { yield { text: '恢复' }; })());
+    expect((await collectEvents(source)).at(-1)?.event).toBe('done'); expect(mockGenerateContentStream).toHaveBeenCalledTimes(2);
+  });
+  it('Mock 不消耗或受 Gemini 预算影响', async () => {
+    const budget = new RequestBudget({ requestsPerMinute: 1 }); budget.pause();
+    const source = createChatStreamSourceFromEnv({}, { requestBudget: budget, mockAdapterOptions: { delayMs: 0, streamChunkDelayMs: 0 } });
+    expect((await collectEvents(source)).at(-1)?.event).toBe('done'); expect((await collectEvents(source)).at(-1)?.event).toBe('done');
+    expect(mockGenerateContentStream).not.toHaveBeenCalled();
+  });
+  it('已中止请求不消耗预算或调用 SDK', async () => {
+    const budget = new RequestBudget({ requestsPerMinute: 1 }); const controller = new AbortController(); controller.abort();
+    const source = createChatStreamSourceFromEnv({ GEMINI_API_KEY: 'fake' }, { requestBudget: budget });
+    const events = []; for await (const event of source({ messages: [] }, { signal: controller.signal })) events.push(event);
+    expect(events).toEqual([]); expect(mockGenerateContentStream).not.toHaveBeenCalled(); expect(budget.acquire()).toBe(0);
+  });
+  it('非法服务端预算配置在启动时拒绝', () => {
+    expect(() => createChatStreamSourceFromEnv({ GEMINI_API_KEY: 'fake', GEMINI_REQUESTS_PER_MINUTE: '0' })).toThrow('budget configuration');
   });
 
   it('有效服务端 Key 应选择 Gemini，并映射 chunk/done 与 AbortSignal', async () => {

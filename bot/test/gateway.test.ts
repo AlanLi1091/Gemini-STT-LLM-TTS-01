@@ -15,7 +15,7 @@ async function setup(options: Partial<Parameters<typeof startGateway>[0]> = {}) 
   const log = vi.fn();
   const resolveInput = vi.fn(() => input);
   const handleInput = vi.fn().mockResolvedValue('已收到；模型对话将在下一步接入。');
-  const gateway = await startGateway({ token: 'fake-secret', client, log, resolveInput, handleInput, ...options });
+  const gateway = await startGateway({ token: 'fake-secret', schedulerOptions: { cooldownMs: 0 }, client, log, resolveInput, handleInput, ...options });
   stops.push(gateway.stop);
   return { client, destroy, log, resolveInput, handleInput, ...gateway };
 }
@@ -25,9 +25,41 @@ function message() {
 function emit(client: Client, value: ReturnType<typeof message>) {
   client.emit(Events.MessageCreate, value as unknown as ClientEvents[Events.MessageCreate][0]);
 }
-const flush = async () => { for (let i = 0; i < 8; i++) await Promise.resolve(); };
+const flush = async () => { for (let i = 0; i < 30; i++) await Promise.resolve(); };
 
 describe('Task 16 Step 1: Bot 网关骨架', () => {
+  it('前一轮完整回复发送完才开始下一轮 typing 和模型请求', async () => {
+    const { client, handleInput } = await setup(); const first = message(), second = message();
+    let finish!: () => void;
+    first.reply.mockImplementationOnce(() => new Promise(resolve => { finish = () => resolve({}); }));
+    emit(client, first); await flush(); emit(client, second); await flush();
+    expect(handleInput).toHaveBeenCalledOnce(); expect(second.channel.sendTyping).not.toHaveBeenCalled();
+    finish(); await flush(); expect(handleInput).toHaveBeenCalledTimes(2); expect(second.reply).toHaveBeenCalledOnce();
+  });
+  it('冷却拒绝给出安全反馈且不调用后端', async () => {
+    const { client, handleInput } = await setup({ schedulerOptions: { cooldownMs: 5000 } });
+    emit(client, message()); await flush(); const next = message(); emit(client, next); await flush();
+    expect(handleInput).toHaveBeenCalledOnce(); expect(next.channel.sendTyping).not.toHaveBeenCalled();
+    expect(next.reply).toHaveBeenCalledWith({ content: expect.stringContaining('冷却'), allowedMentions: { parse: [], repliedUser: false } });
+  });
+  it('频道队满给出提示且不调用后端', async () => {
+    let finish!: (content: string) => void;
+    const handler = vi.fn(() => new Promise<string>(resolve => { finish = resolve; }));
+    const { client } = await setup({ schedulerOptions: { maxPending: 0, cooldownMs: 0 }, handleInput: handler });
+    emit(client, message()); await flush(); const next = message(); emit(client, next); await flush();
+    expect(next.reply).toHaveBeenCalledWith(expect.objectContaining({ content: expect.stringContaining('队列已满') }));
+    expect(handler).toHaveBeenCalledOnce();
+    expect(next.channel.sendTyping).not.toHaveBeenCalled(); finish('完成'); await flush();
+  });
+  it('退出时排队消息不开始处理或发送停止提示', async () => {
+    let finish!: (content: string) => void; const handler = vi.fn(() => new Promise<string>(resolve => { finish = resolve; }));
+    const { client, stop } = await setup({ handleInput: handler });
+    emit(client, message()); const next = message(); emit(client, next); await flush();
+    stop(); finish('完成'); await flush(); expect(handler).toHaveBeenCalledOnce(); expect(next.reply).not.toHaveBeenCalled();
+  });
+  it('拒绝无效环境限流配置', () => {
+    expect(() => readBotConfig({ DISCORD_BOT_TOKEN: 'fake', DISCORD_TEST_CHANNEL_ID: '123456789012345678', DISCORD_MAX_PENDING: '-1' })).toThrow('调度配置');
+  });
   it('后端错误给出可读反馈并继续处理后续消息', async () => {
     const { client, handleInput } = await setup();
     handleInput.mockRejectedValueOnce(new BackendError('后端暂不可用'));
@@ -77,7 +109,7 @@ describe('Task 16 Step 1: Bot 网关骨架', () => {
   });
   it('正式入口读取根目录环境配置并清理空白', () => {
     expect(readBotConfig({ DISCORD_BOT_TOKEN: ' fake-secret ', DISCORD_TEST_CHANNEL_ID: ' 123456789012345678 ' }))
-      .toEqual({ token: 'fake-secret', channelId: '123456789012345678', backendUrl: 'http://127.0.0.1:3001' });
+      .toEqual({ token: 'fake-secret', channelId: '123456789012345678', backendUrl: 'http://127.0.0.1:3001', schedulerOptions: { maxPending: 3, cooldownMs: 5000 } });
   });
   it('缺少 Token 或无效频道时给出配置指引', () => {
     expect(() => readBotConfig({})).toThrow('DISCORD_BOT_TOKEN');

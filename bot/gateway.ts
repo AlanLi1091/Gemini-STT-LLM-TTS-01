@@ -2,6 +2,7 @@ import { Client, Events, GatewayIntentBits, type ClientEvents } from 'discord.js
 import type { BotInput } from './message-entry';
 import { BackendError } from './backend-client';
 import { splitMessage } from './split-message';
+import { RequestScheduler, SchedulerError, type SchedulerOptions } from './request-scheduler';
 
 export interface GatewayOptions {
   token: string;
@@ -11,6 +12,7 @@ export interface GatewayOptions {
   signal?: AbortSignal;
   log?: (message: string) => void;
   onFatal?: () => void;
+  schedulerOptions?: SchedulerOptions;
 }
 
 export async function startGateway(options: GatewayOptions) {
@@ -18,6 +20,7 @@ export async function startGateway(options: GatewayOptions) {
     GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent,
   ] });
   const log = options.log ?? console.log;
+  const scheduler = new RequestScheduler(options.schedulerOptions);
   const listeners: Array<() => void> = [];
   const requests = new Map<AbortController, ReturnType<typeof setInterval>>();
   let stopped = false;
@@ -27,6 +30,7 @@ export async function startGateway(options: GatewayOptions) {
   const stop = () => {
     if (stopped) return;
     stopped = true;
+    scheduler.stop();
     options.signal?.removeEventListener('abort', stop);
     for (const [controller, timer] of requests) { controller.abort(); clearInterval(timer); }
     requests.clear(); listeners.forEach(remove => remove());
@@ -46,44 +50,61 @@ export async function startGateway(options: GatewayOptions) {
   });
   on(Events.MessageCreate, async message => {
     if (stopped) return;
-    let controller: AbortController | undefined;
     try {
       const input = options.resolveInput(message, client.user?.id ?? '');
       if (!input) return;
-      log('[bot] input accepted');
-      controller = new AbortController();
-      const typing = async () => {
-        try { await message.channel.sendTyping(); }
-        catch { log('[bot] typing failed'); }
-      };
-      const timer = setInterval(() => { void typing(); }, 7000);
-      timer.unref(); requests.set(controller, timer);
-      // Typing is best effort; it must not delay the actual input handler.
-      void typing();
-      const content = await options.handleInput(input, controller.signal);
-      if (!stopped && !controller.signal.aborted && content.trim()) {
-        const parts = splitMessage(content);
-        let first = true;
-        for (const part of parts) {
-          if (stopped || controller.signal.aborted) return;
-          // Discord rejects whitespace-only messages; substantive text is preserved.
-          if (!part.trim()) continue;
-          const payload = { content: part, allowedMentions: { parse: [], repliedUser: false } };
-          if (first) await message.reply(payload);
-          else if (message.channel.isSendable()) await message.channel.send(payload);
-          else throw new Error('Channel cannot send messages');
-          first = false;
+      await scheduler.schedule(input, async scheduledSignal => {
+        let controller: AbortController | undefined;
+        let detachAbort: (() => void) | undefined;
+        try {
+          log('[bot] input accepted');
+          controller = new AbortController();
+          const abort = () => controller!.abort();
+          scheduledSignal.addEventListener('abort', abort, { once: true });
+          detachAbort = () => scheduledSignal.removeEventListener('abort', abort);
+          if (scheduledSignal.aborted) controller.abort();
+          const typing = async () => {
+            try { await message.channel.sendTyping(); }
+            catch { log('[bot] typing failed'); }
+          };
+          const timer = setInterval(() => { void typing(); }, 7000);
+          timer.unref(); requests.set(controller, timer);
+          // Typing is best effort; it must not delay the actual input handler.
+          void typing();
+          const content = await options.handleInput(input, controller.signal);
+          if (!stopped && !controller.signal.aborted && content.trim()) {
+            const parts = splitMessage(content);
+            let first = true;
+            for (const part of parts) {
+              if (stopped || controller.signal.aborted) return;
+              // Discord rejects whitespace-only messages; substantive text is preserved.
+              if (!part.trim()) continue;
+              const payload = { content: part, allowedMentions: { parse: [], repliedUser: false } };
+              if (first) await message.reply(payload);
+              else if (message.channel.isSendable()) await message.channel.send(payload);
+              else throw new Error('Channel cannot send messages');
+              first = false;
+            }
+            log('[bot] input handled');
+          }
+        } catch (error) {
+          log('[bot] input failed');
+          if (error instanceof BackendError && controller && !stopped && !controller.signal.aborted) {
+            try { await message.reply({ content: error.message, allowedMentions: { parse: [], repliedUser: false } }); }
+            catch { log('[bot] error feedback failed'); }
+          }
+        } finally {
+          detachAbort?.();
+          if (controller) { clearInterval(requests.get(controller)); requests.delete(controller); }
         }
-        log('[bot] input handled');
-      }
+      });
     } catch (error) {
-      log('[bot] input failed');
-      if (error instanceof BackendError && controller && !stopped && !controller.signal.aborted) {
+      if (stopped) return;
+      log('[bot] admission failed');
+      if (error instanceof SchedulerError) {
         try { await message.reply({ content: error.message, allowedMentions: { parse: [], repliedUser: false } }); }
         catch { log('[bot] error feedback failed'); }
       }
-    } finally {
-      if (controller) { clearInterval(requests.get(controller)); requests.delete(controller); }
     }
   });
   options.signal?.addEventListener('abort', stop, { once: true });

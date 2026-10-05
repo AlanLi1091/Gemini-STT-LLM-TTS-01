@@ -1,7 +1,7 @@
 # 测试套件与测试用例台账
 
 > **维护规范**：
-> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（27 个套件）与具体测试用例（234 个断言项）。
+> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（29 个套件）与具体测试用例（255 个断言项）。
 > 2. **铁律联动**：后续开发中，每次有新功能开发、重构或测试内容更新时，**必须同步在此台账中维护新增或修改的测试项**，保持与实际测试套件 100% 同步。
 
 ## 1. 测试套件概览看板
@@ -25,17 +25,19 @@
 | 15 | `core/test/sse-contract.test.ts` | Task 11 | 共享 SSE 事件、错误载荷与 sessionId 演进契约 | 5 | ✅ 通过 |
 | 16 | `server/test/cors.test.ts` | Task 11 | CORS 白名单解析、允许/拒绝策略与预检链路 | 5 | ✅ 通过 |
 | 17 | `server/test/chat-stream.test.ts` | Task 12 | SSE 流式管道、心跳、续传声明与中断级联 | 7 | ✅ 通过 |
-| 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 3 | ✅ 通过 |
+| 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 / Task 17 Step 1 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 8 | ✅ 通过 |
 | 19 | `src/test/remote-chat-adapter.test.ts` | Task 13 / Task 14 Step 3 | RemoteChatAdapter 的 SSE 消费、错误映射、AbortSignal 与 sessionId 模式 | 7 | ✅ 通过 |
 | 20 | `src/test/app-remote-integration.test.tsx` | Task 13 Step 3 / Task 14 Step 3 / Phase 3 收尾 | App 的后端 SSE 装配、会话恢复、归档清空与旧配置迁移 | 5 | ✅ 通过 |
 | 21 | `server/test/json-session-storage.test.ts` | Task 14 Step 1 / Task 16 Step 2 | JSON 会话、频道关联、重启恢复与严格追加 | 8 | ✅ 通过 |
 | 22 | `server/test/session-api.test.ts` | Task 14 Step 2 / Task 16 Step 2 | 会话 API、频道上下文、归档与来源隔离 | 7 | ✅ 通过 |
 | 23 | `server/test/discord-demo.test.ts` | Task 15 Step 2 | 配置、测试频道回显、连接事件、日志脱敏与退出清理（网络 Mock） | 14 | ✅ 通过 |
-| 24 | `bot/test/gateway.test.ts` | Task 16 Step 1–3 | 正式入口配置、网关输入注入、typing 生命周期、错误日志与退出清理（网络 Mock） | 17 | ✅ 通过 |
+| 24 | `bot/test/gateway.test.ts` | Task 16 / Task 17 Step 1 | 正式入口配置、网关输入注入、typing 生命周期、错误日志与退出清理（网络 Mock） | 22 | ✅ 通过 |
 | 25 | `bot/test/message-entry.test.ts` | Task 16 Step 1 | 指定频道直接 @Bot、提及清理与消息过滤 | 14 | ✅ 通过 |
 | 26 | `bot/test/backend-client.test.ts` | Task 16 Step 2 | 本机 HTTP / SSE、最终回复、错误、中止与重启解析 | 12 | ✅ 通过 |
 | 27 | `bot/test/split-message.test.ts` | Task 16 Step 3 | 长回复完整分段、段落 / 换行优先、UTF-16 与 CRLF 边界 | 10 | ✅ 通过 |
-| **合计** | **27 个测试文件** | **Phase 1–4** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **234** | **✅ 100% 通过** |
+| 28 | `bot/test/request-scheduler.test.ts` | Task 17 Step 1 | FIFO、跨频道、队满、用户冷却、失败恢复与退出 | 7 | ✅ 通过 |
+| 29 | `server/test/request-budget.test.ts` | Task 17 Step 1 | 滚动请求预算、限流暂停与恢复 | 4 | ✅ 通过 |
+| **合计** | **29 个测试文件** | **Phase 1–4** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **255** | **✅ 100% 通过** |
 
 ---
 
@@ -312,13 +314,19 @@
 - [x] **上游异常应转换为标准 UNKNOWN error 事件且不泄漏内部错误**
 - [x] **客户端断开连接时应中止上游 AbortSignal**
 
-### 2.18 `server/test/chat-adapter-stream-source.test.ts` (3 项)
+### 2.18 `server/test/chat-adapter-stream-source.test.ts` (8 项)
 > **任务对应**：Task 12 Step 2–3 · 服务端 Adapter 承载、自动降级与错误透传
 
 #### Task 12 Step 3: Adapter 自动选择与统一错误透传
 - [x] **有效服务端 Key 应选择 Gemini，并映射 chunk/done 与 AbortSignal**
 - [x] **缺少、空白或不可见字符 Key 时应自动降级共享 MockAdapter**
 - [x] **Gemini 错误应通过 SSE error 事件透传标准 code 与 message**
+
+- [x] **Web 与频道共用预算，超限不调用 SDK 或追加会话输入**
+- [x] **上游 429 后暂停，期间不调用 SDK，到期可恢复**
+- [x] **Mock 不消耗或受 Gemini 预算影响**
+- [x] **已中止请求不消耗预算或调用 SDK**
+- [x] **非法服务端预算配置在启动时拒绝**
 
 ### 2.19 `src/test/remote-chat-adapter.test.ts` (7 项)
 > **任务对应**：Task 13 Step 1 / Task 14 Step 3 · RemoteChatAdapter 实现、会话模式与契约测试
@@ -388,7 +396,7 @@
 - [x] **会话失效时停止，SDK 错误原文不进入日志**
 - [x] **退出信号在登录期间也能清理网关资源**
 
-### 2.24 `bot/test/gateway.test.ts` (17 项)
+### 2.24 `bot/test/gateway.test.ts` (22 项)
 > **任务对应**：Task 16 Step 1–3 · 配置、网关与长回复发送，网络调用全 Mock。
 
 - [x] **正式入口读取根目录环境配置并清理空白**
@@ -410,6 +418,12 @@
 - [x] **中途发送失败不重发或继续剩余段，并清理 typing**
 - [x] **分段发送期间退出不再发送剩余段**
 - [x] **空白最终回复不发送消息**
+
+- [x] **前一轮完整回复发送完才开始下一轮 typing 和模型请求**
+- [x] **冷却拒绝给出安全反馈且不调用后端**
+- [x] **频道队满给出提示且不调用后端**
+- [x] **退出时排队消息不开始处理或发送停止提示**
+- [x] **拒绝无效环境限流配置**
 
 ### 2.25 `bot/test/message-entry.test.ts` (14 项)
 > **任务对应**：Task 16 Step 1 · 用户裁决：只对指定频道内直接 @Bot 的有效正文触发。
@@ -458,3 +472,23 @@
 - [x] **无换行超长文本每段不超过上限且完整重组**
 - [x] **保留段落分隔符、空格和首尾换行**
 - [x] **开头只有换行时仍能前进而不产生空段**
+
+### 2.28 `bot/test/request-scheduler.test.ts` (7 项)
+> **任务对应**：Task 17 Step 1 · 时钟 / 任务注入验证，无真实模型配额消耗。
+
+- [x] **同频道 FIFO 串行，其他频道可并行**
+- [x] **队满拒绝且不占用被拒用户的冷却**
+- [x] **用户冷却跨频道生效且到期恢复**
+- [x] **失败释放频道并继续下一个请求**
+- [x] **退出中止活动请求并拒绝等待及新请求**
+- [x] **拒绝无效调度配置**
+
+- [x] **禁用等待时已完成请求立即释放频道**
+
+### 2.29 `server/test/request-budget.test.ts` (4 项)
+> **任务对应**：Task 17 Step 1 · 时钟 / 任务注入验证，无真实模型配额消耗。
+
+- [x] **滚动一分钟预算原子占位，边界恢复**
+- [x] **上游限流开启暂停，到期后恢复**
+- [x] **再次限流延长暂停且不缩短已有窗口**
+- [x] **拒绝非法预算配置**
