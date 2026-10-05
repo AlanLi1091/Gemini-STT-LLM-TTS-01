@@ -1,6 +1,6 @@
 import { Client, Events, GatewayIntentBits, type ClientEvents } from 'discord.js';
 import type { BotInput } from './message-entry';
-import { BackendError } from './backend-client';
+import { describeFailure } from './errors';
 import { splitMessage } from './split-message';
 import { RequestScheduler, SchedulerError, type SchedulerOptions } from './request-scheduler';
 
@@ -34,8 +34,22 @@ export async function startGateway(options: GatewayOptions) {
     options.signal?.removeEventListener('abort', stop);
     for (const [controller, timer] of requests) { controller.abort(); clearInterval(timer); }
     requests.clear(); listeners.forEach(remove => remove());
-    void client.destroy().catch(() => log('[bot] cleanup failed'));
+    try { void client.destroy().catch(() => log('[bot] cleanup failed')); }
+    catch { log('[bot] cleanup failed'); }
     log('[bot] stopped');
+  };
+  const notify = async (message: ClientEvents[Events.MessageCreate][0], content: string, channelOnly = false) => {
+    if (stopped) return;
+    const payload = { content, allowedMentions: { parse: [], repliedUser: false } };
+    if (!channelOnly) {
+      try { await message.reply(payload); return; }
+      catch { log('[bot] error reply failed'); }
+    }
+    if (stopped) return;
+    try {
+      if (!message.channel.isSendable()) throw new Error('Channel cannot send messages');
+      await message.channel.send(payload);
+    } catch { log('[bot] error feedback failed'); }
   };
   const fatal = () => { stop(); options.onFatal?.(); };
   on(Events.ClientReady, () => log('[bot] ready'));
@@ -56,6 +70,8 @@ export async function startGateway(options: GatewayOptions) {
       await scheduler.schedule(input, async scheduledSignal => {
         let controller: AbortController | undefined;
         let detachAbort: (() => void) | undefined;
+        let sending = false;
+        let sent = 0;
         try {
           log('[bot] input accepted');
           controller = new AbortController();
@@ -73,6 +89,7 @@ export async function startGateway(options: GatewayOptions) {
           void typing();
           const content = await options.handleInput(input, controller.signal);
           if (!stopped && !controller.signal.aborted && content.trim()) {
+            sending = true;
             const parts = splitMessage(content);
             let first = true;
             for (const part of parts) {
@@ -84,14 +101,17 @@ export async function startGateway(options: GatewayOptions) {
               else if (message.channel.isSendable()) await message.channel.send(payload);
               else throw new Error('Channel cannot send messages');
               first = false;
+              sent++;
             }
             log('[bot] input handled');
           }
         } catch (error) {
           log('[bot] input failed');
-          if (error instanceof BackendError && controller && !stopped && !controller.signal.aborted) {
-            try { await message.reply({ content: error.message, allowedMentions: { parse: [], repliedUser: false } }); }
-            catch { log('[bot] error feedback failed'); }
+          const failure = describeFailure(error, sending);
+          log(`[bot] failure kind=${failure.kind}`);
+          if (!stopped && !controller?.signal.aborted) {
+            const prefix = sent ? `回复发送中断，已发送 ${sent} 段；剩余内容未重发。` : '';
+            await notify(message, prefix + failure.message, sending);
           }
         } finally {
           detachAbort?.();
@@ -101,10 +121,7 @@ export async function startGateway(options: GatewayOptions) {
     } catch (error) {
       if (stopped) return;
       log('[bot] admission failed');
-      if (error instanceof SchedulerError) {
-        try { await message.reply({ content: error.message, allowedMentions: { parse: [], repliedUser: false } }); }
-        catch { log('[bot] error feedback failed'); }
-      }
+      await notify(message, error instanceof SchedulerError ? error.message : describeFailure(error).message);
     }
   });
   options.signal?.addEventListener('abort', stop, { once: true });

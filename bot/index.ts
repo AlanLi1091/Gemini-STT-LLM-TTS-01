@@ -5,6 +5,7 @@ import { startGateway } from './gateway';
 import { normalizeMessage } from './message-entry';
 import { BackendClient, validateBackendUrl } from './backend-client';
 import { RequestScheduler } from './request-scheduler';
+import { startupFailureMessage } from './errors';
 
 export function readBotConfig(env: NodeJS.ProcessEnv) {
   const token = env.DISCORD_BOT_TOKEN?.trim();
@@ -42,7 +43,7 @@ async function main() {
   } catch (error) {
     process.off('SIGINT', shutdown);
     process.off('SIGTERM', shutdown);
-    console.error((error as Error).message);
+    console.error(startupFailureMessage(error));
     process.exitCode = 1;
   }
 }

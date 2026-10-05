@@ -28,6 +28,33 @@ function emit(client: Client, value: ReturnType<typeof message>) {
 const flush = async () => { for (let i = 0; i < 30; i++) await Promise.resolve(); };
 
 describe('Task 16 Step 1: Bot 网关骨架', () => {
+  it('清理资源同步失败仍移除监听器且日志脱敏', async () => {
+    const { client, destroy, stop, log } = await setup(); destroy.mockImplementationOnce(() => { throw new Error('fake-secret'); });
+    expect(stop).not.toThrow(); expect(client.listenerCount(Events.MessageCreate)).toBe(0); expect(JSON.stringify(log.mock.calls)).not.toContain('fake-secret');
+  });
+  it('错误提示等待期间退出不发送备用频道提示', async () => {
+    const { client, handleInput, stop } = await setup(); handleInput.mockRejectedValueOnce(new BackendError('fake-secret'));
+    const msg = message(); let fail!: () => void;
+    msg.reply.mockImplementationOnce(() => new Promise((_resolve, reject) => { fail = () => reject(new Error('fake-secret')); }));
+    emit(client, msg); await flush(); stop(); fail(); await flush(); expect(msg.channel.send).not.toHaveBeenCalled();
+  });
+  it('原消息失效时备用频道提示一次且后续请求继续', async () => {
+    const { client } = await setup(); const first = message(); first.reply.mockRejectedValueOnce({ code: 10008, message: 'fake-secret' });
+    emit(client, first); await flush();
+    expect(first.channel.send).toHaveBeenCalledWith({ content: expect.stringContaining('原消息'), allowedMentions: { parse: [], repliedUser: false } });
+    const next = message(); emit(client, next); await flush(); expect(next.reply).toHaveBeenCalledOnce();
+  });
+  it('错误回复与备用提示都失败不递归重试或卡住队列', async () => {
+    const { client, handleInput, log } = await setup(); handleInput.mockRejectedValueOnce(new BackendError('fake-secret'));
+    const first = message(); first.reply.mockRejectedValue({ code: 50013 }); first.channel.send.mockRejectedValue(new Error('fake-secret'));
+    emit(client, first); await flush(); expect(first.reply).toHaveBeenCalledOnce(); expect(first.channel.send).toHaveBeenCalledOnce();
+    expect(JSON.stringify(log.mock.calls)).not.toContain('fake-secret'); const next = message(); emit(client, next); await flush(); expect(next.reply).toHaveBeenCalledOnce();
+  });
+  it('部分段落发送失败只提示中断，不重发已发送段落', async () => {
+    const { client } = await setup({ handleInput: async () => '长'.repeat(6001) }); const msg = message();
+    msg.channel.send.mockResolvedValueOnce({}).mockRejectedValueOnce({ code: 50013 }); emit(client, msg); await flush();
+    expect(msg.reply).toHaveBeenCalledOnce(); expect(msg.channel.send).toHaveBeenCalledTimes(3); expect(msg.channel.send.mock.calls[2][0].content).toContain('已发送 2 段');
+  });
   it('前一轮完整回复发送完才开始下一轮 typing 和模型请求', async () => {
     const { client, handleInput } = await setup(); const first = message(), second = message();
     let finish!: () => void;
@@ -64,7 +91,7 @@ describe('Task 16 Step 1: Bot 网关骨架', () => {
     const { client, handleInput } = await setup();
     handleInput.mockRejectedValueOnce(new BackendError('后端暂不可用'));
     const first = message(); emit(client, first); await flush();
-    expect(first.reply).toHaveBeenCalledWith(expect.objectContaining({ content: '后端暂不可用' }));
+    expect(first.reply).toHaveBeenCalledWith(expect.objectContaining({ content: expect.stringContaining('后端') }));
     const next = message(); emit(client, next); await flush();
     expect(next.reply).toHaveBeenCalledOnce();
   });
@@ -89,7 +116,8 @@ describe('Task 16 Step 1: Bot 网关骨架', () => {
     const { client, log } = await setup({ handleInput: async () => '长'.repeat(6001) });
     const msg = message(); msg.channel.send.mockRejectedValueOnce(new Error('fake-secret'));
     emit(client, msg); await flush();
-    expect(msg.reply).toHaveBeenCalledOnce(); expect(msg.channel.send).toHaveBeenCalledOnce();
+    expect(msg.reply).toHaveBeenCalledOnce(); expect(msg.channel.send).toHaveBeenCalledTimes(2);
+    expect(msg.channel.send.mock.calls[1][0].content).toContain('已发送 1 段');
     expect(log).toHaveBeenCalledWith('[bot] input failed');
     expect(JSON.stringify(log.mock.calls)).not.toContain('fake-secret');
     await vi.advanceTimersByTimeAsync(14000);
@@ -150,7 +178,7 @@ describe('Task 16 Step 1: Bot 网关骨架', () => {
     const { client, handleInput, log } = await setup();
     handleInput.mockRejectedValueOnce(new Error('fake-secret'));
     const first = message(); emit(client, first); await flush();
-    expect(first.reply).not.toHaveBeenCalled();
+    expect(first.reply).toHaveBeenCalledWith(expect.objectContaining({ content: expect.stringContaining('处理失败') }));
     const second = message(); second.reply.mockRejectedValue(new Error('fake-secret'));
     emit(client, second); await flush();
     const third = message(); emit(client, third); await flush();

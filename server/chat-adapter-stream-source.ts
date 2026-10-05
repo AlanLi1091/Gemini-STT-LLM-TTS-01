@@ -55,6 +55,7 @@ export function createAdapterStreamSource(adapter: ChatAdapter): ChatStreamSourc
           },
         };
       }
+      if (!signal.aborted) yield { event: 'error', data: { error: { code: 'MODEL_ERROR', message: '模型未返回完整回复。' } } };
     } catch (error) {
       const chatError = classifyGeminiError(error, signal);
       yield {
@@ -104,6 +105,7 @@ export function createSessionChatStreamSource(
           data: { delta: chunk.delta, accumulated: chunk.accumulated },
         };
       }
+      if (!signal.aborted) yield { event: 'error', data: { error: { code: 'MODEL_ERROR', message: '模型未返回完整回复。' } } };
     } catch (error) {
       if (error instanceof SessionNotFoundError) {
         yield {

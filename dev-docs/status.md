@@ -2,21 +2,23 @@
 
 ## 当前阶段
 
-Phase 3 —— 后端服务化（已完成、已结项）。Phase 4 Task 15 与 Task 16 Step 1 已完成；Task 16 Step 2 已完成：Bot 后端对话、频道持久化与来源隔离通过自动化及真实频道验收。Task 16 Step 3 已完成，Task 16 文字对话三步全部验收通过；Task 17 Step 1 已完成：频道串行、用户冷却及 Gemini 请求预算通过自动化与真实验收；Task 17 Step 2–3、Task 18 与 VPS 部署未授权。
+Phase 3 —— 后端服务化（已完成、已结项）。Phase 4 Task 15 与 Task 16 Step 1 已完成；Task 16 Step 2 已完成：Bot 后端对话、频道持久化与来源隔离通过自动化及真实频道验收。Task 16 Step 3 已完成，Task 16 文字对话三步全部验收通过；Task 17 Step 1 已完成：频道串行、用户冷却及 Gemini 请求预算通过自动化与真实验收；Task 17 Step 2 实现、自动化与真实断开 / 恢复验收通过，正在提交闭环；Task 17 Step 3、Task 18 与 VPS 部署未授权。
 
 ## 当前授权
 
-- **授权任务**：Task 17 Step 1 已完成；用户确认冷却提示，真实频道顺序验证通过，功能提交 `374d055` 已推送至 `origin/test`，本轮授权结束。
+- **授权任务**：用户确认 Task 17 Step 2 文件计划；错误分类、一次备用提示与模型流异常处理已实现并验收，提交闭环进行中。
 - **VPS 现状**：已采购开通（Vultr Seattle、1核1G、Ubuntu 26.04，含 Auto Backup），仅完成开机，未做加固与部署；在加固完成前不得对公网启动任何项目服务。
 - **最近功能 commit**：`374d055` — `feat(discord): serialize channel requests and enforce request budgets`。
-- **当前测试基线**：29/29 个测试套件、255/255 项用例通过（`npm run test`）；根与四包 `npm run lint`、本步 Bot / Express 构建通过（Web 无代码变更）；与 [`tests.md`](tests.md) 一致。
+- **当前测试基线**：30/30 个测试套件、272/272 项用例通过（`npm run test`）；根与四包 `npm run lint`、本步 Bot / Express 构建通过（Web 无代码变更）；与 [`tests.md`](tests.md) 一致。
 - **当前功能验收**：Playground 仅连接后端服务；启动时恢复最近活动会话，无可恢复会话时创建新会话。发送仅提交本轮输入与 `sessionId`，由服务端加载完整上下文；清空对话归档旧会话并切换至新会话。旧版直连设置迁移为后端模式并清除浏览器存储的 Key 字段。
 
 ## 下一步计划
 
-等待用户指派 Task 17 Step 2（错误处理与进程韧性）；实施前另交文件计划。Task 17 Step 2–3、Task 18 与 VPS 部署仍未授权。
+当前完成 Task 17 Step 2 验收与提交后停止；Task 17 Step 3、Task 18 与 VPS 部署仍未授权。
 
 ## 本轮验收与遗留
+
+- **Task 17 Step 2 验收**：30/30 套件、272/272 用例、类型检查与 Bot / Express 构建及文档检查通过。用户确认后端未运行时收到连接失败提示、Bot 在线；后端恢复后同一 Bot 记录 input handled，Discord 元数据确认失败提示之后发送非空回复（30 字符、无提及）。Discord 权限 / 消息失效与反馈失败由 Mock 验证，未修改真实 Token 或频道权限。测试进程已停止，完成标记与记录已同步，功能提交待推送。
 
 - **Task 17 Step 1 验收**：29/29 套件、255/255 用例、根与四包类型检查、Bot / Express 构建及文档检查通过。用户确认五秒冷却提示；Discord REST 时间关系确认请求在长文结束前提交、对应回复在长文全部发送后。模型预算与上游 429 暂停由模拟测试验证，未人为消耗真实上游配额。禁用等待时频道释放顺序边界已修复并通过回归。Bot / 后端已停止，完成标记与记录已同步，功能提交 `374d055` 已推送至 `origin/test`。
 

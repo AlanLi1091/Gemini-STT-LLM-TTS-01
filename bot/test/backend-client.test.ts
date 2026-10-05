@@ -13,6 +13,23 @@ function sse(frames: string[]) {
 const resolved = () => new Response(JSON.stringify({ sessionId }));
 afterEach(() => vi.useRealTimers());
 describe('Task 16 Step 2: Bot 后端与 SSE 对话', () => {
+  it.each(['AUTH_ERROR', 'NETWORK_ERROR', 'MODEL_ERROR'])('保留%s分类且不泄露服务端原文', async kind => {
+    const fetcher = vi.fn().mockResolvedValueOnce(resolved()).mockResolvedValueOnce(sse([`event: error\ndata: ${JSON.stringify({ error: { code: kind, message: 'fake-secret' } })}\n\n`]));
+    try { await new BackendClient({ fetch: fetcher }).chat(input); throw new Error('Expected failure'); }
+    catch (error) { expect(error).toBeInstanceOf(BackendError); expect((error as BackendError).kind).toBe(kind); expect((error as Error).message).not.toContain('fake-secret'); }
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+  it('HTTP 鉴权错误返回安全分类', async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response('fake-secret', { status: 403 }));
+    await expect(new BackendClient({ fetch: fetcher }).chat(input)).rejects.toMatchObject({ kind: 'AUTH_ERROR' });
+  });
+  it('读取 SSE 期间主动中止会取消 reader 且不重发', async () => {
+    const cancel = vi.fn(); const stream = new ReadableStream({ start() {}, cancel });
+    const fetcher = vi.fn().mockResolvedValueOnce(resolved()).mockResolvedValueOnce(new Response(stream));
+    const controller = new AbortController(); const pending = expect(new BackendClient({ fetch: fetcher }).chat(input, controller.signal)).rejects.toMatchObject({ kind: 'ABORTED' });
+    for (let i = 0; i < 20; i++) await Promise.resolve(); controller.abort(); await pending;
+    expect(cancel).toHaveBeenCalledOnce(); expect(fetcher).toHaveBeenCalledTimes(2);
+  });
   it('跨 UTF-8 字节边界读取中文最终回复', async () => {
     const bytes = new TextEncoder().encode('event: done\ndata: {"content":"中文回复"}\n\n');
     const stream = new ReadableStream({ start(controller) {

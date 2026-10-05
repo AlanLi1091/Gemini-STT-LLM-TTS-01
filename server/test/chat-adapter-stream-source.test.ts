@@ -35,6 +35,12 @@ async function collectEvents(
 }
 
 describe('Task 12 Step 3: Adapter 自动选择与统一错误透传', () => {
+  it('无状态模型流缺少结束事件时返回明确错误', async () => {
+    // Verify the source boundary directly: SDK adapter may synthesize a done event.
+    const { createAdapterStreamSource } = await import('../chat-adapter-stream-source');
+    const source = createAdapterStreamSource({ id: 'incomplete', name: 'Incomplete', send: async () => ({ content: '' }), stream: async function* () { yield { delta: 'x', accumulated: 'x', done: false }; } });
+    expect((await collectEvents(source)).at(-1)).toEqual({ event: 'error', data: { error: { code: 'MODEL_ERROR', message: expect.stringContaining('完整') } } });
+  });
   beforeEach(() => {
     vi.clearAllMocks();
   });

@@ -47,6 +47,17 @@ afterEach(async () => {
 });
 
 describe('Task 14 Step 2: 会话 API 与多轮上下文', () => {
+  it.each(['缺少结束事件', '中途抛错'])('模型%s不保存半截助手回复且后续请求恢复', async mode => {
+    const { app, adapter, sessionService } = await createTestContext(); const original = adapter.stream.bind(adapter);
+    adapter.stream = async function* () { yield { delta: '半截', accumulated: '半截', done: false }; if (mode === '中途抛错') throw new Error('network failure'); };
+    const session = await sessionService.createSession();
+    const failed = await request(app).post('/api/chat/stream').send({ sessionId: session.id, messages: [{ role: 'user', content: '第一轮' }] }).expect(200);
+    expect(failed.text).toContain('event: error'); expect(failed.text).not.toContain('event: done');
+    expect((await sessionService.getSession(session.id))?.messages.map(m => m.role)).toEqual(['user']);
+    adapter.stream = original;
+    const next = await request(app).post('/api/chat/stream').send({ sessionId: session.id, messages: [{ role: 'user', content: '第二轮' }] }).expect(200);
+    expect(next.text).toContain('event: done'); expect((await sessionService.getSession(session.id))?.messages.map(m => m.content)).toEqual(['第一轮', '第二轮', '回复']);
+  });
   it('Bot 经真实 HTTP/SSE 多轮对话并按频道复用持久化上下文', async () => {
     const { app, adapter } = await createTestContext();
     const server = app.listen(0, '127.0.0.1');
