@@ -2,25 +2,25 @@
 
 ## 当前阶段
 
-Phase 3 —— 后端服务化（已完成、已结项）。Phase 4 Task 15 与 Task 16 Step 1 已完成；Task 16 Step 2 已完成：Bot 后端对话、频道持久化与来源隔离通过自动化及真实频道验收。Task 16 Step 3 已完成，Task 16 文字对话三步全部验收通过；Task 17 Step 1 已完成：频道串行、用户冷却及 Gemini 请求预算通过自动化与真实验收；Task 17 Step 2 已完成：错误反馈、流异常与请求恢复通过自动化及真实验收；Task 17 Step 3 已完成本地模拟验证与边界记录，Task 17 三步已完成；Task 18 Step 1 与独立 VPS 私有部署已完成；Step 2 全部验收通过、正在提交收尾，Step 3 尚未启动。
+Phase 3 —— 后端服务化（已完成、已结项）。Phase 4 Task 15 与 Task 16 Step 1 已完成；Task 16 Step 2 已完成：Bot 后端对话、频道持久化与来源隔离通过自动化及真实频道验收。Task 16 Step 3 已完成，Task 16 文字对话三步全部验收通过；Task 17 Step 1 已完成：频道串行、用户冷却及 Gemini 请求预算通过自动化与真实验收；Task 17 Step 2 已完成：错误反馈、流异常与请求恢复通过自动化及真实验收；Task 17 Step 3 已完成本地模拟验证与边界记录，Task 17 三步已完成；Task 18 Step 1 与独立 VPS 私有部署已完成；Step 2 已完成并提交推送，Step 3 尚未启动。
 
 ## 当前授权
 
-- **授权任务**：用户确认 Task 18 Step 2 文件计划，授权采集器、上线后主机重启、双入口验收与真实 ≥24 小时观察；全部验收已通过，正在commit / push收尾；Step 3 未启动。
+- **授权任务**：用户确认 Task 18 Step 2 文件计划，授权采集器、上线后主机重启、双入口验收与真实 ≥24 小时观察；已完成，功能提交`bf7391c`已推送至`origin/test`，本轮授权结束；Step 3 未启动。
 - **VPS 现状**：Vultr Seattle、1核1G、Ubuntu 26.04.1，内核 7.0.0-38、Node v24.21.0，Auto Backup 已开启；gemini-admin 公钥管理，禁用 root / 密码 SSH，UFW 仅开放 22/tcp。gemini-server / gemini-bot 两个非 root systemd 服务 active / enabled，Express 仅监听 127.0.0.1:3001，数据目录独立持久化。无域名、仅本人使用，通过 SSH 隧道访问 http://127.0.0.1:18080，详见 [运维说明](../deploy/README.md)。服务保持常驻。
-- **最近功能 commit**：`65c4fb2` — `feat(deploy): run private Playground and Discord bot on hardened VPS`。
+- **最近功能 commit**：`bf7391c` — `feat(deploy): validate continuous VPS operation with measured recovery evidence`。
 - **当前测试基线**：本机与 Linux 均 32/32 套件、305/305 用例与类型检查通过；本步不修改应用产物，既有 Linux 三构建与生产审计 0 漏洞结论保留；新增 11 项见 [tests.md](tests.md)。
 - **当前功能验收**：Playground 仅连接后端服务；启动时恢复最近活动会话，无可恢复会话时创建新会话。发送仅提交本轮输入与 `sessionId`，由服务端加载完整上下文；清空对话归档旧会话并切换至新会话。旧版直连设置迁移为后端模式并清除浏览器存储的 Key 字段。
 
 ## 下一步计划
 
-完成 Step 2 的commit / push收尾后停止；Step 3 正式结项未授权实施。
+等待用户指派 Task 18 Step 3（Phase 4 正式结项）；未授权，不开工。
 
 ## 本轮验收与遗留
 
-- **Task 18 Step 2 验收通过，提交收尾中**：真实同boot与两进程连续108506秒（30小时8分），1781个健康样本，最大间隔61.24秒；有效故障与自动重启0。22次自动恢复合计16.429573秒、最长1.698147秒，符合用户允许的≤5秒口径，原13个失败样本保留；独立原始样本 / journal核对无未配对、旧进程或硬错误。RSS末72.7 / 峰98.3 MiB，heapUsed末 / 峰23.4 MiB，未见持续失控增长。主机重启自动恢复、原会话文件一致、Web新回复、Discord服务端证据与用户确认均通过；本机 / Linux32/32套件、305/305用例及类型检查通过。验收timer已disabled / inactive，聊天回访已PAUSED，最终新鲜报告与原始journal保存于VPS root专属目录；两应用常驻。计划内改动待提交推送test，Step 3未启动；详见[观察记录](research/phase3-deployment.md#10-task-18-step-2上线验收)。
+- **Task 18 Step 2 完成**：真实同boot与两进程连续108506秒（30小时8分），1781个健康样本，最大间隔61.24秒；有效故障与自动重启0。22次自动恢复合计16.429573秒、最长1.698147秒，符合用户允许的≤5秒口径，原13个失败样本保留；独立原始样本 / journal核对无未配对、旧进程或硬错误。RSS末72.7 / 峰98.3 MiB，heapUsed末 / 峰23.4 MiB，未见持续失控增长。主机重启自动恢复、原会话文件一致、Web新回复、Discord服务端证据与用户确认均通过；本机 / Linux32/32套件、305/305用例及类型检查通过。验收timer已disabled / inactive，聊天回访已PAUSED，最终新鲜报告与原始journal保存于VPS root专属目录；两应用常驻。功能提交`bf7391c`已推送至`origin/test`，本步已勾选并追加历史，Step 3未启动；详见[观察记录](research/phase3-deployment.md#10-task-18-step-2上线验收)。
 
-- **Task 18 Step 1 验收**：本机 / Linux 31/31 套件、294/294 用例、类型检查、Linux 三构建与文档检查通过。新内核上线前重启与加固管理入口验证通过；两个服务 active / enabled，Bot 真实 ready，SSH 隧道 Web 真实模型回复“连接成功”，备份重启服务后刷新恢复会话。归档校验、隔离恢复逐文件对比与本机 data/vps-backups 异地副本通过；九个部署源码配置与工作区校验一致，运行进程密钥按职责隔离。功能提交 `65c4fb2` 已推送至 `origin/test`，发行物 task18-20261005-01 摘要见 [部署记录](research/phase3-deployment.md#9-task-18-step-1私有-vps-实施记录)。既有 UI 测试 React act 警告与系统 XFS CPUAccounting 弃用提示已记录，生产审计 0 漏洞。首次部署暂无上一发行物，备份暂为手动；Step 2 长时 / 上线后主机重启 / 双入口消息验收尚未进行。本机隧道和 VPS 常驻服务保持运行，既有本地开发会话未迁移。
+- **Task 18 Step 1 验收**：本机 / Linux 31/31 套件、294/294 用例、类型检查、Linux 三构建与文档检查通过。新内核上线前重启与加固管理入口验证通过；两个服务 active / enabled，Bot 真实 ready，SSH 隧道 Web 真实模型回复“连接成功”，备份重启服务后刷新恢复会话。归档校验、隔离恢复逐文件对比与本机 data/vps-backups 异地副本通过；九个部署源码配置与工作区校验一致，运行进程密钥按职责隔离。功能提交 `65c4fb2` 已推送至 `origin/test`，发行物 task18-20261005-01 摘要见 [部署记录](research/phase3-deployment.md#9-task-18-step-1私有-vps-实施记录)。既有 UI 测试 React act 警告与系统 XFS CPUAccounting 弃用提示已记录，生产审计 0 漏洞。首次部署暂无上一发行物，备份暂为手动；Step 1完成时尚未进行的长时 / 上线后主机重启 / 双入口消息验收已由本轮Step 2通过。本机隧道和 VPS 常驻服务保持运行，既有本地开发会话未迁移。
 
 - **Task 17 Step 3 验收**：30/30 套件、287/287 用例、类型检查、Bot 构建及文档检查通过；新增 15 项事件注入 / 假时钟测试，验证可恢复关闭、六种致命关闭、重复回调、活动请求跨重连与模拟 24 小时 / 100 次恢复下资源清理。补齐致命关闭码、单次退出通知、shard / replayed 日志及 30 秒内存采样。功能提交 `64d8b12` 已推送至 `origin/test`；未启动真实 Bot / 后端测试进程，未修改真实 Token / 网络。模拟不证明真实 SDK 重连或长期内存稳定，真实断网与超过 10 分钟观察仍为 Task 15 Demo 历史证据，边界详见 [第 12 节](research/phase4-discord.md#12-task-17-step-3网关稳定性验证)。
 
