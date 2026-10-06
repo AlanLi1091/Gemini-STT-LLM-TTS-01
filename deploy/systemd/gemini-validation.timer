@@ -1,0 +1,11 @@
+[Unit]
+Description=Task 18 sample every minute during acceptance
+
+[Timer]
+OnBootSec=90s
+OnUnitActiveSec=60s
+AccuracySec=1s
+Unit=gemini-validation.service
+
+[Install]
+WantedBy=timers.target

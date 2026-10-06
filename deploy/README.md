@@ -51,3 +51,21 @@ ssh -N -L 127.0.0.1:18080:127.0.0.1:3001 -o ExitOnForwardFailure=yes -o ServerAl
 Step 1 验证系统加固、两个非 root 服务启动、loopback / 隧道访问、密钥按职责隔离、SSE、备份和隔离恢复。连续 ≥24 小时、主机重启自恢复与 Web / Discord 同时对话属于 Step 2，须下一轮指派。本步骤完成后服务保持常驻，不自动继续 Step 2 或结项。
 
 参考：[Ubuntu OpenSSH](https://documentation.ubuntu.com/server/how-to/security/openssh-server/)、[Ubuntu 防火墙](https://documentation.ubuntu.com/server/how-to/security/firewalls/index.html)、[systemd.exec](https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html)、[Node 24 官方发布](https://nodejs.org/download/release/latest-v24.x/)。
+
+
+## Task 18 Step 2：真实在线验收
+
+采集器为 deploy/validate-online.sh，使用系统 /usr/bin/python3。安装到 /opt/gemini-validation，两个新 systemd 单元 gemini-validation.service / timer 每分钟采样；采样只读取 systemd、Bot journald 与本机 /api/health，不调用 Gemini、不发送 Discord 消息、不重启应用。
+
+- root 专属 /var/lib/gemini-validation/samples.jsonl 保留 UTC、单调时钟、boot ID、进程 invocation / PID / 重启次数 / 内存及安全状态；state.json 保留网关状态与 journal cursor，不保存消息正文、密钥或 SDK 错误原文。
+- 首次采样读取当前 boot 的 Bot 日志；后续按 cursor 增量读取，仅采用当前 Bot invocation 的连接事件。按用户确认的口径，重连 / 断开在同进程自动恢复且原始日志证明耗时不超过 5 秒时允许计入观察；超时、未恢复、错误或停止仍判为中断；30 秒内存日志超过 90 秒未更新亦不通过。
+- --report 只读汇总：必须同 boot 与两服务 invocation、健康样本连续跨度达到 86400 秒、间隔不超过 150 秒、最后样本新鲜，且无损坏 JSON。有效故障、重启或采样缺口重新累计；短暂恢复列出逐次开始 / 结束的单调时间、耗时、次数及总耗时，保留原样本判定和新口径结果；此结果不替代人工双入口验收，也不证明采样间隔内所有瞬时 REST 故障不存在。
+- 原始 samples.jsonl 不改写；旧口径因重连判失败的样本，仅在当前 boot / invocation 的 journald 有完整配对且不超过 5 秒、HTTP与内存日志新鲜度及两进程健康时重新评估。日志缺失 / 不配对 / 错误路径不放行；failed_samples 保留原判定数，effective_failed_samples 表示新口径失败数。
+- 重启主机前先确认没有正在生成的请求；重启后不手动启动应用，验证两个 enabled 单元自动 active、Bot ready、已有 Web 会话完整、原会话文件校验一致。观察窗口从重启后的健康样本开始。
+- 验收期间不要切版、手动重启或运行会停服务的 backup.sh；需要维护时如实记录并重新累计窗口。查看数据不停止采集。
+- 在 Web Playground 发起一次简短测试；用户在指定 Discord 频道直接 @Bot 发起测试。核对 input handled、频道持久化、非空最终回复，并确认 Web 与 Bot 同时在线。由用户发起 Discord 消息，不用 Bot Token 冒充用户发送。
+- 真实至少 24 小时后检查报告、所有异常区间与内存趋势，核对同窗口双入口已验收证据与最终服务状态；通过后停用 gemini-validation.timer 保留证据，只完成 Step 2，不自动正式结项。
+
+运维只读报告命令：sudo /opt/gemini-validation/validate-online.sh --report。验收采集是 VPS systemd 任务，Mac 关机不影响采样；聊天的后续检查仍需要本机 Codex 和 SSH 可用。VALIDATION_DIR / VALIDATION_BOOT_FILE / VALIDATION_HEALTH_URL 为测试注入变量，生产 unit 使用默认路径和 loopback 地址，不提供对外接口。
+
+本轮Step 2已通过，验收timer已disabled / inactive；最终保存报告与原始journal位于/var/lib/gemini-validation，详见[最终验收记录](../dev-docs/research/phase3-deployment.md#最终验收2026-10-06)。停采后动态报告会自然过期，保存的final-report.json记录验收时的新鲜度；两个应用仍保持常驻。

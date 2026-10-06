@@ -1,7 +1,7 @@
 # 测试套件与测试用例台账
 
 > **维护规范**：
-> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（31 个套件）与具体测试用例（294 个断言项）。
+> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（32 个套件）与具体测试用例（305 个断言项）。
 > 2. **铁律联动**：后续开发中，每次有新功能开发、重构或测试内容更新时，**必须同步在此台账中维护新增或修改的测试项**，保持与实际测试套件 100% 同步。
 
 ## 1. 测试套件概览看板
@@ -39,7 +39,8 @@
 | 29 | `server/test/request-budget.test.ts` | Task 17 Step 1 | 滚动请求预算、限流暂停与恢复 | 4 | ✅ 通过 |
 | 30 | `bot/test/errors.test.ts` | Task 17 Step 2 | 固定安全反馈、Discord 错误分类与启动日志脱敏 | 4 | ✅ 通过 |
 | 31 | `server/test/deployment.test.ts` | Task 18 Step 1 | 私有 loopback 配置、静态托管、SSE / API 隔离与文件边界 | 7 | ✅ 通过 |
-| **合计** | **31 个测试文件** | **Phase 1–4** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **294** | **✅ 100% 通过** |
+| 32 | `server/test/deployment-validation.test.ts` | Task 18 Step 2 | 采集故障、重连中断、24 小时 / 新鲜度 / 证据缺口判定 | 11 | ✅ 通过 |
+| **合计** | **32 个测试文件** | **Phase 1–4** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **305** | **✅ 100% 通过** |
 
 ---
 
@@ -547,3 +548,19 @@
 - [x] **同源首页、静态资源与页面回退正常提供**
 - [x] **API 与 SSE 不被静态回退覆盖且隧道 Origin 可访问**
 - [x] **不提供点文件、目录穿越或 Web 目录外的服务端产物**
+
+
+### 2.32 `server/test/deployment-validation.test.ts` (11 项)
+> **任务对应**：Task 18 Step 2 · 真实采集器子进程与可控夹具；算法时间夹具不冒充实际 24 小时观察。
+
+- [x] **records real health and gateway metadata without raw logs or secrets**
+- [x] **does not pass when HTTP health is unavailable**
+- [x] **does not pass when the process is inactive or metadata collection fails**
+- [x] **accepts brief automatic recovery and records its measured duration**
+- [x] **does not reuse gateway readiness from an old process**
+- [x] **requires a complete real 24-hour span with fresh records**
+- [x] **resets the window after a failed sample, missing interval or process restart**
+- [x] **rejects stale records, changed host boot and malformed evidence**
+- [x] **rejects slow recovery and errors even if the gateway subsequently resumes**
+- [x] **reevaluates old samples only with matching measured journal evidence without rewriting them**
+- [x] **keeps old interruption samples failed when journal evidence is missing**
