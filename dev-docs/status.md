@@ -6,19 +6,19 @@ Phase 1–4 已完成并正式结项；Phase 4 Task 15–18全部完成，Task 1
 
 ## 当前授权
 
-- **授权任务**：用户指派Task 18 Step 3并确认文件计划；核对Phase 4退出条件、全量回归、更新结项文档与根AGENTS.md（单独commit），验收通过，正在提交推送收尾。只推送origin/test，完成后停止。
+- **授权任务**：用户指派Task 18 Step 3并确认文件计划；核对Phase 4退出条件、全量回归、更新结项文档与根AGENTS.md（单独commit），已完成；结项提交`b8c28cf`与根摘要独立提交`f98920d`已推送至`origin/test`，本轮授权结束。
 - **VPS 现状**：Vultr Seattle、1核1G、Ubuntu 26.04.1，内核 7.0.0-38、Node v24.21.0，Auto Backup 已开启；gemini-admin 公钥管理，禁用 root / 密码 SSH，UFW 仅开放 22/tcp。gemini-server / gemini-bot 两个非 root systemd 服务 active / enabled，Express 仅监听 127.0.0.1:3001，数据目录独立持久化。无域名、仅本人使用，通过 SSH 隧道访问 http://127.0.0.1:18080，详见 [运维说明](../deploy/README.md)。服务保持常驻。
-- **最近功能 commit**：`bf7391c` — `feat(deploy): validate continuous VPS operation with measured recovery evidence`。
+- **最近交付 commit**：`b8c28cf` — `docs: close Phase 4 with verified exit criteria`；根摘要独立提交`f98920d`。最近功能提交仍为`bf7391c`。
 - **当前测试基线**：本机与 Linux 均 32/32 套件、305/305 用例与类型检查通过；本步不修改应用产物，既有 Linux 三构建与生产审计 0 漏洞结论保留；新增 11 项见 [tests.md](tests.md)。
 - **当前功能验收**：Playground 仅连接后端服务；启动时恢复最近活动会话，无可恢复会话时创建新会话。发送仅提交本轮输入与 `sessionId`，由服务端加载完整上下文；清空对话归档旧会话并切换至新会话。旧版直连设置迁移为后端模式并清除浏览器存储的 Key 字段。
 
 ## 下一步计划
 
-完成当前Step 3验收与提交推送后停止；后续任务等待用户指派。
+Phase 4已正式结项；等待用户指派后续任务，Phase 5及其他预研不自动开工。
 
 ## 本轮验收与遗留
 
-- **Task 18 Step 3 验收通过，提交收尾中**：路线图三项退出条件逐项核对通过，真实与Mock证据边界保留；本轮全量32/32测试文件、305/305用例、根与四包类型检查通过，台账逐项一致，修正一个Demo既有标题漏字。首次沙箱HTTP监听EPERM后经批准重跑全量通过；未修改应用 / 测试代码或现网配置。根AGENTS.md阶段摘要和ADR索引按确认计划独立提交，Phase 5未授权。
+- **Task 18 Step 3 / Phase 4 正式结项完成**：路线图三项退出条件逐项核对通过，真实与Mock证据边界保留；本轮全量32/32测试文件、305/305用例、根与四包类型检查通过，台账逐项一致，修正一个Demo既有标题漏字。首次沙箱HTTP监听EPERM后经批准重跑全量通过；未修改应用 / 测试代码或现网配置。根AGENTS.md阶段摘要和ADR索引按确认计划以`f98920d`独立提交，结项文档以`b8c28cf`提交，均已推送origin/test；本步已勾选，历史只追加，Phase 5未授权。
 
 - **Task 18 Step 2 完成**：真实同boot与两进程连续108506秒（30小时8分），1781个健康样本，最大间隔61.24秒；有效故障与自动重启0。22次自动恢复合计16.429573秒、最长1.698147秒，符合用户允许的≤5秒口径，原13个失败样本保留；独立原始样本 / journal核对无未配对、旧进程或硬错误。RSS末72.7 / 峰98.3 MiB，heapUsed末 / 峰23.4 MiB，未见持续失控增长。主机重启自动恢复、原会话文件一致、Web新回复、Discord服务端证据与用户确认均通过；本机 / Linux32/32套件、305/305用例及类型检查通过。验收timer已disabled / inactive，聊天回访已PAUSED，最终新鲜报告与原始journal保存于VPS root专属目录；两应用常驻。功能提交`bf7391c`已推送至`origin/test`，本步已勾选并追加历史，Step 3结项见上项；详见[观察记录](research/phase3-deployment.md#10-task-18-step-2上线验收)。
 
