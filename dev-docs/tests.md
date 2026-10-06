@@ -395,7 +395,7 @@
 - [x] **忽略机器人消息**
 - [x] **忽略Webhook消息**
 - [x] **忽略私信消息**
-- [x] **忽略空白消息**
+- [x] **忽略空白消息消息**
 - [x] **长回显不超过 2000 字符且不截断代理对**
 - [x] **回复失败后仍可处理下一条消息且日志不含错误原文**
 - [x] **记录连接恢复与内存数据，停止后清理定时器和监听器**
@@ -564,3 +564,12 @@
 - [x] **rejects slow recovery and errors even if the gateway subsequently resumes**
 - [x] **reevaluates old samples only with matching measured journal evidence without rewriting them**
 - [x] **keeps old interruption samples failed when journal evidence is missing**
+
+
+## 3. Phase 4 结项回归（Task 18 Step 3，2026-10-06）
+
+- 本轮全量回归32/32测试文件、305/305用例通过，根与四个workspaces类型检查通过；没有新增或修改测试代码，基线不变。
+- 使用Vitest JSON结果逐文件比较用例title与本台账：32文件 / 305条逐项映射一致；修正Demo既有用例名“忽略空白消息消息”的台账漏字，保持与现有代码精确对应，不改测试实现。
+- 首次沙箱运行因本机HTTP监听EPERM及相关超时失败；经批准在沙箱外重跑全量通过，没有跳过用例或修改断言规避限制。
+- 三项退出条件与真实验收证据见[路线图结项核对](roadmap.md#phase-4-退出条件核对2026-10-06)。真实30小时8分窗口属于Task 18 Step 2；本轮未重复调用模型、发送Discord消息或改变现网配置。
+- Step 2独立Linux32/32套件、305/305用例与类型检查、Step 1生产构建与审计结论沿用历史证据；本轮为文档结项，未把这些历史检查表述为重新执行。

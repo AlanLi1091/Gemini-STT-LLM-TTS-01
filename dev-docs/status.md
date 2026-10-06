@@ -2,11 +2,11 @@
 
 ## 当前阶段
 
-Phase 3 —— 后端服务化（已完成、已结项）。Phase 4 Task 15 与 Task 16 Step 1 已完成；Task 16 Step 2 已完成：Bot 后端对话、频道持久化与来源隔离通过自动化及真实频道验收。Task 16 Step 3 已完成，Task 16 文字对话三步全部验收通过；Task 17 Step 1 已完成：频道串行、用户冷却及 Gemini 请求预算通过自动化与真实验收；Task 17 Step 2 已完成：错误反馈、流异常与请求恢复通过自动化及真实验收；Task 17 Step 3 已完成本地模拟验证与边界记录，Task 17 三步已完成；Task 18 Step 1 与独立 VPS 私有部署已完成；Step 2 已完成并提交推送，Step 3 尚未启动。
+Phase 1–4 已完成并正式结项；Phase 4 Task 15–18全部完成，Task 18 Step 3退出条件核对与回归通过。Phase 5及后续阶段未启动、未授权。
 
 ## 当前授权
 
-- **授权任务**：用户确认 Task 18 Step 2 文件计划，授权采集器、上线后主机重启、双入口验收与真实 ≥24 小时观察；已完成，功能提交`bf7391c`已推送至`origin/test`，本轮授权结束；Step 3 未启动。
+- **授权任务**：用户指派Task 18 Step 3并确认文件计划；核对Phase 4退出条件、全量回归、更新结项文档与根AGENTS.md（单独commit），验收通过，正在提交推送收尾。只推送origin/test，完成后停止。
 - **VPS 现状**：Vultr Seattle、1核1G、Ubuntu 26.04.1，内核 7.0.0-38、Node v24.21.0，Auto Backup 已开启；gemini-admin 公钥管理，禁用 root / 密码 SSH，UFW 仅开放 22/tcp。gemini-server / gemini-bot 两个非 root systemd 服务 active / enabled，Express 仅监听 127.0.0.1:3001，数据目录独立持久化。无域名、仅本人使用，通过 SSH 隧道访问 http://127.0.0.1:18080，详见 [运维说明](../deploy/README.md)。服务保持常驻。
 - **最近功能 commit**：`bf7391c` — `feat(deploy): validate continuous VPS operation with measured recovery evidence`。
 - **当前测试基线**：本机与 Linux 均 32/32 套件、305/305 用例与类型检查通过；本步不修改应用产物，既有 Linux 三构建与生产审计 0 漏洞结论保留；新增 11 项见 [tests.md](tests.md)。
@@ -14,11 +14,13 @@ Phase 3 —— 后端服务化（已完成、已结项）。Phase 4 Task 15 与 
 
 ## 下一步计划
 
-等待用户指派 Task 18 Step 3（Phase 4 正式结项）；未授权，不开工。
+完成当前Step 3验收与提交推送后停止；后续任务等待用户指派。
 
 ## 本轮验收与遗留
 
-- **Task 18 Step 2 完成**：真实同boot与两进程连续108506秒（30小时8分），1781个健康样本，最大间隔61.24秒；有效故障与自动重启0。22次自动恢复合计16.429573秒、最长1.698147秒，符合用户允许的≤5秒口径，原13个失败样本保留；独立原始样本 / journal核对无未配对、旧进程或硬错误。RSS末72.7 / 峰98.3 MiB，heapUsed末 / 峰23.4 MiB，未见持续失控增长。主机重启自动恢复、原会话文件一致、Web新回复、Discord服务端证据与用户确认均通过；本机 / Linux32/32套件、305/305用例及类型检查通过。验收timer已disabled / inactive，聊天回访已PAUSED，最终新鲜报告与原始journal保存于VPS root专属目录；两应用常驻。功能提交`bf7391c`已推送至`origin/test`，本步已勾选并追加历史，Step 3未启动；详见[观察记录](research/phase3-deployment.md#10-task-18-step-2上线验收)。
+- **Task 18 Step 3 验收通过，提交收尾中**：路线图三项退出条件逐项核对通过，真实与Mock证据边界保留；本轮全量32/32测试文件、305/305用例、根与四包类型检查通过，台账逐项一致，修正一个Demo既有标题漏字。首次沙箱HTTP监听EPERM后经批准重跑全量通过；未修改应用 / 测试代码或现网配置。根AGENTS.md阶段摘要和ADR索引按确认计划独立提交，Phase 5未授权。
+
+- **Task 18 Step 2 完成**：真实同boot与两进程连续108506秒（30小时8分），1781个健康样本，最大间隔61.24秒；有效故障与自动重启0。22次自动恢复合计16.429573秒、最长1.698147秒，符合用户允许的≤5秒口径，原13个失败样本保留；独立原始样本 / journal核对无未配对、旧进程或硬错误。RSS末72.7 / 峰98.3 MiB，heapUsed末 / 峰23.4 MiB，未见持续失控增长。主机重启自动恢复、原会话文件一致、Web新回复、Discord服务端证据与用户确认均通过；本机 / Linux32/32套件、305/305用例及类型检查通过。验收timer已disabled / inactive，聊天回访已PAUSED，最终新鲜报告与原始journal保存于VPS root专属目录；两应用常驻。功能提交`bf7391c`已推送至`origin/test`，本步已勾选并追加历史，Step 3结项见上项；详见[观察记录](research/phase3-deployment.md#10-task-18-step-2上线验收)。
 
 - **Task 18 Step 1 验收**：本机 / Linux 31/31 套件、294/294 用例、类型检查、Linux 三构建与文档检查通过。新内核上线前重启与加固管理入口验证通过；两个服务 active / enabled，Bot 真实 ready，SSH 隧道 Web 真实模型回复“连接成功”，备份重启服务后刷新恢复会话。归档校验、隔离恢复逐文件对比与本机 data/vps-backups 异地副本通过；九个部署源码配置与工作区校验一致，运行进程密钥按职责隔离。功能提交 `65c4fb2` 已推送至 `origin/test`，发行物 task18-20261005-01 摘要见 [部署记录](research/phase3-deployment.md#9-task-18-step-1私有-vps-实施记录)。既有 UI 测试 React act 警告与系统 XFS CPUAccounting 弃用提示已记录，生产审计 0 漏洞。首次部署暂无上一发行物，备份暂为手动；Step 1完成时尚未进行的长时 / 上线后主机重启 / 双入口消息验收已由本轮Step 2通过。本机隧道和 VPS 常驻服务保持运行，既有本地开发会话未迁移。
 
@@ -35,7 +37,7 @@ Phase 3 —— 后端服务化（已完成、已结项）。Phase 4 Task 15 与 
 - **Task 16 Step 1 验收**：用户确认 general 普通文字无回复、直接 @Bot 收到入口确认消息；正式启动 ready、Ctrl+C stopped。typing 生命周期与过滤 / 错误 / 退出行为有 Mock 测试。当时测试进程已停止，Step 1 只确认收到消息；后端对话由本轮 Step 2 接入。
 - **Step 3 架构验收**：ADR-011 落档与本地文档链接检查通过；23/23 套件、174/174 用例、lint、服务端严格类型检查和 build 通过。只改文档，测试台账基线不变。
 - **Discord Demo 验收**：AlanChatBot 在线、general 回显、约 65 秒断网后恢复及回显通过；超过 10 分钟内存观察未见堆内存持续增长；SIGTERM 正常退出和再次登录通过。测试进程已停止，详见 [预研记录](research/phase4-discord.md)。
-- **既有遗留**：未跟踪文件 `.zcodeignore` 为本轮开始前已有，未改动、未纳入提交；根 AGENTS.md 阶段摘要仍是 Phase 4 未启动，单独修订需另行提议确认。
+- **既有遗留**：未跟踪文件 `.zcodeignore` 为本轮开始前已有，未改动、未纳入提交；根 AGENTS.md 过期阶段摘要已按本轮确认计划修订，单独提交。
 
 ## 职责交接记录
 

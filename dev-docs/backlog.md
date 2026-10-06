@@ -26,9 +26,9 @@
 - [x] **Step 4（本地 lockfile 政策）**：忽略 `package-lock.json`，在风险 10 固化未来受控环境生成政策。
 - [x] **Step 5（Phase 3 正式结项）**：同步路线图、历史、状态及根目录索引，Phase 4 继续等待授权。
 
-## Phase 4（Discord 文字接入，Task 15 已完成，后续未授权）
+## Phase 4（Discord 文字接入，已完成、已结项）
 
-依赖顺序：Task 15 → 16 → 17 → 18；Task 18 Step 1 的 VPS 前置部署已在本轮独立授权并完成（SSH 隧道私有访问）。进程拓扑已由用户确认，以 [ADR-011](adr/0011-discord-process-topology.md)定案为独立 Bot + 同机 Express API，Express 保持会话唯一写入者。触发方式已裁决为指定频道内直接 @Bot；Task 18 Step 2 已完成；Step 3 等待下一轮指派。
+依赖顺序：Task 15 → 16 → 17 → 18；Task 18 Step 1 的 VPS 前置部署已在本轮独立授权并完成（SSH 隧道私有访问）。进程拓扑已由用户确认，以 [ADR-011](adr/0011-discord-process-topology.md)定案为独立 Bot + 同机 Express API，Express 保持会话唯一写入者。触发方式已裁决为指定频道内直接 @Bot；Task 18 Step 1–3均已完成，Phase 4退出条件逐项核对见[路线图](roadmap.md#phase-4-退出条件核对2026-10-06)。
 
 ### Task 15：Discord 接入预研与架构定案
 
@@ -61,7 +61,8 @@
   - 私有 loopback + SSH 隧道，无域名 / 公网 HTTP；新内核与非 root 管理入口生效，Bot 真实 ready、Playground 真实回复与会话恢复、一致性备份 / 隔离恢复 / 本机异地副本通过；本机与 Linux 31/31 套件、294/294 用例通过，详见 [`research/phase3-deployment.md`](research/phase3-deployment.md#9-task-18-step-1私有-vps-实施记录)。
 - [x] **Step 2（上线验收）**：连续在线 ≥24 小时、重启自恢复、Web Playground 与 bot 同时可用、全量测试回归。
   - 已完成：真实同 boot / 双进程连续 108506 秒（30小时8分），1781 个健康样本；22 次自动恢复合计16.429573秒、最长1.698147秒，符合用户允许的≤5秒口径，有效故障与自动重启0。上线后重启、Web / Discord真实回复和会话恢复、本机 / Linux32/32套件与305/305用例通过；原始证据保留，验收timer与聊天回访已停用，见部署记录第10节。
-- [ ] **Step 3（Phase 4 正式结项）**：路线图退出条件逐项核对（网关稳定在线 / 文字对话闭环 / 限流与错误处理），同步 `status.md` / `history.md` / `backlog.md` / `tests.md`。
+- [x] **Step 3（Phase 4 正式结项）**：路线图退出条件逐项核对（网关稳定在线 / 文字对话闭环 / 限流与错误处理），同步 `status.md` / `history.md` / `backlog.md` / `tests.md`。
+  - 2026-10-06已完成：三项退出条件逐项关联真实与自动化证据，全量32/32测试文件、305/305用例、类型检查与台账映射通过；路线图与阶段文档同步，根AGENTS.md按确认计划独立提交。后续阶段仍未授权。
 
 ## 后续阶段预研（未授权，仅规划）
 
