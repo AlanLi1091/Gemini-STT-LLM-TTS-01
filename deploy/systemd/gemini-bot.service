@@ -1,0 +1,33 @@
+[Unit]
+Description=Gemini Chat bot
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=gemini-bot
+Group=gemini-bot
+WorkingDirectory=/opt/gemini-chat/current
+Environment=NODE_ENV=production
+EnvironmentFile=/etc/gemini-chat/bot.env
+ExecStart=/opt/node/bin/node dist/bot.js
+Restart=on-failure
+RestartSec=15
+TimeoutStopSec=25
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+InaccessiblePaths=/var/lib/gemini-chat
+
+[Install]
+WantedBy=multi-user.target

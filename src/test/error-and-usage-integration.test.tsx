@@ -37,6 +37,7 @@ describe('Task 9: 错误提示与用量记录 UI 集成测试', () => {
       retryFailedSend: vi.fn(),
       stopGenerating: vi.fn(),
       dismissError: vi.fn(),
+      replaceMessages: vi.fn(),
       clearMessages: vi.fn(),
     });
 
@@ -51,9 +52,12 @@ describe('Task 9: 错误提示与用量记录 UI 集成测试', () => {
     expect(tokenBadge).toHaveAttribute('aria-label', expect.stringContaining('共 36 tokens'));
   });
 
-  it('当存在 lastError 时，顶部正确展示 ChatErrorBanner 错误横幅', () => {
+  it('当存在 lastError 时，顶部正确展示 ChatErrorBanner 错误横幅', async () => {
     const dismissErrorMock = vi.fn();
     const retryFailedSendMock = vi.fn();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      id: 'test-session', createdAt: 1, messages: [],
+    }), { status: 201 })));
 
     vi.spyOn(useChatModule, 'useChat').mockReturnValue({
       messages: [
@@ -73,6 +77,7 @@ describe('Task 9: 错误提示与用量记录 UI 集成测试', () => {
       retryFailedSend: retryFailedSendMock,
       stopGenerating: vi.fn(),
       dismissError: dismissErrorMock,
+      replaceMessages: vi.fn(),
       clearMessages: vi.fn(),
     });
 
@@ -86,6 +91,7 @@ describe('Task 9: 错误提示与用量记录 UI 集成测试', () => {
 
     // 点击“重试”应触发 retryFailedSend
     const retryBtn = screen.getByRole('button', { name: /重试/i });
+    await waitFor(() => expect(retryBtn).not.toBeDisabled());
     fireEvent.click(retryBtn);
     expect(retryFailedSendMock).toHaveBeenCalledTimes(1);
 
@@ -95,38 +101,4 @@ describe('Task 9: 错误提示与用量记录 UI 集成测试', () => {
     expect(dismissErrorMock).toHaveBeenCalledTimes(1);
   });
 
-  it('点击错误横幅中的“检查设置”按钮，能够联动打开设置弹窗', async () => {
-    localStorage.setItem('app_settings_v1', JSON.stringify({
-      connectionMode: 'direct',
-      provider: 'gemini',
-      geminiApiKey: 'test-key',
-      geminiModel: 'gemini-3.8-flash',
-    }));
-    vi.spyOn(useChatModule, 'useChat').mockReturnValue({
-      messages: [],
-      inputText: '',
-      isLoading: false,
-      isGenerating: false,
-      lastError: new ChatError('Invalid API Key', 'AUTH_ERROR'),
-      setInputText: vi.fn(),
-      sendMessage: vi.fn(),
-      retryFailedSend: vi.fn(),
-      stopGenerating: vi.fn(),
-      dismissError: vi.fn(),
-      clearMessages: vi.fn(),
-    });
-
-    render(<App />);
-
-    const settingsBtn = screen.getByRole('button', { name: /检查设置/i });
-    expect(settingsBtn).toBeInTheDocument();
-
-    // 点击检查设置
-    fireEvent.click(settingsBtn);
-
-    // 设置弹窗打开并展示设置标题
-    const dialog = await screen.findByRole('dialog');
-    expect(dialog).toBeInTheDocument();
-    expect(screen.getByText('模型与调试设置')).toBeInTheDocument();
-  });
 });

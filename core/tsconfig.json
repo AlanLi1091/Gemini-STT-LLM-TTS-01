@@ -2,7 +2,9 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
-    "lib": ["ES2022"],
+    "lib": [
+      "ES2022"
+    ],
     "moduleResolution": "bundler",
     "isolatedModules": true,
     "moduleDetection": "force",
@@ -10,5 +12,7 @@
     "strict": true,
     "noEmit": true
   },
-  "include": ["./**/*"]
+  "include": [
+    "./**/*"
+  ]
 }

@@ -37,6 +37,27 @@ describe('Task 13 Step 1: RemoteChatAdapter', () => {
     });
   });
 
+  it('会话模式应携带 sessionId，且只提交本轮最后一条消息', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      sseResponse('event: done\ndata: {"content":"已完成"}\n\n'),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const history: Message[] = [
+      { id: 'message-1', role: 'user', content: '第一轮', createdAt: 1 },
+      { id: 'message-2', role: 'assistant', content: '第一轮回复', createdAt: 2 },
+      { id: 'message-3', role: 'user', content: '第二轮', createdAt: 3 },
+    ];
+
+    await new RemoteChatAdapter({ sessionId: 'session-123' }).send(history);
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/chat/stream', expect.objectContaining({
+      body: JSON.stringify({
+        sessionId: 'session-123',
+        messages: [{ role: 'user', content: '第二轮' }],
+      }),
+    }));
+  });
+
   it('应跨 ReadableStream 分段解析 chunk 与 done 事件及用量', async () => {
     vi.stubGlobal(
       'fetch',

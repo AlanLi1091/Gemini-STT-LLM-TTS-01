@@ -55,6 +55,7 @@ describe('Task 5 交互细节与体验优化全面测试', () => {
   describe('IME 组合态防误发测试', () => {
     it('中文输入法敲 Enter 选词（isComposing 为 true）时不得触发消息发送', async () => {
       render(<App />);
+      await act(async () => { await vi.runAllTimersAsync(); });
       const textarea = screen.getByRole('textbox', { name: '输入消息' });
 
       // 模拟用户在输入法组合输入过程中
@@ -105,6 +106,7 @@ describe('Task 5 交互细节与体验优化全面测试', () => {
   describe('清空会话功能与状态干净测试', () => {
     it('点击清空对话按钮出现确认步骤，确认后重置会话并保持输入框干净聚焦', async () => {
       render(<App />);
+      await act(async () => { await vi.runAllTimersAsync(); });
       const textarea = screen.getByRole('textbox', { name: '输入消息' });
 
       // 发送一条消息并等待响应完成
@@ -125,7 +127,10 @@ describe('Task 5 交互细节与体验优化全面测试', () => {
       const confirmBtn = screen.getByRole('button', { name: '确定' });
 
       // 点击确认清空
-      fireEvent.click(confirmBtn);
+      await act(async () => {
+        fireEvent.click(confirmBtn);
+        await vi.runAllTimersAsync();
+      });
 
       // 验证：消息列表完全重置，显示就绪空状态
       expect(screen.queryByText('测试清空')).not.toBeInTheDocument();
@@ -135,6 +140,7 @@ describe('Task 5 交互细节与体验优化全面测试', () => {
 
     it('取消清空对话后，原有消息不丢失', async () => {
       render(<App />);
+      await act(async () => { await vi.runAllTimersAsync(); });
       const textarea = screen.getByRole('textbox', { name: '输入消息' });
 
       await act(async () => {
@@ -164,6 +170,7 @@ describe('Task 5 交互细节与体验优化全面测试', () => {
 
     it('发送消息后调用滚动触底 scrollTo', async () => {
       render(<App />);
+      await act(async () => { await vi.runAllTimersAsync(); });
       const textarea = screen.getByRole('textbox', { name: '输入消息' });
 
       await act(async () => {

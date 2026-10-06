@@ -19,6 +19,7 @@ export interface UseChatReturn {
   retryFailedSend: () => Promise<boolean>;
   stopGenerating: () => void;
   dismissError: () => void;
+  replaceMessages: (messages: Message[]) => void;
   clearMessages: () => void;
 }
 
@@ -61,6 +62,12 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
   const dismissError = useCallback(() => {
     setLastError(null);
   }, []);
+
+  const replaceMessages = useCallback((nextMessages: Message[]) => {
+    stopGenerating();
+    setMessages(nextMessages);
+    setLastError(null);
+  }, [stopGenerating]);
 
   const clearMessages = useCallback(() => {
     stopGenerating();
@@ -230,7 +237,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
     retryFailedSend,
     stopGenerating,
     dismissError,
+    replaceMessages,
     clearMessages,
   };
 }
-

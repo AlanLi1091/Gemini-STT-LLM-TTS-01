@@ -8,13 +8,20 @@ import {
   type MockChatAdapterOptions,
 } from '@core/index';
 import type { ChatStreamSource } from './chat-stream';
+import { SessionArchivedError, SessionService } from './session-service';
+import { SessionNotFoundError, type SessionStorage } from './storage/session-storage';
+import { guardStreamSource, RequestBudget } from './request-budget';
 
 export interface ServerChatEnvironment {
   GEMINI_API_KEY?: string;
+  GEMINI_REQUESTS_PER_MINUTE?: string;
+  GEMINI_RATE_LIMIT_COOLDOWN_MS?: string;
 }
 
 export interface ServerChatStreamSourceOptions {
   mockAdapterOptions?: MockChatAdapterOptions;
+  sessionStorage?: SessionStorage;
+  requestBudget?: RequestBudget;
 }
 
 /** 将任意共享 ChatAdapter 映射为服务端 SSE 流源。 */
@@ -48,6 +55,7 @@ export function createAdapterStreamSource(adapter: ChatAdapter): ChatStreamSourc
           },
         };
       }
+      if (!signal.aborted) yield { event: 'error', data: { error: { code: 'MODEL_ERROR', message: '模型未返回完整回复。' } } };
     } catch (error) {
       const chatError = classifyGeminiError(error, signal);
       yield {
@@ -63,6 +71,66 @@ export function createAdapterStreamSource(adapter: ChatAdapter): ChatStreamSourc
   };
 }
 
+/**
+ * Adds Task 14 session addressing to an adapter source. In session mode,
+ * request messages are this turn's inputs and the adapter receives the full
+ * persisted history. Omitting sessionId preserves Task 13's stateless mode.
+ */
+export function createSessionChatStreamSource(
+  adapter: ChatAdapter,
+  sessionService: SessionService,
+): ChatStreamSource {
+  const statelessSource = createAdapterStreamSource(adapter);
+
+  return async function* sessionChatStreamSource(request, { signal }) {
+    if (!request.sessionId) {
+      yield* statelessSource(request, { signal });
+      return;
+    }
+
+    try {
+      const session = await sessionService.appendTurnInputs(request.sessionId, request.messages);
+      for await (const chunk of adapter.stream(session.messages, { signal })) {
+        if (chunk.done) {
+          await sessionService.appendAssistantResponse(
+            request.sessionId,
+            chunk.accumulated,
+            chunk.usage,
+          );
+          yield { event: 'done', data: { content: chunk.accumulated, usage: chunk.usage } };
+          return;
+        }
+        yield {
+          event: 'chunk',
+          data: { delta: chunk.delta, accumulated: chunk.accumulated },
+        };
+      }
+      if (!signal.aborted) yield { event: 'error', data: { error: { code: 'MODEL_ERROR', message: '模型未返回完整回复。' } } };
+    } catch (error) {
+      if (error instanceof SessionNotFoundError) {
+        yield {
+          event: 'error',
+          data: { error: { code: 'UNKNOWN', message: 'Chat session was not found.' } },
+        };
+        return;
+      }
+      if (error instanceof SessionArchivedError) {
+        yield {
+          event: 'error',
+          data: { error: { code: 'UNKNOWN', message: 'Chat session is archived.' } },
+        };
+        return;
+      }
+
+      const chatError = classifyGeminiError(error, signal);
+      yield {
+        event: 'error',
+        data: { error: { code: chatError.code, message: chatError.message } },
+      };
+    }
+  };
+}
+
 /** 有有效服务端 Key 时使用 Gemini，否则自动降级至共享 MockAdapter。 */
 export function createChatStreamSourceFromEnv(
   environment: ServerChatEnvironment,
@@ -73,5 +141,11 @@ export function createChatStreamSourceFromEnv(
     ? new GeminiChatAdapter({ apiKey })
     : new MockChatAdapter(options.mockAdapterOptions);
 
-  return createAdapterStreamSource(adapter);
+  const source = options.sessionStorage
+    ? createSessionChatStreamSource(adapter, new SessionService(options.sessionStorage))
+    : createAdapterStreamSource(adapter);
+  return apiKey ? guardStreamSource(source, options.requestBudget ?? new RequestBudget({
+    requestsPerMinute: environment.GEMINI_REQUESTS_PER_MINUTE === undefined ? undefined : Number(environment.GEMINI_REQUESTS_PER_MINUTE),
+    cooldownMs: environment.GEMINI_RATE_LIMIT_COOLDOWN_MS === undefined ? undefined : Number(environment.GEMINI_RATE_LIMIT_COOLDOWN_MS),
+  })) : source;
 }

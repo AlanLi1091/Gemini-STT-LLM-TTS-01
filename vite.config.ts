@@ -99,6 +99,8 @@ export default defineConfig(() => {
       environment: 'jsdom',
       environmentMatchGlobs: [
         ['**/server/**', 'node'],
+        ['**/bot/**', 'node'],
+        ['**/core/**', 'node'],
       ],
       setupFiles: './src/test/setup.ts',
     },

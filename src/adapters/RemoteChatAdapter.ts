@@ -13,6 +13,8 @@ import {
 export interface RemoteChatAdapterConfig {
   /** 服务端地址；省略时请求同源的 /api/chat/stream。 */
   baseUrl?: string;
+  /** Task 14 会话模式：服务端从持久化日志加载完整上下文。 */
+  sessionId?: string;
 }
 
 interface ParsedSseEvent {
@@ -85,9 +87,11 @@ export class RemoteChatAdapter implements ChatAdapter {
   readonly id = 'remote-chat';
   readonly name = 'Backend Chat Service';
   private readonly endpoint: string;
+  private readonly sessionId?: string;
 
   constructor(config: RemoteChatAdapterConfig = {}) {
     this.endpoint = `${normalizeBaseUrl(config.baseUrl)}/api/chat/stream`;
+    this.sessionId = config.sessionId;
   }
 
   async send(messages: Message[], options: ChatAdapterOptions = {}): Promise<ChatResponse> {
@@ -114,9 +118,14 @@ export class RemoteChatAdapter implements ChatAdapter {
       response = await fetch(this.endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
-        body: JSON.stringify({
-          messages: messages.map(({ role, content }) => ({ role, content })),
-        }),
+        body: JSON.stringify(this.sessionId
+          ? {
+              sessionId: this.sessionId,
+              messages: messages.slice(-1).map(({ role, content }) => ({ role, content })),
+            }
+          : {
+              messages: messages.map(({ role, content }) => ({ role, content })),
+            }),
         signal,
       });
     } catch (error) {

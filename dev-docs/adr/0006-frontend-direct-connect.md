@@ -1,3 +1,5 @@
+> 状态：前端直连实践已被 [ADR-010](0010-phase3-deployment-and-direct-connect.md) 取代；以下保留历史决策原文。
+
 # ADR-006：浏览器端直连与本地密钥管理
 
 ## 背景

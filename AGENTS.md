@@ -7,7 +7,7 @@
 1. **只做当前被指派的事**：仅执行用户本轮明确授权的任务，完成后立即停下汇报。
 2. **Backlog ≠ 授权 / 愿景 ≠ 授权**：未经指派不得开工；愿景仅作架构决策参考。
 3. **先计划后动手**：文件改动前先提交计划（文件清单 + 每步一句话说明），经确认后执行。
-4. **单步闭环**：测试通过 → commit → push（默认仅 `test` 分支，严禁直推 `main`）→ 更新 `dev-docs/status.md`，然后停止。
+4. **单步闭环**：测试通过 → 同步勾选 `dev-docs/backlog.md` 当前 Step → commit → push（默认仅 `test` 分支，严禁直推 `main`）→ 更新 `dev-docs/status.md`，然后停止。
 5. **代码唯一去处是文件**：聊天区仅承载计划、结果摘要、提问、提议；仅存在于聊天区的代码视为未交付。
 
 ## 会话启动协议
@@ -29,8 +29,9 @@
 | `dev-docs/history.md` | 已完成任务归档（只增不改） | 每次任务完成（追加） |
 | `dev-docs/risks.md` | 风险与阻塞台账 | 出现新风险时 |
 | `dev-docs/tests.md` | 测试台账与维护规范 | 新增测试时 |
-| `dev-docs/adr/` | 架构决策记录 ADR-001 至 ADR-009 | 新决策时追加 |
+| `dev-docs/research/` | 预研与调研报告（决策输入文档） | 随预研任务产生 |
+| `dev-docs/adr/` | 架构决策记录 ADR-001 至 ADR-011 | 新决策时追加 |
 
 ## 当前状态
 
-Phase 3 进行中；Task 13 Step 1 已完成（cea4ab4），等待下一项授权。详见 `dev-docs/status.md`。
+Phase 1–4 已完成并正式结项；Task 18 Step 1–3 与本人私有 VPS 部署均已完成，Web Playground 通过 SSH 隧道访问，Bot 与 Express 保持常驻。Phase 5 及后续任务未启动、未授权，须等待用户指派。详见 `dev-docs/status.md`、`dev-docs/backlog.md` 与 `dev-docs/roadmap.md`。

@@ -1,0 +1,14 @@
+{
+  "name": "@gemini-chat/bot",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "discord.js": "14.27.0",
+    "dotenv": "^17.2.3",
+    "@gemini-chat/core": "*"
+  }
+}

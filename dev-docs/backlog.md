@@ -2,7 +2,7 @@
 
 所有任务默认未授权。执行任何任务前，须由用户在 `dev-docs/status.md` 指派。
 
-## Phase 3（进行中，未授权项不得开工）
+## Phase 3（已完成，未授权项不得开工）
 
 ### Task 13：前端 Playground 改连与架构平滑切换
 
@@ -14,14 +14,60 @@
 
 ### Task 14：会话持久化与上下文管理
 
-- [ ] **Step 1（持久化存储层抽象与 JSON 文件引擎）**：定义 `SessionStorage` 接口（遵循 ADR-005 唯一 ID 与严格追加语义）；默认实现 JSON 文件存储引擎（每会话单文件，存 `data/` 目录进 `.gitignore`）；编写存储层单测。
-- [ ] **Step 2（会话操作 API 与多轮上下文拼接）**：实现会话获取与创建接口，支持 sessionId 寻址；上下文默认全量历史（截断策略推迟至 Phase 5）；清空对话定案为归档标记语义（Soft Delete / Archived），保持物理日志不可变。
-- [ ] **Step 3（前端单会话自动恢复与状态联动）**：Playground 启动时恢复最近会话；清空对话联动后端归档；补充持久化集成测试；前端不做多会话管理 UI（Phase 5 范围）。
+- [x] **Step 1（持久化存储层抽象与 JSON 文件引擎）**：定义 `SessionStorage` 接口（遵循 ADR-005 唯一 ID 与严格追加语义）；默认实现 JSON 文件存储引擎（每会话单文件，存 `data/` 目录进 `.gitignore`）；编写存储层单测。
+- [x] **Step 2（会话操作 API 与多轮上下文拼接）**：实现会话获取与创建接口，支持 sessionId 寻址；上下文默认全量历史（截断策略推迟至 Phase 5）；清空对话定案为归档标记语义（Soft Delete / Archived），保持物理日志不可变。
+- [x] **Step 3（前端单会话自动恢复与状态联动）**：Playground 启动时恢复最近会话；清空对话联动后端归档；补充持久化集成测试；前端不做多会话管理 UI（Phase 5 范围）。
+
+### Phase 3 收尾实施
+
+- [x] **Step 1（部署与直连决策）**：记录 ADR-010、更新预研与 ADR-006 状态，并登记未授权的 VPS 部署实施项。
+- [x] **Step 2（前端直连模式整体移除）**：迁移旧设置、清除浏览器 Key，Playground 仅装配 RemoteChatAdapter；同步测试台账。
+- [x] **Step 3（开发端口冲突缓解）**：Vite 开发脚本增加 `--strictPort`，更新风险 12。
+- [x] **Step 4（本地 lockfile 政策）**：忽略 `package-lock.json`，在风险 10 固化未来受控环境生成政策。
+- [x] **Step 5（Phase 3 正式结项）**：同步路线图、历史、状态及根目录索引，Phase 4 继续等待授权。
+
+## Phase 4（Discord 文字接入，已完成、已结项）
+
+依赖顺序：Task 15 → 16 → 17 → 18；Task 18 Step 1 的 VPS 前置部署已在本轮独立授权并完成（SSH 隧道私有访问）。进程拓扑已由用户确认，以 [ADR-011](adr/0011-discord-process-topology.md)定案为独立 Bot + 同机 Express API，Express 保持会话唯一写入者。触发方式已裁决为指定频道内直接 @Bot；Task 18 Step 1–3均已完成，Phase 4退出条件逐项核对见[路线图](roadmap.md#phase-4-退出条件核对2026-10-06)。
+
+### Task 15：Discord 接入预研与架构定案
+
+- [x] **Step 1（应用注册与 bot 上架）**：用户在 Discord Developer Portal 完成 Application/Bot 创建、开启 Message Content Intent、生成 Token 并邀请 bot 进测试服务器；Token 只进服务端环境变量；产出操作记录。
+- [x] **Step 2（discord.js 最小网关 Demo）**：本地最小 bot——登录、监听消息、回显；观察断线重连与内存占用；确认 discord.js v14 与现有 Node 版本兼容；结论写入预研文档。
+  - 已完成；23/23 套件、174/174 用例通过，真实登录、回显、约 65 秒断网后的恢复、超过 10 分钟内存观察、正常退出与重启通过，详见 [`research/phase4-discord.md`](research/phase4-discord.md)。
+- [x] **Step 3（进程拓扑 ADR-011）**：用户确认独立 Bot + 同机 Express API、Express 会话唯一写入者；ADR 与关联文档已落档，文档链接、23/23 套件与 174/174 用例、类型检查及构建通过；Task 16–18 与部署仍未授权。
+
+### Task 16：Discord 文字对话闭环
+
+- [x] **Step 1（Discord 通道适配层抽象与 workspaces 迁移）**：按 ADR-009 / ADR-011 落实四个 npm workspaces 与依赖 / 编译边界，保留根统一入口；实现指定频道直接 @Bot 触发、消息标准化、正式 bot 骨架与 typing；TDD 与 mock 测试通过。
+  - 25/25 套件与 199/199 用例、四包类型检查及 Web / Express / Bot 构建通过；用户确认普通文字无回复、直接 @Bot 收到入口确认反馈，Ctrl+C 正常停止。Step 1 当时尚未接入 LLM 或频道会话，后续接入见 Step 2。
+- [x] **Step 2（对话链路接入）**：Bot 经同机 API 消费共享 SSE，提交本轮输入与 sessionId、done 后发送最终回复；Express 扩展按来源 / guildId / channelId 的会话关联持久化与原子解析，复用 SessionStorage；覆盖 Bot 重启恢复、多轮上下文、归档切换与 Playground 恢复的来源隔离，现有 API 不具备的能力须补齐；不自动重发失败聊天 POST。
+  - 26/26 套件、220/220 用例、根与四包类型检查、Web / Express / Bot 构建通过；用户截图确认连续直接 @Bot 获得真实对话回复，网关 input handled；测试进程已停止，详见 [`research/phase4-discord.md`](research/phase4-discord.md#8-task-16-step-2后端对话与频道持久化)。
+- [x] **Step 3（长消息分段）**：LLM 回复按 Discord 2000 字符上限分段发送；段落切分规则有测试覆盖。
+  - 27/27 套件、234/234 用例、根与四包类型检查及 Bot 构建通过；真实频道发出 3 段（1947 / 1912 / 1856 字符），首段回复原消息、后续频道发送且无提及，验收后停止测试进程。
+
+### Task 17：限流与错误处理
+
+- [x] **Step 1（并发与排队）**：同频道请求串行排队、按用户冷却、Gemini 配额守卫；超限给用户可读提示。
+  - 29/29 套件、255/255 用例、根与四包类型检查、Bot / Express 构建通过；用户确认五秒冷却提示，Discord 时间关系确认排队请求在长文结束前提交、回复在长文全部发送后；测试进程已停止。
+- [x] **Step 2（错误处理与进程韧性）**：Gemini 调用失败 / Discord API 报错时进程不崩、给出可读反馈；错误路径有测试。
+  - 30/30 套件、272/272 用例、类型检查及 Bot / Express 构建通过；用户确认后端断开提示且 Bot 在线，后端恢复后同一 Bot 正常发送回复，网关与 Discord 元数据佐证；模拟覆盖 Discord 发送 / 反馈失败、模型流异常和后续恢复，测试进程已停止。
+- [x] **Step 3（网关稳定性验证）**：断网/令牌失效/长时间运行下的重连行为验证（本地可模拟），记录已知边界。
+  - 30/30 套件、287/287 用例、根与四包类型检查、Bot 构建通过；新增 15 项，覆盖可恢复 / 致命关闭、活动请求、重复事件与假时钟 24 小时 / 100 次恢复的资源清理；真实 SDK 恢复与长期内存不由模拟证明，详见 [`research/phase4-discord.md`](research/phase4-discord.md#12-task-17-step-3网关稳定性验证)。
+
+### Task 18：常驻上线与 Phase 4 结项
+
+- [x] **Step 1（VPS 部署前置）**：执行 VPS 部署线（本轮独立授权的加固、托管、systemd 等项），bot 与 Express 各自 systemd 单元上线；密钥经 `EnvironmentFile` 注入。
+  - 私有 loopback + SSH 隧道，无域名 / 公网 HTTP；新内核与非 root 管理入口生效，Bot 真实 ready、Playground 真实回复与会话恢复、一致性备份 / 隔离恢复 / 本机异地副本通过；本机与 Linux 31/31 套件、294/294 用例通过，详见 [`research/phase3-deployment.md`](research/phase3-deployment.md#9-task-18-step-1私有-vps-实施记录)。
+- [x] **Step 2（上线验收）**：连续在线 ≥24 小时、重启自恢复、Web Playground 与 bot 同时可用、全量测试回归。
+  - 已完成：真实同 boot / 双进程连续 108506 秒（30小时8分），1781 个健康样本；22 次自动恢复合计16.429573秒、最长1.698147秒，符合用户允许的≤5秒口径，有效故障与自动重启0。上线后重启、Web / Discord真实回复和会话恢复、本机 / Linux32/32套件与305/305用例通过；原始证据保留，验收timer与聊天回访已停用，见部署记录第10节。
+- [x] **Step 3（Phase 4 正式结项）**：路线图退出条件逐项核对（网关稳定在线 / 文字对话闭环 / 限流与错误处理），同步 `status.md` / `history.md` / `backlog.md` / `tests.md`。
+  - 2026-10-06已完成：三项退出条件逐项关联真实与自动化证据，全量32/32测试文件、305/305用例、类型检查与台账映射通过；路线图与阶段文档同步，根AGENTS.md按确认计划独立提交。后续阶段仍未授权。
 
 ## 后续阶段预研（未授权，仅规划）
 
-- [ ] **Phase 3 收尾预研**：部署方案（Cloud Run / VPS，显式声明不阻塞 Phase 3 退出条件）。
-- [ ] **Phase 4 预研**：discord.js 选型验证与最小网关 Demo。
+- [x] **部署实施（本人私有访问）**：本轮独立授权并随 Task 18 Step 1 完成 VPS 单体部署，采用 SSH 隧道；公网反代 / TLS 不适用于当前私有范围，未来开放公网须另行授权；实施拆解见 [`research/phase3-deployment.md` 第 7 节](research/phase3-deployment.md#7-结论推荐倾向与实施拆解提案)与 [ADR-010](adr/0010-phase3-deployment-and-direct-connect.md)。
+- [x] **Phase 3 收尾预研**：部署方案（Cloud Run / VPS，显式声明不阻塞 Phase 3 退出条件）。
 - [ ] **Phase 5 预研**：角色数据格式调研（自定义 schema vs Character Card V2）。
 - [ ] **消息重发/重生成与分支导航（基于 ADR-005 消息树模型）**（Phase 5）。
 - [ ] **Phase 6 预研**：语音链路方案对比（Gemini 原生音频 vs Whisper+TTS；Discord 语音通话直播主入口可行性与端到端延迟验证；Web 麦克风调试通道；直播文字伴随输出承载选型）。

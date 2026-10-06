@@ -4,27 +4,18 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --port=3000 --host=0.0.0.0",
+    "dev": "vite --port=3000 --host=0.0.0.0 --strictPort",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit",
+    "lint": "tsc --noEmit && npm run lint --workspaces --if-present",
     "test": "vitest run",
     "test:watch": "vitest",
     "server:dev": "tsx watch server/index.ts",
-    "server:build": "esbuild server/index.ts --bundle --platform=node --target=node20 --outfile=dist/server.js --external:express"
-  },
-  "dependencies": {
-    "@google/genai": "^2.4.0",
-    "@tailwindcss/vite": "^4.1.14",
-    "@vitejs/plugin-react": "^5.0.4",
-    "dotenv": "^17.2.3",
-    "express": "^4.21.2",
-    "lucide-react": "^0.546.0",
-    "motion": "^12.23.24",
-    "react": "^19.0.1",
-    "react-dom": "^19.0.1",
-    "vite": "^6.2.3"
+    "server:build": "esbuild server/index.ts --bundle --platform=node --target=node20 --outfile=dist/server.js --external:express",
+    "discord:demo": "tsx bot/demo.ts",
+    "bot:dev": "tsx bot/index.ts",
+    "bot:build": "esbuild bot/index.ts --bundle --format=esm --platform=node --target=node24 --outfile=dist/bot.js --external:discord.js --external:dotenv"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^7.0.1",
@@ -40,6 +31,14 @@
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.3",
-    "vitest": "^5.0.0"
-  }
+    "vitest": "^5.0.0",
+    "@tailwindcss/vite": "^4.1.14",
+    "@vitejs/plugin-react": "^5.0.4"
+  },
+  "workspaces": [
+    "src",
+    "server",
+    "core",
+    "bot"
+  ]
 }

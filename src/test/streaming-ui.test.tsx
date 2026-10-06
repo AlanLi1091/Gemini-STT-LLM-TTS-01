@@ -50,6 +50,7 @@ describe('Task 10 Step 3: 流式 UI 交互与端到端集成测试', () => {
       retryFailedSend: vi.fn(),
       stopGenerating: vi.fn(),
       dismissError: vi.fn(),
+      replaceMessages: vi.fn(),
       clearMessages: vi.fn(),
     });
 
@@ -89,6 +90,7 @@ describe('Task 10 Step 3: 流式 UI 交互与端到端集成测试', () => {
       retryFailedSend: vi.fn(),
       stopGenerating: vi.fn(),
       dismissError: vi.fn(),
+      replaceMessages: vi.fn(),
       clearMessages: vi.fn(),
     });
 
@@ -111,6 +113,7 @@ describe('Task 10 Step 3: 流式 UI 交互与端到端集成测试', () => {
       retryFailedSend: vi.fn(),
       stopGenerating: stopGeneratingMock,
       dismissError: vi.fn(),
+      replaceMessages: vi.fn(),
       clearMessages: vi.fn(),
     });
 
@@ -142,6 +145,7 @@ describe('Task 10 Step 3: 流式 UI 交互与端到端集成测试', () => {
       retryFailedSend: vi.fn(),
       stopGenerating: vi.fn(),
       dismissError: vi.fn(),
+      replaceMessages: vi.fn(),
       clearMessages: vi.fn(),
     });
 
