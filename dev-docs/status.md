@@ -6,9 +6,9 @@ Phase 1–4 已完成并正式结项；Phase 4 Task 15–18全部完成，Task 1
 
 ## 当前授权
 
-- **授权任务**：用户单独授权 P0-2 并确认修订方案与 Claude 四项补充（包括 ChatErrorBanner）；实现 / ADR / 台账已完成且验证通过，待 commit / push。P0-1、P1-4、P1-1 其他路径、Bot 标识接入及后续阶段仍未授权。
+- **授权任务**：用户单独授权 P0-2 并确认修订方案与 Claude 四项补充（包括 ChatErrorBanner）；实现 / ADR / 台账已完成且验证通过，功能提交 `1388296` 已推送至 `origin/test`，本轮授权完成。P0-1、P1-4、P1-1 其他路径、Bot 标识接入及后续阶段仍未授权。
 - **VPS 现状**：Vultr Seattle、1核1G、Ubuntu 26.04.1，内核 7.0.0-38、Node v24.21.0，Auto Backup 已开启；gemini-admin 公钥管理，禁用 root / 密码 SSH，UFW 仅开放 22/tcp。gemini-server / gemini-bot 两个非 root systemd 服务 active / enabled，Express 仅监听 127.0.0.1:3001，数据目录独立持久化。无域名、仅本人使用，通过 SSH 隧道访问 http://127.0.0.1:18080，详见 [运维说明](../deploy/README.md)。服务保持常驻。
-- **最近交付 commit**：`583bb84` — `fix: bind development server to loopback by default`；本轮收尾另提交状态同步。既有 Phase 4 结项与 Codex 子代理配置提交保留。
+- **最近交付 commit**：`1388296` — `fix: make session chat retries idempotent`；本轮收尾另提交状态同步。P0-3、Phase 4 结项和子代理配置提交保留。
 - **当前测试基线**：P0-2 本机 32/32 文件、327/327 用例及根 / 四包类型检查通过；Web / Express / Bot 构建通过，新增 22 项并同步 tests.md，逐文件逐项匹配 JSON 结果。Linux 最近基线仍为 32/32 文件、305/305 用例，本轮未部署或重跑 Linux 验收。
 - **当前功能验收**：Playground 仅连接后端服务；启动时恢复最近活动会话，无可恢复会话时创建新会话。发送仅提交本轮输入与 `sessionId`，由服务端加载完整上下文；清空对话归档旧会话并切换至新会话。旧版直连设置迁移为后端模式并清除浏览器存储的 Key 字段。
 
