@@ -6,9 +6,9 @@ Phase 1–4 已完成并正式结项；Phase 4 Task 15–18全部完成，Task 1
 
 ## 当前授权
 
-- **授权任务**：用户指派检查Claude审计并确认C1 / C2十文件修复计划；窗口利用率修复与文档 / 测试已完成且验证通过，待commit / push / 收尾 / tag。P0-1第二步Discord重置及其他审计修复仍未授权。
+- **授权任务**：用户指派检查Claude审计并确认C1 / C2十文件修复计划；窗口利用率修复与文档 / 测试已完成且验证通过，功能提交0aad2be已推送至origin/test，本轮授权完成；状态收尾另行提交，交付tag预期V0.0.1-build.138，最终远端核验见主会话汇报。P0-1第二步Discord重置及其他审计修复仍未授权。
 - **VPS 现状**：Vultr Seattle、1核1G、Ubuntu 26.04.1，内核 7.0.0-38、Node v24.21.0，Auto Backup 已开启；gemini-admin 公钥管理，禁用 root / 密码 SSH，UFW 仅开放 22/tcp。gemini-server / gemini-bot 两个非 root systemd 服务 active / enabled，Express 仅监听 127.0.0.1:3001，数据目录独立持久化。无域名、仅本人使用，通过 SSH 隧道访问 http://127.0.0.1:18080，详见 [运维说明](../deploy/README.md)。服务保持常驻。
-- **最近交付 commit**：`5142971` — `fix: bound chat context with conservative token windows`；状态收尾另行提交推送，tag 绑定最终收尾提交。P0-1 第二步未实施。
+- **最近交付 commit**：`0aad2be` — `fix: recover context utilization after precise token counting`；状态收尾另行提交推送，tag绑定最终收尾提交。P0-1第二步未实施。
 - **当前测试基线**：Claude C1修复本机33/33文件、364/364用例、根 / 四包类型检查与Web / Express构建通过；新增9项，台账逐文件逐项匹配JSON。Bot未修改，本轮未重跑Bot构建；Linux基线仍为32/32文件305/305用例，无现网部署。
 - **当前功能验收**：Playground 仅连接后端服务；启动时恢复最近活动会话，无可恢复会话时创建新会话。发送仅提交本轮输入与 `sessionId`，由服务端加载完整上下文；清空对话归档旧会话并切换至新会话。旧版直连设置迁移为后端模式并清除浏览器存储的 Key 字段。
 
