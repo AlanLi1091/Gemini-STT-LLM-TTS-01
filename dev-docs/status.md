@@ -6,9 +6,9 @@ Phase 1–4 已完成并正式结项；Phase 4 Task 15–18全部完成，Task 1
 
 ## 当前授权
 
-- **授权任务**：用户确认P0-1第二步文件计划；管理员重置 / 明确目标归档 / 共享服务锁实现、测试与记录完成并验证通过，待commit / push / 收尾 / tag。P0三项代码修复闭环，现网部署、P1与C3–C5仍未授权。
+- **授权任务**：用户确认P0-1第二步文件计划；管理员重置 / 明确目标归档 / 共享服务锁实现、测试与记录完成并验证通过，功能提交28920b1已推送至origin/test，本轮授权完成；状态收尾另提交，预期交付tag V0.0.1-build.143，最终远端核验见主会话汇报。P0三项代码修复闭环，现网部署、P1与C3–C5仍未授权。
 - **VPS 现状**：Vultr Seattle、1核1G、Ubuntu 26.04.1，内核 7.0.0-38、Node v24.21.0，Auto Backup 已开启；gemini-admin 公钥管理，禁用 root / 密码 SSH，UFW 仅开放 22/tcp。gemini-server / gemini-bot 两个非 root systemd 服务 active / enabled，Express 仅监听 127.0.0.1:3001，数据目录独立持久化。无域名、仅本人使用，通过 SSH 隧道访问 http://127.0.0.1:18080，详见 [运维说明](../deploy/README.md)。服务保持常驻。
-- **最近交付 commit**：`6c56351` — `docs: register Claude C3-C5 follow-up backlog items`；状态收尾另行提交推送，tag绑定最终收尾提交。最近功能修复仍为`0aad2be`。
+- **最近交付 commit**：`28920b1` — `fix: add controlled Discord session reset with shared archive locks`；状态收尾另提交推送，tag绑定最终收尾提交。P0三项代码修复完成，VPS尚未部署。
 - **当前测试基线**：P0-1第二步本机33/33文件、387/387用例、根 / 四包类型检查和Web / Express / Bot构建通过；新增23项、台账逐项匹配JSON。Linux基线仍32/32文件305/305用例，本轮无现网部署。
 - **当前功能验收**：Playground 仅连接后端服务；启动时恢复最近活动会话，无可恢复会话时创建新会话。发送仅提交本轮输入与 `sessionId`，由服务端加载完整上下文；清空对话归档旧会话并切换至新会话。旧版直连设置迁移为后端模式并清除浏览器存储的 Key 字段。
 
