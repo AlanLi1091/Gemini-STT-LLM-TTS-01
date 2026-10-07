@@ -35,10 +35,10 @@ describe('P0-1: 有限上下文窗口', () => {
     expect(selected.map(m => m.content)).toEqual(['u-98', 'a-98', 'u-99', 'a-99', 'current']);
     expect(history).toHaveLength(200);
   });
-  it('中文英文 emoji 和代码按 UTF-8 字节及开销估算不按字符数替代 token', () => {
+  it('中文英文 emoji 和代码按字符类别及开销估算不将经验值当成精确 token', () => {
     const policy = new ContextWindow();
-    expect(policy.estimate([user('中')])).toBeGreaterThan(policy.estimate([user('a')]));
-    expect(policy.estimate([user('😀')])).toBeGreaterThan(policy.estimate([user('中')]));
+    expect(policy.estimate([user('中'.repeat(10))])).toBeGreaterThan(policy.estimate([user('a'.repeat(10))]));
+    expect(policy.estimate([user('😀'.repeat(10))])).toBeGreaterThan(policy.estimate([user('中'.repeat(10))]));
     expect(policy.estimate([user('const x = 1;')])).toBeGreaterThan(policy.estimate([user('a')]));
   });
   it('低于八成预算不调计数边缘区只计内容并加配置系统估算', async () => {
@@ -110,7 +110,7 @@ describe('P0-1: 有限上下文窗口', () => {
     const log = vi.fn(); const policy = new ContextWindow({}, { log }); const messages = [user('secret-body')];
     const initial = policy.estimate(messages);
     policy.observe(messages, 10000); const increased = policy.estimate(messages);
-    expect(increased).toBeGreaterThan(initial); expect(increased).toBe(Math.ceil((256 + 32 + 11) * 4));
+    expect(increased).toBeGreaterThan(initial); expect(increased).toBe(Math.ceil((256 + 32 + 11 * 0.9) * 4));
     policy.observe(messages, 1); expect(policy.estimate(messages)).toBe(increased);
     policy.observe(messages, NaN); expect(policy.estimate(messages)).toBe(increased);
     expect(new ContextWindow().estimate(messages)).toBe(initial);
@@ -119,5 +119,67 @@ describe('P0-1: 有限上下文窗口', () => {
   it('计数鉴权失败不静默降级重复调用上游', async () => {
     const policy = new ContextWindow({ inputTokens: 1000 });
     await expect(policy.select([], [user('x'.repeat(400))], adapter(async () => { throw new ChatError('auth', 'AUTH_ERROR'); }), signal())).rejects.toMatchObject({ code: 'AUTH_ERROR' });
+  });
+});
+
+describe('Claude C1: 精确计数窗口利用率', () => {
+  it.each([
+    ['中文长回复', '问'.repeat(50), '答'.repeat(800), '新'.repeat(70), 1],
+    ['中文双向长消息', '问'.repeat(300), '答'.repeat(300), '新'.repeat(300), 1],
+    ['英文长回复', 'u'.repeat(200), 'a'.repeat(3000), 'n'.repeat(200), 0.25],
+  ])('%s 精确核验时保留接近预算的连续历史而非一两轮', async (_name, input, reply, currentText, perChar) => {
+    const history = Array.from({ length: 20 }, (_, i) => [user(input, `u-${i}`), { ...assistant(reply), id: `a-${i}` }]).flat();
+    const current = user(currentText, 'current'); const policy = new ContextWindow();
+    const contentsTokens = (messages: Message[]) => Math.ceil(messages.reduce((n, m) => n + [...m.content].length * perChar, 0));
+    const counter = vi.fn(async (messages: Message[]) => contentsTokens(messages));
+    const selected = await policy.select(history, [current], adapter(counter), signal());
+    const total = contentsTokens(selected) + policy.estimate([]);
+    expect(total).toBeGreaterThanOrEqual(8192 * 0.7); expect(total).toBeLessThanOrEqual(8192);
+    expect(selected.length).toBeGreaterThan(5); expect(selected.at(-1)).toBe(current);
+    expect(history.slice(history.indexOf(selected[0]))).toEqual(selected.slice(0, -1));
+    expect(counter.mock.calls.length).toBeLessThanOrEqual(2);
+    expect(counter.mock.calls[0][0]).toHaveLength(17);
+  });
+  it('首次安全取样后允许加回未参与取样的旧轮次并进行第二次核验', async () => {
+    const history = Array.from({ length: 20 }, (_, i) => [user('问'.repeat(100), `u-${i}`), { ...assistant('答'.repeat(200)), id: `a-${i}` }]).flat();
+    const counter = vi.fn(async (messages: Message[]) => messages.reduce((n, m) => n + [...m.content].length, 0));
+    const policy = new ContextWindow(); const selected = await policy.select(history, [user('新'.repeat(50))], adapter(counter), signal());
+    expect(counter).toHaveBeenCalledTimes(2);
+    expect(counter.mock.calls[1][0].length).toBeGreaterThan(counter.mock.calls[0][0].length);
+    expect(selected).toHaveLength(41); expect(selected[0].id).toBe('u-0');
+  });
+  it('第二次计数失败时保留首次已精确验证安全的窗口', async () => {
+    const history = Array.from({ length: 20 }, (_, i) => [user('问'.repeat(100), `u-${i}`), { ...assistant('答'.repeat(200)), id: `a-${i}` }]).flat();
+    const counter = vi.fn().mockResolvedValueOnce(2450).mockRejectedValueOnce(new Error('count unavailable'));
+    const policy = new ContextWindow(); const selected = await policy.select(history, [user('新'.repeat(50))], adapter(counter), signal());
+    expect(counter).toHaveBeenCalledTimes(2); expect(selected).toEqual(counter.mock.calls[0][0]);
+  });
+  it('精确结果异常超限时不返回已确认超限的同一候选', async () => {
+    const history = [user('h'.repeat(150))]; const current = user('x'.repeat(300));
+    const counter = vi.fn().mockResolvedValueOnce(2000).mockResolvedValueOnce(2000);
+    await expect(new ContextWindow({ inputTokens: 1000 }).select(history, [current], adapter(counter), signal())).rejects.toMatchObject({ code: 'CONTEXT_LIMIT' });
+    expect(counter).toHaveBeenCalledTimes(2);
+  });
+  it('宽松字节预筛限制计数负载且不截断本轮输入', async () => {
+    const counter = vi.fn(async (_messages: Message[]) => 10); const policy = new ContextWindow({ inputTokens: 1000 });
+    const history = [user('h'.repeat(40000))]; const current = user('x'.repeat(400));
+    expect(await policy.select(history, [current], adapter(counter), signal())).toEqual([current]);
+    expect(counter.mock.calls[0][0]).toEqual([current]);
+    await expect(policy.select([], [user('x'.repeat(33000))], adapter(counter), signal())).rejects.toMatchObject({ code: 'CONTEXT_LIMIT' });
+  });
+});
+
+describe('Claude C2: 降级窗口边界', () => {
+  it('约2500中文字符的本轮输入在本地估算路径仍可发送', async () => {
+    const current = user('中'.repeat(2500)); const policy = new ContextWindow();
+    expect(await policy.select([], [current], adapter(), signal())).toEqual([current]);
+    expect(policy.estimate([current])).toBeLessThanOrEqual(8192 * 0.8);
+  });
+  it('第二次计数预算耗尽时复用首个安全窗口而不再请求上游', async () => {
+    const history = Array.from({ length: 20 }, (_, i) => [user('问'.repeat(100), `u-${i}`), { ...assistant('答'.repeat(200)), id: `a-${i}` }]).flat();
+    const counter = vi.fn(async (messages: Message[]) => messages.reduce((n, m) => n + [...m.content].length, 0));
+    const policy = new ContextWindow({ countsPerMinute: 1 });
+    expect(await policy.select(history, [user('新'.repeat(50))], adapter(counter), signal())).toEqual(counter.mock.calls[0][0]);
+    expect(counter).toHaveBeenCalledOnce();
   });
 });

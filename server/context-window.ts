@@ -16,6 +16,22 @@ export const DEFAULT_CONTEXT_CONFIG: ContextWindowConfig = {
 const SAFE_RATIO = 0.8;
 const DEFAULT_FACTOR = 1.25;
 const MAX_FACTOR = 4;
+const COUNT_SAMPLE_TURNS = 8;
+const COUNT_PAYLOAD_BYTES_PER_TOKEN = 32;
+const PRECISE_TARGET_RATIO = 0.95;
+
+// Category-weighted engineering estimate; unusual Unicode keeps the byte fallback.
+function textUnits(text: string): number {
+  let units = 0;
+  for (const char of text) {
+    const code = char.codePointAt(0)!;
+    if (code <= 0x7f) units += 0.9;
+    else if ((code >= 0x3400 && code <= 0x9fff) || (code >= 0x20000 && code <= 0x323af) ||
+      (code >= 0x3040 && code <= 0x30ff) || (code >= 0xac00 && code <= 0xd7af)) units += 1.5;
+    else units += Buffer.byteLength(char, 'utf8');
+  }
+  return units;
+}
 
 export function readContextConfig(env: {
   CHAT_CONTEXT_INPUT_TOKENS?: string; CHAT_CONTEXT_HISTORY_TURNS?: string;
@@ -65,9 +81,12 @@ export class ContextWindow {
   }
   private readonly log: (message: string) => void;
   private base(messages: readonly Message[]): number {
-    return 256 + Buffer.byteLength(this.config.systemInstruction, 'utf8') +
-      messages.reduce((n, message) => n + 32 + Buffer.byteLength(message.content, 'utf8'), 0);
+    return 256 + textUnits(this.config.systemInstruction) + this.contentUnits(messages);
   }
+  private contentUnits(messages: readonly Message[]): number {
+    return messages.reduce((n, message) => n + 32 + textUnits(message.content), 0);
+  }
+  private systemReserve(): number { return Math.ceil((256 + textUnits(this.config.systemInstruction)) * this.factor); }
   estimate(messages: readonly Message[]): number { return Math.ceil(this.base(messages) * this.factor); }
   observe(messages: readonly Message[], promptTokens?: number): void {
     if (!Number.isSafeInteger(promptTokens) || promptTokens! <= 0) return;
@@ -96,8 +115,7 @@ export class ContextWindow {
       if (signal.aborted) controller.abort();
       const tokens = await Promise.race([adapter.countTokens(messages, { signal: controller.signal }), timeout, cancelled]);
       if (!Number.isSafeInteger(tokens) || tokens < 0) return undefined;
-      // The SDK cannot count Developer API systemInstruction; add it locally.
-      return tokens + Math.ceil((256 + Buffer.byteLength(this.config.systemInstruction, 'utf8')) * this.factor);
+      return tokens;
     } catch (error) {
       if (signal.aborted) throw new ChatError('The operation was aborted.', 'ABORTED');
       if (error instanceof ChatError && error.code === 'AUTH_ERROR') throw error;
@@ -110,29 +128,62 @@ export class ContextWindow {
   async select(history: readonly Message[], inputs: readonly Message[], adapter: ChatAdapter, signal: AbortSignal): Promise<Message[]> {
     if (signal.aborted) throw new ChatError('The operation was aborted.', 'ABORTED');
     const current = historyTurns(inputs).flat();
-    const turns = historyTurns(history).slice(-this.config.historyTurns);
-    if (this.config.historyTurns === 0) turns.length = 0;
-    const candidate = () => [...turns.flat(), ...current];
+    const allTurns = this.config.historyTurns === 0 ? [] : historyTurns(history).slice(-this.config.historyTurns);
+    const candidate = (turns: Message[][]) => [...turns.flat(), ...current];
+    const payloadLimit = this.config.inputTokens * COUNT_PAYLOAD_BYTES_PER_TOKEN;
+    const payloadFits = (messages: Message[]) => messages.reduce((n, m) => n + Buffer.byteLength(m.content, 'utf8'), 0) <= payloadLimit;
     const safe = this.config.inputTokens * SAFE_RATIO;
-    // Before network counting, bound work and remove whole oldest turns.
-    while (turns.length && this.estimate(candidate()) > this.config.inputTokens) turns.shift();
-    let selected = candidate();
-    if (this.estimate(selected) <= safe) return selected;
+    const full = candidate(allTurns);
+    if (this.estimate(full) <= safe && payloadFits(full)) return full;
+    // Bound the first probe, but retain all eligible history for expansion.
+    const sampleTurns = allTurns.slice(-COUNT_SAMPLE_TURNS);
+    while (sampleTurns.length && !payloadFits(candidate(sampleTurns))) sampleTurns.shift();
+    let selected = candidate(sampleTurns);
+    if (!payloadFits(selected)) return this.limit();
+    const systemReserve = this.systemReserve();
+    let knownSafe: Message[] | undefined;
+    let knownOver: Message[] | undefined;
     for (let attempt = 0; attempt < 2; attempt++) {
-      const measured = await this.count(adapter, selected, signal);
+      const contentsTokens = await this.count(adapter, selected, signal);
       if (signal.aborted) throw new ChatError('The operation was aborted.', 'ABORTED');
-      if (measured === undefined) break;
-      if (measured <= this.config.inputTokens) return selected;
-      if (!turns.length) return this.limit();
-      // Use this request's observed ratio without poisoning persistent calibration.
-      const ratio = Math.max(1, measured / Math.max(1, this.estimate(selected)));
-      do { turns.shift(); } while (turns.length && this.estimate(candidate()) * ratio > safe);
-      selected = candidate();
+      if (contentsTokens === undefined) break;
+      const measured = contentsTokens + systemReserve;
+      if (measured <= this.config.inputTokens) {
+        knownSafe = selected;
+        if (attempt === 1 || selected.length === full.length) return selected;
+      } else {
+        knownOver = selected;
+        if (selected.length === current.length) {
+          if (knownSafe) return knownSafe;
+          return this.limit();
+        }
+        if (attempt === 1) break;
+      }
+      // The observed ratio can be below one: add back whole eligible turns.
+      const ratio = contentsTokens / Math.max(1, this.contentUnits(selected));
+      const fitted = allTurns.slice();
+      const target = this.config.inputTokens * PRECISE_TARGET_RATIO;
+      while (fitted.length && (systemReserve + this.contentUnits(candidate(fitted)) * ratio > target ||
+        !payloadFits(candidate(fitted)))) fitted.shift();
+      const next = candidate(fitted);
+      if (next.length === selected.length && next.every((message, index) => message === selected[index])) {
+        if (knownSafe) return knownSafe;
+        // An over-limit probe must become strictly smaller before the last check.
+        if (fitted.length) fitted.shift();
+      }
+      selected = candidate(fitted);
     }
-    // Failure/exhaustion: fall back to a smaller locally bounded window.
-    while (turns.length && this.estimate(candidate()) > safe) turns.shift();
-    selected = candidate();
-    if (this.estimate(selected) > safe) return this.limit();
-    return selected;
+    // Failure/exhaustion: keep a verified safe probe or a smaller local window.
+    if (knownSafe) return knownSafe;
+    const fallbackTurns = allTurns.slice();
+    while (fallbackTurns.length && (this.estimate(candidate(fallbackTurns)) > safe ||
+      !payloadFits(candidate(fallbackTurns)))) fallbackTurns.shift();
+    let fallback = candidate(fallbackTurns);
+    if (knownOver && fallback.length === knownOver.length && fallback.every((m, i) => m === knownOver![i])) {
+      if (!fallbackTurns.length) return this.limit();
+      fallbackTurns.shift(); fallback = candidate(fallbackTurns);
+    }
+    if (this.estimate(fallback) > safe || !payloadFits(fallback)) return this.limit();
+    return fallback;
   }
 }
