@@ -24,6 +24,26 @@
 7. 首次部署安装两个 systemd 单元，`systemd-analyze verify` 后 daemon-reload；指向新 release，先启动 Express，检查 /api/health 与目录可写，再启用 Bot。
 8. 后续切版先暂停 Bot、停止旧 Express 并备份，原子替换 current 符号链接再启动；不同时运行两个 Express 或 Bot。失败时停止两者并将 current 切回上个 release。代码回滚不回滚会话日志，格式变更另行评审。
 
+
+## 服务端上下文配置（P0-1 第一步）
+
+本节说明仓库配置默认值，不表示本轮已部署到 VPS。配置位于服务端 EnvironmentFile，Bot 不持有 Gemini 配置；调整后须另行授权发布 / 重启服务。
+
+| 配置 | 默认值 | 含义 |
+| :--- | :--- | :--- |
+| CHAT_CONTEXT_INPUT_TOKENS | 8192 | 输入预算（512–65536），包含配置系统指令与消息开销 |
+| CHAT_CONTEXT_HISTORY_TURNS | 20 | 最近历史轮数（0–100），本轮输入另保留 |
+| CHAT_MAX_OUTPUT_TOKENS | 8192 | 生成上限（1–65536），包含思考 tokens，不等于正文长度 |
+| CHAT_COUNT_TIMEOUT_MS | 3000 | 边缘计数调用超时（1–30000 毫秒） |
+| CHAT_COUNTS_PER_MINUTE | 20 | 独立计数频率（1–1000），每次窗口选择最多两次计数 |
+| GEMINI_SYSTEM_INSTRUCTION | 空 | 仅服务端配置的可信系统指令，按预算校验；历史 system 不再进入模型 |
+
+平常使用 UTF-8 字节与固定开销的保守估算；超过输入预算 80% 才尝试精确计数对话内容。当前 SDK 的 Developer API countTokens 不支持 systemInstruction，配置系统文本仍按本地估算加计。计数网络失败 / 超时 / 配额耗尽时退回更小的 80% 保守窗口，不发送完整历史；取消不继续生成，鉴权失败直接反馈。最小本轮输入仍超限时不写入新日志，Web / Bot 提示缩短输入。
+
+历史轮次从 user 开始，连续 user 分别成轮，孤立 assistant 与历史 system 不进入窗口；裁剪仅影响模型视图，日志和页面历史仍完整保存。模型不会记住窗口外正文，本次没有摘要或长期记忆。输出 MAX_TOKENS 且有正文时附带一次截断提示并保存相同内容，提示会进入后续窗口；无正文则返回模型错误，不保存空助手回复，不自动续写。
+
+估算不是 tokenizer 的数学上界；promptTokenCount 校准只在内存提高系数，最高 4，重启恢复默认 1.25。部署仍要求单 Express 写入者；Discord /reset 与归档锁调整为 P0-1 第二步，尚未实施。
+
 ## 使用 Playground
 
 在 Mac Terminal 执行以下运维命令，保持窗口打开：

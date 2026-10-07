@@ -1,9 +1,10 @@
 import { RESTJSONErrorCodes } from 'discord.js';
-export type FailureKind = 'AUTH_ERROR' | 'RATE_LIMIT' | 'NETWORK_ERROR' | 'MODEL_ERROR' | 'ABORTED' | 'TIMEOUT' | 'PROTOCOL' | 'BACKEND' | 'DISCORD_PERMISSION' | 'DISCORD_MESSAGE' | 'DISCORD_CHANNEL' | 'DISCORD_SEND' | 'UNEXPECTED';
+export type FailureKind = 'AUTH_ERROR' | 'RATE_LIMIT' | 'NETWORK_ERROR' | 'MODEL_ERROR' | 'CONTEXT_LIMIT' | 'ABORTED' | 'TIMEOUT' | 'PROTOCOL' | 'BACKEND' | 'DISCORD_PERMISSION' | 'DISCORD_MESSAGE' | 'DISCORD_CHANNEL' | 'DISCORD_SEND' | 'UNEXPECTED';
 export class BackendError extends Error {
   constructor(message: string, readonly kind: FailureKind = 'BACKEND') { super(message); this.name = 'BackendError'; }
 }
 const messages: Record<FailureKind, string> = {
+  CONTEXT_LIMIT: '本轮输入过长，请缩短内容后重新提问。',
   AUTH_ERROR: '模型服务鉴权失败，请检查服务端配置。',
   RATE_LIMIT: '模型请求达到限额，请稍后再试。',
   NETWORK_ERROR: '后端连接失败，请检查服务和网络后再试。',

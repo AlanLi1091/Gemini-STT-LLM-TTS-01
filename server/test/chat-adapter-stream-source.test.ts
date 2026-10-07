@@ -320,3 +320,76 @@ describe('P0-2: 幂等重试数据流', () => {
     expect((await c.storage.getSession(c.sessionId))!.messages).toEqual([]);
   }));
 });
+
+describe('P0-1: 窗口与会话流装配', () => {
+  async function context(run: (ctx: { storage: JsonSessionStorage; service: import('../session-service').SessionService; sessionId: string }) => Promise<void>) {
+    const { SessionService } = await import('../session-service');
+    const directory = await mkdtemp(join(tmpdir(), 'bounded-session-'));
+    try {
+      const storage = new JsonSessionStorage(directory); const service = new SessionService(storage);
+      await run({ storage, service, sessionId: (await service.createSession()).id });
+    } finally { await rm(directory, { recursive: true }); }
+  }
+  async function collect(source: import('../chat-stream').ChatStreamSource, req: import('@core/index').ChatStreamRequest) {
+    const events: ChatSseEvent[] = [];
+    for await (const event of source(req, { signal: new AbortController().signal })) events.push(event);
+    return events;
+  }
+  const requestId = '11111111-1111-4111-8111-111111111111';
+  it('大量历史 system 不进入窗口且最近轮次生成后完整日志保留', async () => context(async c => {
+    const { createSessionChatStreamSource } = await import('../chat-adapter-stream-source');
+    const { ContextWindow } = await import('../context-window');
+    await c.service.appendTurnInputs(c.sessionId, [{ role: 'system', content: 'x'.repeat(50000) }, { role: 'user', content: 'old' }]);
+    await c.service.appendAssistantResponse(c.sessionId, 'old-reply');
+    await c.service.appendTurnInputs(c.sessionId, [{ role: 'user', content: 'recent' }]);
+    await c.service.appendAssistantResponse(c.sessionId, 'recent-reply');
+    const before = (await c.storage.getSession(c.sessionId))!.messages;
+    const stream = vi.fn(async function* (messages: import('@core/index').Message[], options?: import('@core/index').ChatAdapterOptions) {
+      expect(messages.map(m => m.content)).toEqual(['recent', 'recent-reply', 'current']);
+      expect(options?.maxTokens).toBe(8192);
+      yield { delta: '', accumulated: 'ok', done: true };
+    });
+    const source = createSessionChatStreamSource({ id: 'record', name: 'Record', send: async () => ({ content: '' }), stream }, c.service, undefined, new ContextWindow({ historyTurns: 1 }));
+    expect((await collect(source, { sessionId: c.sessionId, requestId, messages: [{ role: 'user', content: 'current' }] })).at(-1)?.event).toBe('done');
+    expect((await c.storage.getSession(c.sessionId))!.messages.slice(0, before.length)).toEqual(before);
+  }));
+  it('失败重试的本轮输入在计数和模型窗口中都仅出现一次回放不再计数', async () => context(async c => {
+    const { createSessionChatStreamSource } = await import('../chat-adapter-stream-source'); const { ContextWindow } = await import('../context-window');
+    const content = 'x'.repeat(400); const inputs: number[] = [];
+    const countTokens = vi.fn(async (messages: import('@core/index').Message[]) => { expect(messages.filter(m => m.content === content)).toHaveLength(1); return 100; });
+    let calls = 0;
+    const stream = vi.fn(async function* (messages: import('@core/index').Message[]) {
+      inputs.push(messages.length); if (++calls === 1) throw new Error('failed');
+      yield { delta: '', accumulated: 'ok', done: true };
+    });
+    const source = createSessionChatStreamSource({ id: 'retry', name: 'Retry', send: async () => ({ content: '' }), countTokens, stream }, c.service, undefined, new ContextWindow({ inputTokens: 1000 }));
+    const req = { sessionId: c.sessionId, requestId, messages: [{ role: 'user' as const, content }] };
+    expect((await collect(source, req)).at(-1)?.event).toBe('error');
+    expect((await collect(source, req)).at(-1)?.event).toBe('done');
+    expect((await collect(source, req))).toEqual([{ event: 'done', data: { content: 'ok', usage: undefined } }]);
+    expect(inputs).toEqual([1, 1]); expect(countTokens).toHaveBeenCalledTimes(2);
+    expect((await c.storage.getSession(c.sessionId))!.messages.map(m => m.role)).toEqual(['user', 'assistant']);
+  }));
+  it('超限新输入不落盘不调用模型且会话锁正常释放', async () => context(async c => {
+    const { createSessionChatStreamSource } = await import('../chat-adapter-stream-source'); const { ContextWindow } = await import('../context-window');
+    const stream = vi.fn(async function* () { yield { delta: '', accumulated: 'ok', done: true }; });
+    const source = createSessionChatStreamSource({ id: 'mock', name: 'Mock', send: async () => ({ content: '' }), stream }, c.service, undefined, new ContextWindow({ inputTokens: 1000 }));
+    expect((await collect(source, { sessionId: c.sessionId, requestId, messages: [{ role: 'user', content: 'x'.repeat(2000) }] }))[0]).toMatchObject({ event: 'error', data: { error: { code: 'CONTEXT_LIMIT' } } });
+    expect((await c.storage.getSession(c.sessionId))!.messages).toEqual([]); expect(stream).not.toHaveBeenCalled();
+    expect((await collect(source, { sessionId: c.sessionId, requestId, messages: [{ role: 'user', content: 'short' }] })).at(-1)?.event).toBe('done');
+  }));
+  it('MAX_TOKENS 空正文不保存助手消息有正文提示与持久化一致', async () => context(async c => {
+    const { createSessionChatStreamSource } = await import('../chat-adapter-stream-source');
+    const { GeminiChatAdapter } = await import('@core/index');
+    mockGenerateContentStream.mockResolvedValueOnce((async function* () { yield { text: '', candidates: [{ finishReason: 'MAX_TOKENS' }] }; })());
+    const source = createSessionChatStreamSource(new GeminiChatAdapter({ apiKey: 'fake' }), c.service);
+    const req = { sessionId: c.sessionId, requestId, messages: [{ role: 'user' as const, content: 'hi' }] };
+    expect((await collect(source, req)).at(-1)?.event).toBe('error');
+    expect((await c.storage.getSession(c.sessionId))!.messages.map(m => m.role)).toEqual(['user']);
+    mockGenerateContentStream.mockResolvedValueOnce((async function* () { yield { text: 'partial', candidates: [{ finishReason: 'MAX_TOKENS' }] }; })());
+    const last = (await collect(source, req)).at(-1)!;
+    expect(last.event).toBe('done');
+    if (last.event === 'done') expect((await c.storage.getSession(c.sessionId))!.messages.at(-1)?.content).toBe(last.data.content);
+    expect((await c.storage.getSession(c.sessionId))!.messages.at(-1)?.content).toContain('内容已截断');
+  }));
+});

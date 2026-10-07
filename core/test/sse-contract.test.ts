@@ -80,3 +80,10 @@ describe('ADR-012: 幂等契约', () => {
     expect(SSE_SUPPORTS_RESUMPTION).toBe(false);
   });
 });
+
+describe('P0-1: 超限契约', () => {
+  it('CONTEXT_LIMIT 使用既有 error 事件结构', () => {
+    const event: SseErrorEvent = { event: 'error', data: { error: { code: 'CONTEXT_LIMIT', message: '输入过长' } } };
+    expect(event.data.error.code).toBe('CONTEXT_LIMIT');
+  });
+});

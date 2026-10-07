@@ -108,3 +108,11 @@ describe('ChatErrorBanner 错误提示横幅组件测试', () => {
     expect(screen.getByText(/Fallback message/i)).toBeInTheDocument();
   });
 });
+
+describe('P0-1: 输入超限提示', () => {
+  it('CONTEXT_LIMIT 显示缩短输入的固定提示而不暴露原文', () => {
+    render(<ChatErrorBanner error={new ChatError('raw internal detail', 'CONTEXT_LIMIT')} />);
+    expect(screen.getByRole('alert')).toHaveTextContent('本轮输入过长，请缩短内容后重新发送');
+    expect(screen.queryByText('raw internal detail')).not.toBeInTheDocument();
+  });
+});

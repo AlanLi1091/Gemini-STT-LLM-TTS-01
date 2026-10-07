@@ -69,4 +69,6 @@ export interface ChatAdapter {
   readonly name: string;
   send(messages: Message[], options?: ChatAdapterOptions): Promise<ChatResponse>;
   stream(messages: Message[], options?: ChatAdapterOptions): AsyncIterable<ChatChunk>;
+  /** Counts conversation contents only; configured system text is estimated server-side. */
+  countTokens?(messages: Message[], options?: ChatAdapterOptions): Promise<number>;
 }

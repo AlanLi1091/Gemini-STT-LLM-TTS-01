@@ -194,3 +194,24 @@ describe('P0-2: HTTP 持久化重试', () => {
     expect((await request(restarted).get(`/api/sessions/${session.id}`).expect(200)).body).toEqual(before);
   });
 });
+
+describe('P0-1: HTTP 有限上下文', () => {
+  it('模型仅接收最近轮次但 GET 保留全部日志超限新输入不落盘', async () => {
+    const { adapter, sessionService } = await createTestContext();
+    const { ContextWindow } = await import('../context-window');
+    const session = await sessionService.createSession();
+    for (let i = 0; i < 30; i++) {
+      await sessionService.appendTurnInputs(session.id, [{ role: 'user', content: `user-${i}` }]);
+      await sessionService.appendAssistantResponse(session.id, `reply-${i}`);
+    }
+    const app = createApp({ sessionService, chatStreamSource: createSessionChatStreamSource(adapter, sessionService, undefined, new ContextWindow({ inputTokens: 1000, historyTurns: 2 })) });
+    const requestId = '11111111-1111-4111-8111-111111111111';
+    await request(app).post('/api/chat/stream').send({ sessionId: session.id, requestId, messages: [{ role: 'user', content: 'current' }] }).expect(200);
+    expect(adapter.histories[0].map(m => m.content)).toEqual(['user-28', 'reply-28', 'user-29', 'reply-29', 'current']);
+    const before = (await request(app).get(`/api/sessions/${session.id}`).expect(200)).body;
+    expect(before.messages).toHaveLength(62);
+    const rejected = await request(app).post('/api/chat/stream').send({ sessionId: session.id, requestId: '22222222-2222-4222-8222-222222222222', messages: [{ role: 'user', content: 'x'.repeat(2000) }] }).expect(200);
+    expect(rejected.text).toContain('CONTEXT_LIMIT'); expect(adapter.histories).toHaveLength(1);
+    expect((await request(app).get(`/api/sessions/${session.id}`).expect(200)).body).toEqual(before);
+  });
+});

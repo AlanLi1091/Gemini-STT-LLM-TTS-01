@@ -106,3 +106,11 @@ describe('Task 16 Step 2: Bot 后端与 SSE 对话', () => {
     expect(fetcher).toHaveBeenCalledOnce();
   });
 });
+
+describe('P0-1: Bot 输入超限', () => {
+  it('CONTEXT_LIMIT 映射为缩短输入提示且不自动重发', async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce(resolved()).mockResolvedValueOnce(sse(['event: error\ndata: {"error":{"code":"CONTEXT_LIMIT","message":"raw-secret"}}\n\n']));
+    await expect(new BackendClient({ fetch: fetcher }).chat(input)).rejects.toMatchObject({ kind: 'CONTEXT_LIMIT', message: '本轮输入过长，请缩短内容后重新提问。' });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+});

@@ -11,11 +11,18 @@ import type { ChatStreamSource } from './chat-stream';
 import { SessionArchivedError, SessionService } from './session-service';
 import { SessionNotFoundError, SessionRequestConflictError, type SessionStorage } from './storage/session-storage';
 import { guardStreamSource, RequestBudget } from './request-budget';
+import { ContextWindow, readContextConfig } from './context-window';
 
 export interface ServerChatEnvironment {
   GEMINI_API_KEY?: string;
   GEMINI_REQUESTS_PER_MINUTE?: string;
   GEMINI_RATE_LIMIT_COOLDOWN_MS?: string;
+  CHAT_CONTEXT_INPUT_TOKENS?: string;
+  CHAT_CONTEXT_HISTORY_TURNS?: string;
+  CHAT_MAX_OUTPUT_TOKENS?: string;
+  CHAT_COUNT_TIMEOUT_MS?: string;
+  CHAT_COUNTS_PER_MINUTE?: string;
+  GEMINI_SYSTEM_INSTRUCTION?: string;
 }
 
 export interface ServerChatStreamSourceOptions {
@@ -25,7 +32,7 @@ export interface ServerChatStreamSourceOptions {
 }
 
 /** 将任意共享 ChatAdapter 映射为服务端 SSE 流源。 */
-export function createAdapterStreamSource(adapter: ChatAdapter): ChatStreamSource {
+export function createAdapterStreamSource(adapter: ChatAdapter, contextWindow = new ContextWindow()): ChatStreamSource {
   return async function* adapterStreamSource(request, { signal }) {
     const messages: Message[] = request.messages.map((message, index) => ({
       id: `request-${index}`,
@@ -35,8 +42,13 @@ export function createAdapterStreamSource(adapter: ChatAdapter): ChatStreamSourc
     }));
 
     try {
-      for await (const chunk of adapter.stream(messages, { signal })) {
+      let lastUser = messages.length - 1;
+      while (lastUser >= 0 && messages[lastUser].role !== 'user') lastUser--;
+      const selected = await contextWindow.select(messages.slice(0, Math.max(0, lastUser)),
+        messages.slice(Math.max(0, lastUser)), adapter, signal);
+      for await (const chunk of adapter.stream(selected, { signal, maxTokens: contextWindow.config.outputTokens })) {
         if (chunk.done) {
+          contextWindow.observe(selected, chunk.usage?.promptTokens);
           yield {
             event: 'done',
             data: {
@@ -80,8 +92,9 @@ export function createSessionChatStreamSource(
   adapter: ChatAdapter,
   sessionService: SessionService,
   requestBudget?: RequestBudget,
+  contextWindow = new ContextWindow(),
 ): ChatStreamSource {
-  const adapterSource = createAdapterStreamSource(adapter);
+  const adapterSource = createAdapterStreamSource(adapter, contextWindow);
   const statelessSource = requestBudget ? guardStreamSource(adapterSource, requestBudget) : adapterSource;
 
   return async function* sessionChatStreamSource(request, { signal }) {
@@ -104,18 +117,24 @@ export function createSessionChatStreamSource(
         yield { event: 'done', data: { content: state.response.content, usage: state.response.usage } };
         return;
       }
+      // On retry, the existing tail input belongs to this turn, not history.
+      const inputs: Message[] = state.inputExists ? state.session.messages.slice(-1) :
+        request.messages.map((message, index) => ({ ...message, id: requestId ?? `pending-${index}`, createdAt: 0 }));
+      const history = state.inputExists ? state.session.messages.slice(0, -1) : state.session.messages;
+      const selected = await contextWindow.select(history, inputs, adapter, signal);
+      if (signal.aborted) return;
       // Replay and rejected conflicts do not consume upstream model budget.
       const wait = requestBudget?.acquire();
       if (wait) {
         yield { event: 'error', data: { error: { code: 'RATE_LIMIT', message: `模型请求预算已满或暂时暂停，请等待 ${Math.ceil(wait / 1000)} 秒后再试。` } } };
         return;
       }
-      const session = state.inputExists ? state.session :
-        await sessionService.appendTurnInputs(request.sessionId, request.messages, requestId);
+      if (!state.inputExists) await sessionService.appendTurnInputs(request.sessionId, request.messages, requestId);
       if (signal.aborted) return;
-      for await (const chunk of adapter.stream(session.messages, { signal })) {
+      for await (const chunk of adapter.stream(selected, { signal, maxTokens: contextWindow.config.outputTokens })) {
         if (signal.aborted) return;
         if (chunk.done) {
+          contextWindow.observe(selected, chunk.usage?.promptTokens);
           await sessionService.appendAssistantResponse(
             request.sessionId,
             chunk.accumulated,
@@ -169,9 +188,11 @@ export function createChatStreamSourceFromEnv(
   environment: ServerChatEnvironment,
   options: ServerChatStreamSourceOptions = {},
 ): ChatStreamSource {
+  const contextConfig = readContextConfig(environment);
+  const contextWindow = new ContextWindow(contextConfig);
   const apiKey = sanitizeGeminiApiKey(environment.GEMINI_API_KEY);
   const adapter: ChatAdapter = apiKey
-    ? new GeminiChatAdapter({ apiKey })
+    ? new GeminiChatAdapter({ apiKey, systemInstruction: contextConfig.systemInstruction })
     : new MockChatAdapter(options.mockAdapterOptions);
 
   const budget = apiKey ? options.requestBudget ?? new RequestBudget({
@@ -179,8 +200,8 @@ export function createChatStreamSourceFromEnv(
     cooldownMs: environment.GEMINI_RATE_LIMIT_COOLDOWN_MS === undefined ? undefined : Number(environment.GEMINI_RATE_LIMIT_COOLDOWN_MS),
   }) : undefined;
   if (options.sessionStorage) {
-    return createSessionChatStreamSource(adapter, new SessionService(options.sessionStorage), budget);
+    return createSessionChatStreamSource(adapter, new SessionService(options.sessionStorage), budget, contextWindow);
   }
-  const source = createAdapterStreamSource(adapter);
+  const source = createAdapterStreamSource(adapter, contextWindow);
   return budget ? guardStreamSource(source, budget) : source;
 }

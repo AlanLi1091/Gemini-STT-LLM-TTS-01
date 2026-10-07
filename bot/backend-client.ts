@@ -17,7 +17,7 @@ function errorMessage(code: unknown): string {
   return describeFailure(new BackendError('', errorKind(code))).message;
 }
 function errorKind(code: unknown): FailureKind {
-  return ['RATE_LIMIT', 'AUTH_ERROR', 'ABORTED', 'NETWORK_ERROR', 'MODEL_ERROR'].includes(String(code)) ? code as FailureKind : 'BACKEND';
+  return ['RATE_LIMIT', 'AUTH_ERROR', 'ABORTED', 'NETWORK_ERROR', 'MODEL_ERROR', 'CONTEXT_LIMIT'].includes(String(code)) ? code as FailureKind : 'BACKEND';
 }
 
 export class BackendClient {

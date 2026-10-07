@@ -19,6 +19,7 @@ export const CHAT_ERROR_CODES = [
   'ABORTED',
   'UNKNOWN',
   'REQUEST_CONFLICT',
+  'CONTEXT_LIMIT',
 ] as const;
 
 export type ChatErrorCode = (typeof CHAT_ERROR_CODES)[number];

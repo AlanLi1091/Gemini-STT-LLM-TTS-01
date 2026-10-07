@@ -41,6 +41,14 @@ export function resolveSystemInstruction(
   return parts.length > 0 ? parts.join('\n\n') : undefined;
 }
 
+const TRUNCATED_NOTICE = '\n\n[回复已达到长度上限，内容已截断。]';
+
+function markTruncated(content: string, truncated: boolean): string {
+  if (!truncated) return content;
+  if (!content.trim()) throw new ChatError('模型达到生成长度上限但未返回正文，请稍后重新提问。', 'MODEL_ERROR');
+  return content + TRUNCATED_NOTICE;
+}
+
 /** 结构化分类并映射 Gemini 异常为共享 ChatError。 */
 export function classifyGeminiError(error: unknown, signal?: AbortSignal): ChatError {
   if (error instanceof ChatError) return error;
@@ -136,6 +144,22 @@ export class GeminiChatAdapter implements ChatAdapter {
     this.name = `Gemini (${this.model})`;
   }
 
+  async countTokens(messages: Message[], options: ChatAdapterOptions = {}): Promise<number> {
+    if (options.signal?.aborted) throw new ChatError('The operation was aborted.', 'ABORTED');
+    try {
+      const ai = new GoogleGenAI({ apiKey: this.apiKey });
+      // Installed SDK rejects systemInstruction in Developer API countTokens.
+      const response = await ai.models.countTokens({
+        model: this.model, contents: formatGeminiContents(messages),
+        config: { abortSignal: options.signal },
+      });
+      if (!Number.isSafeInteger(response.totalTokens) || response.totalTokens! < 0) {
+        throw new ChatError('模型计数结果无效。', 'MODEL_ERROR');
+      }
+      return response.totalTokens!;
+    } catch (error) { throw classifyGeminiError(error, options.signal); }
+  }
+
   async send(messages: Message[], options: ChatAdapterOptions = {}): Promise<ChatResponse> {
     const { signal, temperature, maxTokens } = options;
 
@@ -167,7 +191,7 @@ export class GeminiChatAdapter implements ChatAdapter {
         },
       });
 
-      const content = response.text || '';
+      const content = markTruncated(response.text || '', response.candidates?.[0]?.finishReason === 'MAX_TOKENS');
       let usage: ChatUsage | undefined;
       if (response.usageMetadata) {
         usage = {
@@ -222,9 +246,11 @@ export class GeminiChatAdapter implements ChatAdapter {
 
       let accumulated = '';
       let latestUsage: ChatUsage | undefined;
+      let truncated = false;
 
       for await (const chunk of streamResponse) {
         if (signal?.aborted) throw new ChatError('The operation was aborted.', 'ABORTED');
+        if (chunk.candidates?.[0]?.finishReason === 'MAX_TOKENS') truncated = true;
 
         if (chunk.usageMetadata) {
           latestUsage = {
@@ -242,6 +268,8 @@ export class GeminiChatAdapter implements ChatAdapter {
       }
 
       if (signal?.aborted) throw new ChatError('The operation was aborted.', 'ABORTED');
+
+      accumulated = markTruncated(accumulated, truncated);
 
       yield {
         delta: '',

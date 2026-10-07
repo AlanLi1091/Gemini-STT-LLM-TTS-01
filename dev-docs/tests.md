@@ -1,7 +1,7 @@
 # 测试套件与测试用例台账
 
 > **维护规范**：
-> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（32 个套件）与具体测试用例（327 个断言项）。
+> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（33 个套件）与具体测试用例（355 个断言项）。
 > 2. **铁律联动**：后续开发中，每次有新功能开发、重构或测试内容更新时，**必须同步在此台账中维护新增或修改的测试项**，保持与实际测试套件 100% 同步。
 
 ## 1. 测试套件概览看板
@@ -14,33 +14,34 @@
 | 4 | `src/test/mock-engine.test.tsx` | Task 4 | Mock 响应引擎延时回复与思考态交互流转 | 3 | ✅ 通过 |
 | 5 | `src/test/task5-interactions.test.tsx` | Task 5 | 体验细节（ADR-005不可变ID / IME防误发 / 清空会话 / 触底滚动） | 7 | ✅ 通过 |
 | 6 | `src/test/chat-adapter-contract.test.ts` | Task 6 / 10 | ChatAdapter 通用契约测试套件（Mock & Gemini send/stream） | 14 | ✅ 通过 |
-| 7 | `src/test/gemini-adapter.test.ts` | Task 7 / 10 | GeminiChatAdapter send & stream 单测（网络全Mock/错误转译/用量提取） | 29 | ✅ 通过 |
+| 7 | `src/test/gemini-adapter.test.ts` | Task 7 / 10 | GeminiChatAdapter send & stream 单测（网络全Mock/错误转译/用量提取） | 34 | ✅ 通过 |
 | 8 | `src/test/settings-storage.test.ts` | Phase 3 收尾 Step 2A | 旧直连配置迁移至后端模式并清除浏览器密钥 | 8 | ✅ 通过 |
 | 9 | `src/test/settings.test.tsx` | Phase 3 收尾 Step 2B | 后端连接信息面板与旧设置迁移 | 4 | ✅ 通过 |
 | 10 | `src/hooks/useChat.test.ts` | Task 3 / 9 / 10 | useChat Hook 领域逻辑状态机（流式驱动/中断/重试/生命周期） | 15 | ✅ 通过 |
-| 11 | `src/test/error-and-usage-components.test.tsx` | Task 9 / Phase 3 收尾 Step 2B | TokenUsageBadge 与服务端错误指引组件测试 | 15 | ✅ 通过 |
+| 11 | `src/test/error-and-usage-components.test.tsx` | Task 9 / Phase 3 收尾 Step 2B | TokenUsageBadge 与服务端错误指引组件测试 | 16 | ✅ 通过 |
 | 12 | `src/test/error-and-usage-integration.test.tsx` | Task 9 / Phase 3 收尾 Step 2B | 错误横幅展示/重试及 Token 徽章集成测试 | 2 | ✅ 通过 |
 | 13 | `src/test/streaming-ui.test.tsx` | Task 10 | 流式打字机光标动效、停止生成按钮、顶栏联动禁用与 Smart Sticky Bottom 触底滚动守卫 | 8 | ✅ 通过 |
 | 14 | `server/test/server-skeleton.test.ts` | Task 11 | Express 服务端骨架、双环境运行、根路径与健康检查响应 | 4 | ✅ 通过 |
-| 15 | `core/test/sse-contract.test.ts` | Task 11 | 共享 SSE 事件、错误载荷与 sessionId 演进契约 | 6 | ✅ 通过 |
+| 15 | `core/test/sse-contract.test.ts` | Task 11 | 共享 SSE 事件、错误载荷与 sessionId 演进契约 | 7 | ✅ 通过 |
 | 16 | `server/test/cors.test.ts` | Task 11 | CORS 白名单解析、允许/拒绝策略与预检链路 | 5 | ✅ 通过 |
 | 17 | `server/test/chat-stream.test.ts` | Task 12 | SSE 流式管道、心跳、续传声明与中断级联 | 8 | ✅ 通过 |
-| 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 / Task 17 Step 1 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 19 | ✅ 通过 |
+| 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 / Task 17 Step 1 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 23 | ✅ 通过 |
 | 19 | `src/test/remote-chat-adapter.test.ts` | Task 13 / Task 14 Step 3 | RemoteChatAdapter 的 SSE 消费、错误映射、AbortSignal 与 sessionId 模式 | 8 | ✅ 通过 |
 | 20 | `src/test/app-remote-integration.test.tsx` | Task 13 Step 3 / Task 14 Step 3 / Phase 3 收尾 | App 的后端 SSE 装配、会话恢复、归档清空与旧配置迁移 | 7 | ✅ 通过 |
 | 21 | `server/test/json-session-storage.test.ts` | Task 14 Step 1 / Task 16 Step 2 | JSON 会话、频道关联、重启恢复与严格追加 | 12 | ✅ 通过 |
-| 22 | `server/test/session-api.test.ts` | Task 14 Step 2 / Task 16 Step 2 | 会话 API、频道上下文、归档与来源隔离 | 10 | ✅ 通过 |
+| 22 | `server/test/session-api.test.ts` | Task 14 Step 2 / Task 16 Step 2 | 会话 API、频道上下文、归档与来源隔离 | 11 | ✅ 通过 |
 | 23 | `server/test/discord-demo.test.ts` | Task 15 Step 2 | 配置、测试频道回显、连接事件、日志脱敏与退出清理（网络 Mock） | 14 | ✅ 通过 |
 | 24 | `bot/test/gateway.test.ts` | Task 16 / Task 17 Step 1–3 | 正式网关、typing、错误、重连、长时模拟与资源清理（网络 Mock） | 42 | ✅ 通过 |
 | 25 | `bot/test/message-entry.test.ts` | Task 16 Step 1 | 指定频道直接 @Bot、提及清理与消息过滤 | 14 | ✅ 通过 |
-| 26 | `bot/test/backend-client.test.ts` | Task 16 Step 2 | 本机 HTTP / SSE、最终回复、错误、中止与重启解析 | 17 | ✅ 通过 |
+| 26 | `bot/test/backend-client.test.ts` | Task 16 Step 2 | 本机 HTTP / SSE、最终回复、错误、中止与重启解析 | 18 | ✅ 通过 |
 | 27 | `bot/test/split-message.test.ts` | Task 16 Step 3 | 长回复完整分段、段落 / 换行优先、UTF-16 与 CRLF 边界 | 10 | ✅ 通过 |
 | 28 | `bot/test/request-scheduler.test.ts` | Task 17 Step 1 | FIFO、跨频道、队满、用户冷却、失败恢复与退出 | 7 | ✅ 通过 |
 | 29 | `server/test/request-budget.test.ts` | Task 17 Step 1 | 滚动请求预算、限流暂停与恢复 | 4 | ✅ 通过 |
-| 30 | `bot/test/errors.test.ts` | Task 17 Step 2 | 固定安全反馈、Discord 错误分类与启动日志脱敏 | 4 | ✅ 通过 |
+| 30 | `bot/test/errors.test.ts` | Task 17 Step 2 | 固定安全反馈、Discord 错误分类与启动日志脱敏 | 5 | ✅ 通过 |
 | 31 | `server/test/deployment.test.ts` | Task 18 Step 1 | 私有 loopback 配置、静态托管、SSE / API 隔离与文件边界 | 7 | ✅ 通过 |
 | 32 | `server/test/deployment-validation.test.ts` | Task 18 Step 2 | 采集故障、重连中断、24 小时 / 新鲜度 / 证据缺口判定 | 11 | ✅ 通过 |
-| **合计** | **32 个测试文件** | **Phase 1–4 / 审计修复** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **327** | **✅ 100% 通过** |
+| 33 | `server/test/context-window.test.ts` | P0-1 第一步 | 轮次窗口、计数降级、超时与内存校准 | 14 | ✅ 通过 |
+| **合计** | **33 个测试文件** | **Phase 1–4 / 审计修复** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **355** | **✅ 100% 通过** |
 
 ---
 
@@ -143,7 +144,7 @@
 - [x] **当传入已中止的 AbortSignal 时，stream 应立即抛出 code 为 ABORTED 的 ChatError**
 - [x] **在流式 chunk 产出过程中触发 AbortSignal，应成功打断并抛出 code 为 ABORTED 的 ChatError**
 
-### 2.7 `src/test/gemini-adapter.test.ts` (29 项)
+### 2.7 `src/test/gemini-adapter.test.ts` (34 项)
 > **任务对应**：Task 7 / 10 · GeminiChatAdapter send & stream 单测（网络全Mock/错误转译/用量提取）
 
 
@@ -185,6 +186,15 @@
 - [x] **流式调用 SDK 抛出 403 / PERMISSION_DENIED 时转译为 AUTH_ERROR**
 - [x] **流式迭代过程中抛出网络异常时转译为 NETWORK_ERROR**
 - [x] **流式调用 SDK 抛出 429 配额异常时转译为 RATE_LIMIT**
+
+#### P0-1 第一步新增回归
+
+- [x] **Developer API 计数不发送 systemInstruction 并透传 AbortSignal**
+- [x] **计数拒绝无效结果且已中止请求不调用 SDK**
+- [x] **send 的 MAX_TOKENS 正文附带一次提示并保留用量**
+- [x] **stream 的重复 MAX_TOKENS 标志只在最终正文附带一次提示**
+- [x] **MAX_TOKENS 无正文时 send 和 stream 都返回模型错误而非成功空回复**
+
 
 ### 2.8 `src/test/settings-storage.test.ts` (8 项)
 > **任务对应**：Phase 3 收尾 Step 2A · 存量直连配置迁移至后端模式并清除密钥
@@ -233,7 +243,7 @@
 - [x] **不支持 randomUUID 的非安全上下文使用 getRandomValues 生成 UUID**
 
 
-### 2.11 `src/test/error-and-usage-components.test.tsx` (15 项)
+### 2.11 `src/test/error-and-usage-components.test.tsx` (16 项)
 > **任务对应**：Task 9 / Task 13 验收修复 · TokenUsageBadge 徽章与 ChatErrorBanner 错误横幅纯组件测试
 
 
@@ -255,6 +265,11 @@
 - [x] **点击重试按钮应触发 onRetry 回调**
 - [x] **点击关闭按钮应触发 onDismiss 回调**
 - [x] **default 兜底分支测试**
+
+#### P0-1 第一步新增回归
+
+- [x] **CONTEXT_LIMIT 显示缩短输入的固定提示而不暴露原文**
+
 
 ### 2.12 `src/test/error-and-usage-integration.test.tsx` (2 项)
 > **任务对应**：Task 9 / Phase 3 收尾 Step 2B · 错误横幅展示/重试及 Token 徽章集成测试
@@ -291,7 +306,7 @@
 #### Task 11 Step 2: 健康检查接口
 - [x] **GET /api/health 应返回 200 状态码与共享健康状态结构**
 
-### 2.15 `core/test/sse-contract.test.ts` (6 项)
+### 2.15 `core/test/sse-contract.test.ts` (7 项)
 > **任务对应**：Task 11 Step 2 · 共享 SSE 协议与无状态到会话化的演进契约
 
 #### Task 11 Step 2: 共享 SSE 契约
@@ -304,6 +319,11 @@
 #### P0-2 / ADR-012 新增回归
 
 - [x] **可选请求 UUID 与 REQUEST_CONFLICT 不改变 SSE 事件结构**
+
+
+#### P0-1 第一步新增回归
+
+- [x] **CONTEXT_LIMIT 使用既有 error 事件结构**
 
 
 ### 2.16 `server/test/cors.test.ts` (5 项)
@@ -333,7 +353,7 @@
 - [x] **带标识请求要求严格 UUID 会话和单条非空 user 输入**
 
 
-### 2.18 `server/test/chat-adapter-stream-source.test.ts` (19 项)
+### 2.18 `server/test/chat-adapter-stream-source.test.ts` (23 项)
 > **任务对应**：Task 17 Step 2 / Task 12 Step 2–3 · 服务端 Adapter 承载、自动降级与错误透传
 
 #### Task 12 Step 3: Adapter 自动选择与统一错误透传
@@ -361,6 +381,14 @@
 - [x] **进程重建后复用无回复输入并可回放新保存的回复**
 - [x] **已完成回放绕过暂停预算而新输入超限时不持久化**
 - [x] **归档及已中止请求不调用模型且不产生新消息**
+
+
+#### P0-1 第一步新增回归
+
+- [x] **大量历史 system 不进入窗口且最近轮次生成后完整日志保留**
+- [x] **失败重试的本轮输入在计数和模型窗口中都仅出现一次回放不再计数**
+- [x] **超限新输入不落盘不调用模型且会话锁正常释放**
+- [x] **MAX_TOKENS 空正文不保存助手消息有正文提示与持久化一致**
 
 
 ### 2.19 `src/test/remote-chat-adapter.test.ts` (8 项)
@@ -419,7 +447,7 @@
 - [x] **无请求元数据的旧文件仍可追加且非法元数据不写入**
 
 
-### 2.22 `server/test/session-api.test.ts` (10 项)
+### 2.22 `server/test/session-api.test.ts` (11 项)
 > **任务对应**：Task 17 Step 2 / Task 16 Step 2 / Task 14 Step 2 · 会话 API、多轮全量上下文与归档语义
 
 #### Task 14 Step 2: 会话 API 与多轮上下文
@@ -438,6 +466,11 @@
 #### P0-2 / ADR-012 新增回归
 
 - [x] **失败重试和服务重建回放不重复写入且刷新日志保持唯一输入**
+
+
+#### P0-1 第一步新增回归
+
+- [x] **模型仅接收最近轮次但 GET 保留全部日志超限新输入不落盘**
 
 
 ### 2.23 `server/test/discord-demo.test.ts` (14 项)
@@ -527,7 +560,7 @@
 - [x] **忽略Webhook消息**
 - [x] **Bot 身份尚未就绪时不处理消息**
 
-### 2.26 `bot/test/backend-client.test.ts` (17 项)
+### 2.26 `bot/test/backend-client.test.ts` (18 项)
 > **任务对应**：Task 17 Step 2 / Task 16 Step 2 · 注入 fetch / ReadableStream 验证；真实本机 HTTP 集成见 2.22。
 
 - [x] **跨 UTF-8 字节边界读取中文最终回复**
@@ -548,6 +581,11 @@
 - [x] **保留MODEL_ERROR分类且不泄露服务端原文**
 - [x] **HTTP 鉴权错误返回安全分类**
 - [x] **读取 SSE 期间主动中止会取消 reader 且不重发**
+
+#### P0-1 第一步新增回归
+
+- [x] **CONTEXT_LIMIT 映射为缩短输入提示且不自动重发**
+
 
 ### 2.27 `bot/test/split-message.test.ts` (10 项)
 > **任务对应**：Task 16 Step 3 · 纯文本分段与完整重组契约。
@@ -583,13 +621,18 @@
 - [x] **再次限流延长暂停且不缩短已有窗口**
 - [x] **拒绝非法预算配置**
 
-### 2.30 `bot/test/errors.test.ts` (4 项)
+### 2.30 `bot/test/errors.test.ts` (5 项)
 > **任务对应**：Task 17 Step 2 · 错误原文隔离与安全提示。
 
 - [x] **后端错误不透传任意原文**
 - [x] **识别 Discord 权限错误**
 - [x] **识别已删除消息或不可用频道**
 - [x] **未知错误和启动失败不泄露原文**
+
+
+#### P0-1 第一步新增回归
+
+- [x] **CONTEXT_LIMIT 不透传服务端原文且明确要求缩短输入**
 
 
 ### 2.31 `server/test/deployment.test.ts` (7 项)
@@ -620,6 +663,25 @@
 - [x] **keeps old interruption samples failed when journal evidence is missing**
 
 
+### 2.33 `server/test/context-window.test.ts` (14 项)
+> **任务对应**：P0-1 第一步 / ADR-013 · 窗口算法与可注入计数器，网络无真实调用。
+
+- [x] **过滤 system 与孤立 assistant 连续 user 分别成轮且不修改原数组**
+- [x] **零历史轮数和只有本轮输入均以 user 开始**
+- [x] **长历史从最旧整轮裁剪保留最近连续轮次和完整本轮正文**
+- [x] **中文英文 emoji 和代码按 UTF-8 字节及开销估算不按字符数替代 token**
+- [x] **低于八成预算不调计数边缘区只计内容并加配置系统估算**
+- [x] **精确超限后整轮缩减且每次选择最多计数两次**
+- [x] **计数失败退回八成保守窗口没有计数能力也使用同一降级**
+- [x] **计数次数预算独立耗尽后降级且不增加上游计数调用**
+- [x] **计数超时会中止并降级即使计数器不响应 AbortSignal**
+- [x] **用户取消计数不降级生成并清理超时定时器**
+- [x] **最小输入精确或保守超限返回固定错误且不截断正文**
+- [x] **非法参数及过大配置系统指令在启动拒绝**
+- [x] **用量校准只提高系数有上限仅存内存且日志不含正文**
+- [x] **计数鉴权失败不静默降级重复调用上游**
+
+
 ## 3. Phase 4 结项回归（Task 18 Step 3，2026-10-06）
 
 - 本轮全量回归32/32测试文件、305/305用例通过，根与四个workspaces类型检查通过；没有新增或修改测试代码，基线不变。
@@ -633,3 +695,9 @@
 - 新增 22 项，32/32 测试文件、327/327 用例通过；根与四包类型检查及 Web / Express / Bot 构建通过。
 - 包括稳定 UUID 与替代生成、请求校验、四种幂等状态、全会话锁、停止后立即发送、写入队列原子防重与重启回放。
 - 基于临时 Vitest JSON 结果核对本台账逐文件数量与逐项标题；HTTP 使用隔离临时会话目录，Gemini / Discord 均 Mock，不替代现网验收。
+
+## 5. P0-1 第一步回归（2026-10-06）
+
+- 新增 1 文件 / 28 用例：33/33 文件、355/355 用例通过，根 / 四包类型检查、Web / Express / Bot 构建通过。
+- 真实 SDK 离线兼容探针确认 Developer countTokens 拒绝 systemInstruction，fetch 次数 0；本轮没有真实模型、Discord 或 VPS 调用。
+- 计数 / 历史均使用可控夹具与隔离临时存储；台账逐文件数量与逐项标题对照 Vitest JSON，无跳过用例。
