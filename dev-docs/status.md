@@ -6,9 +6,9 @@ Phase 1–4 已完成并正式结项；Phase 4 Task 15–18全部完成，Task 1
 
 ## 当前授权
 
-- **授权任务**：用户确认C3–C5待办登记三文件计划；已登记为低优先级未授权项并核对文档，全量回归通过，待commit / push / 收尾 / tag。本轮仅登记，不实施C3–C5修复，P0-1第二步和其他后续项仍未授权。
+- **授权任务**：用户确认C3–C5待办登记三文件计划；已登记为低优先级未授权项并核对文档，全量回归通过，登记提交6c56351已推送至origin/test，本轮授权完成；状态收尾另提交，预期交付tag V0.0.1-build.141，最终远端核验见主会话汇报。本轮仅登记，不实施C3–C5修复，P0-1第二步和其他后续项仍未授权。
 - **VPS 现状**：Vultr Seattle、1核1G、Ubuntu 26.04.1，内核 7.0.0-38、Node v24.21.0，Auto Backup 已开启；gemini-admin 公钥管理，禁用 root / 密码 SSH，UFW 仅开放 22/tcp。gemini-server / gemini-bot 两个非 root systemd 服务 active / enabled，Express 仅监听 127.0.0.1:3001，数据目录独立持久化。无域名、仅本人使用，通过 SSH 隧道访问 http://127.0.0.1:18080，详见 [运维说明](../deploy/README.md)。服务保持常驻。
-- **最近交付 commit**：`0aad2be` — `fix: recover context utilization after precise token counting`；状态收尾另行提交推送，tag绑定最终收尾提交。P0-1第二步未实施。
+- **最近交付 commit**：`6c56351` — `docs: register Claude C3-C5 follow-up backlog items`；状态收尾另行提交推送，tag绑定最终收尾提交。最近功能修复仍为`0aad2be`。
 - **当前测试基线**：本轮仅文档登记，全量33/33文件、364/364用例通过，无新增用例，台账不变；最近C1修复的根 / 四包类型检查和Web / Express构建证据保留，本轮未重复构建。Linux基线仍为32/32文件305/305用例，无现网部署。
 - **当前功能验收**：Playground 仅连接后端服务；启动时恢复最近活动会话，无可恢复会话时创建新会话。发送仅提交本轮输入与 `sessionId`，由服务端加载完整上下文；清空对话归档旧会话并切换至新会话。旧版直连设置迁移为后端模式并清除浏览器存储的 Key 字段。
 
