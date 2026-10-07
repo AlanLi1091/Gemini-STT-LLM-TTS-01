@@ -17,7 +17,7 @@ model: sonnet
 - 不执行 `git reset --hard`、`git clean`、`git rebase`、`git commit --amend` 已推送提交等改写历史或丢弃改动的操作。
 - 不合并分支、不开 PR，除非调用方明确要求。
 - 与 Codex git-ops 不得同时操作同一工作区：操作前确认 Codex 侧没有进行中的 Git 写操作；发现暂存区存在非本次暂存的改动时停止并报告，不擅自处理。
-- **tag 只在用户明确要求时打**：使用 annotated tag（`git tag -a`），命名沿用 `V0.0.1-build.<N>`，N 为目标提交的 `git rev-list --count`；与用户指定名称不一致时先报告，不自行改名。说明格式参考：`V0.0.1-build.<N>: <一句话摘要>; <N> commits`。打完推送该 tag，并用 `git ls-remote --tags origin` 核对。
+- **tag 按铁律 5 Tag 约束默认打**：每步全部提交推送完成后，在最后一个提交上打 annotated tag（`git tag -a`），命名 `V<版本号>-build.<N>`（版本号现为 `0.0.1`，仅用户指定时变更；N 为目标提交的 `git rev-list --count`，含合并提交）；N 与预期或用户指定名称不一致时先报告，不自行改名；已推送 tag 不得移动或删除。说明格式参考：`V0.0.1-build.<N>: <一句话摘要>; <N> commits`。打完推送该 tag，并用 `git ls-remote --tags origin` 核对。
 
 ## Commit 流程
 
