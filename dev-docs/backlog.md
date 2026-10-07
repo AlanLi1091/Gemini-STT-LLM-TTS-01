@@ -81,3 +81,7 @@
 - [ ] **消息重发/重生成与分支导航（基于 ADR-005 消息树模型）**（Phase 5）。
 - [ ] **Phase 6 预研**：语音链路方案对比（Gemini 原生音频 vs Whisper+TTS；Discord 语音通话直播主入口可行性与端到端延迟验证；Web 麦克风调试通道；直播文字伴随输出承载选型）。
 - [ ] **模型动态发现与拉取（提议，未授权）**：支持通过 Gemini API（models.list）动态拉取当前 Key 可用的模型列表，替代硬编码配置。
+
+## 协作工具配置
+
+- [x] **Codex 项目子代理配置（2026-10-06）**：用户确认五角色文件计划与模型分配；新增 code-explorer（GPT-6 Luna / high）、implementer（GPT-6.1 Sol / high）、test-writer（GPT-5.6 Terra / high）、test-runner 与 git-ops（GPT-6 Luna / medium）。配置静态校验 5/5、全量 32/32 套件与 305/305 用例、根与四包类型检查通过；运行时加载尚未实测。审计修复与后续阶段仍未授权。
