@@ -6,9 +6,9 @@ Phase 1–4 已完成并正式结项；Phase 4 Task 15–18全部完成，Task 1
 
 ## 当前授权
 
-- **授权任务**：用户确认 Codex 五个项目子代理的文件计划、固定模型与推理强度；配置与文档已落盘，验证通过，待 commit / push 完成交付。仅本次配置授权，审计修复与后续阶段仍未授权。
+- **授权任务**：用户确认 Codex 五个项目子代理的文件计划、固定模型与推理强度；配置与文档已落盘，验证通过，提交 `031ae8e` 已推送至 `origin/test`；本轮授权已完成。审计修复与后续阶段仍未授权。
 - **VPS 现状**：Vultr Seattle、1核1G、Ubuntu 26.04.1，内核 7.0.0-38、Node v24.21.0，Auto Backup 已开启；gemini-admin 公钥管理，禁用 root / 密码 SSH，UFW 仅开放 22/tcp。gemini-server / gemini-bot 两个非 root systemd 服务 active / enabled，Express 仅监听 127.0.0.1:3001，数据目录独立持久化。无域名、仅本人使用，通过 SSH 隧道访问 http://127.0.0.1:18080，详见 [运维说明](../deploy/README.md)。服务保持常驻。
-- **最近交付 commit**：`b8c28cf` — `docs: close Phase 4 with verified exit criteria`；根摘要独立提交`f98920d`。最近功能提交仍为`bf7391c`。
+- **最近交付 commit**：`031ae8e` — `chore: configure Codex project subagents and model assignments`；本轮收尾另提交状态同步。既有 Phase 4 结项提交 `b8c28cf` 与根摘要 `f98920d` 保留，最近功能提交仍为 `bf7391c`。
 - **当前测试基线**：本机与 Linux 均 32/32 套件、305/305 用例与类型检查通过；本步不修改应用产物，既有 Linux 三构建与生产审计 0 漏洞结论保留；新增 11 项见 [tests.md](tests.md)。
 - **当前功能验收**：Playground 仅连接后端服务；启动时恢复最近活动会话，无可恢复会话时创建新会话。发送仅提交本轮输入与 `sessionId`，由服务端加载完整上下文；清空对话归档旧会话并切换至新会话。旧版直连设置迁移为后端模式并清除浏览器存储的 Key 字段。
 
