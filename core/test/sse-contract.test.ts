@@ -70,3 +70,13 @@ describe('Task 11 Step 2: 共享 SSE 契约', () => {
     expect(SSE_SUPPORTS_RESUMPTION).toBe(false);
   });
 });
+
+describe('ADR-012: 幂等契约', () => {
+  it('可选请求 UUID 与 REQUEST_CONFLICT 不改变 SSE 事件结构', () => {
+    const request: ChatStreamRequest = { sessionId: 'session', requestId: '11111111-1111-4111-8111-111111111111', messages: [{ role: 'user', content: 'hi' }] };
+    const event: SseErrorEvent = { event: 'error', data: { error: { code: 'REQUEST_CONFLICT', message: '冲突' } } };
+    expect(request.requestId).toBeDefined();
+    expect(event.data.error.code).toBe('REQUEST_CONFLICT');
+    expect(SSE_SUPPORTS_RESUMPTION).toBe(false);
+  });
+});

@@ -172,3 +172,25 @@ describe('Task 14 Step 2: 会话 API 与多轮上下文', () => {
     expect(adapter.histories[0].map((message) => message.content)).toEqual(['无状态请求']);
   });
 });
+
+describe('P0-2: HTTP 持久化重试', () => {
+  it('失败重试和服务重建回放不重复写入且刷新日志保持唯一输入', async () => {
+    const { app, adapter, sessionService, dataDirectory } = await createTestContext();
+    const session = await sessionService.createSession();
+    const requestId = '11111111-1111-4111-8111-111111111111';
+    const body = { sessionId: session.id, requestId, messages: [{ role: 'user', content: 'hi' }] };
+    const original = adapter.stream.bind(adapter);
+    adapter.stream = async function* () { throw new Error('model failed'); };
+    expect((await request(app).post('/api/chat/stream').send(body).expect(200)).text).toContain('event: error');
+    adapter.stream = original;
+    expect((await request(app).post('/api/chat/stream').send(body).expect(200)).text).toContain('event: done');
+    const before = (await request(app).get(`/api/sessions/${session.id}`).expect(200)).body;
+    expect(before.messages.map((m: Message) => m.role)).toEqual(['user', 'assistant']);
+    const newService = new SessionService(new JsonSessionStorage(dataDirectory));
+    const restarted = createApp({ sessionService: newService, chatStreamSource: createSessionChatStreamSource(adapter, newService) });
+    const replay = await request(restarted).post('/api/chat/stream').send(body).expect(200);
+    expect(replay.text).toBe('event: done\ndata: {"content":"回复","usage":{"totalTokens":2}}\n\n');
+    expect(adapter.histories).toHaveLength(1);
+    expect((await request(restarted).get(`/api/sessions/${session.id}`).expect(200)).body).toEqual(before);
+  });
+});

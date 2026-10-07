@@ -10,6 +10,8 @@ export interface Message {
   content: string;
   createdAt: number;
   usage?: ChatUsage;
+  /** ADR-012: correlation for an idempotent input and its completed reply. */
+  requestId?: string;
 }
 
 export interface ChatUsage {

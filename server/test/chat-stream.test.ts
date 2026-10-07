@@ -122,3 +122,24 @@ describe('Task 12 Step 1: 服务端 SSE 流式管道与生命周期管理', () =
     await vi.waitFor(() => expect(signal.aborted).toBe(true));
   });
 });
+
+describe('P0-2: 幂等请求校验', () => {
+  const requestId = '11111111-1111-4111-8111-111111111111';
+  it('带标识请求要求严格 UUID 会话和单条非空 user 输入', async () => {
+    const source = vi.fn(async function* () { yield { event: 'done' as const, data: { content: 'ok' } }; });
+    const app = createApp({ chatStreamSource: source });
+    const valid = { ...validRequest, requestId, sessionId: 'session' };
+    for (const body of [
+      { ...valid, requestId: 'bad' }, { ...valid, requestId: 1 },
+      { ...valid, requestId: '11111111-1111-0111-0111-111111111111' },
+      { ...valid, sessionId: undefined }, { ...valid, sessionId: '' },
+      { ...valid, messages: [] }, { ...valid, messages: [...valid.messages, ...valid.messages] },
+      { ...valid, messages: [{ role: 'assistant', content: 'hi' }] },
+      { ...valid, messages: [{ role: 'system', content: 'hi' }] },
+      { ...valid, messages: [{ role: 'user', content: ' \n ' }] },
+    ]) await request(app).post('/api/chat/stream').send(body).expect(400);
+    expect(source).not.toHaveBeenCalled();
+    await request(app).post('/api/chat/stream').send(valid).expect(200);
+    expect(source).toHaveBeenCalledOnce();
+  });
+});

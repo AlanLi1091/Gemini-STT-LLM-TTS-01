@@ -6,6 +6,7 @@ import {
   DuplicateMessageIdError,
   type Session,
   SessionNotFoundError,
+  SessionRequestConflictError,
   type SessionStorage,
 } from './session-storage';
 
@@ -32,7 +33,11 @@ function isValidMessage(message: Message): boolean {
     message.id.trim().length > 0 &&
     (message.role === 'user' || message.role === 'assistant' || message.role === 'system') &&
     typeof message.content === 'string' &&
-    Number.isFinite(message.createdAt)
+    Number.isFinite(message.createdAt) &&
+    (message.requestId === undefined ||
+      (typeof message.requestId === 'string' &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(message.requestId) &&
+        (message.role === 'user' || message.role === 'assistant')))
   );
 }
 
@@ -131,6 +136,19 @@ export class JsonSessionStorage implements SessionStorage {
     return this.serializeWrite(sessionId, async () => {
       const session = await this.readSession(sessionId);
       if (!session) throw new SessionNotFoundError(sessionId);
+      if (message.requestId !== undefined) {
+        const requestId = message.requestId.toLowerCase();
+        if (session.archivedAt !== undefined || session.messages.some(stored =>
+          stored.requestId?.toLowerCase() === requestId && stored.role === message.role)) {
+          throw new SessionRequestConflictError();
+        }
+        if (message.role === 'assistant') {
+          const input = session.messages.at(-1);
+          if (input?.role !== 'user' || input.requestId?.toLowerCase() !== requestId) {
+            throw new SessionRequestConflictError();
+          }
+        }
+      }
       if (session.messages.some((storedMessage) => storedMessage.id === message.id)) {
         throw new DuplicateMessageIdError(message.id);
       }
