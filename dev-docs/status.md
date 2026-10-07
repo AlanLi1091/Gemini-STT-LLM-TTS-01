@@ -6,9 +6,9 @@ Phase 1–4 已完成并正式结项；Phase 4 Task 15–18全部完成，Task 1
 
 ## 当前授权
 
-- **授权任务**：用户单独指派 P0-3 并确认六文件计划；开发脚本默认 loopback 已修复且验证通过，待提交与推送完成交付。P0-1、P0-2、其他审计项与后续阶段仍未授权。
+- **授权任务**：用户单独指派 P0-3 并确认六文件计划；开发脚本默认 loopback 已修复且验证通过，功能提交 `583bb84` 已推送至 `origin/test`；本轮授权完成。P0-1、P0-2、其他审计项与后续阶段仍未授权。
 - **VPS 现状**：Vultr Seattle、1核1G、Ubuntu 26.04.1，内核 7.0.0-38、Node v24.21.0，Auto Backup 已开启；gemini-admin 公钥管理，禁用 root / 密码 SSH，UFW 仅开放 22/tcp。gemini-server / gemini-bot 两个非 root systemd 服务 active / enabled，Express 仅监听 127.0.0.1:3001，数据目录独立持久化。无域名、仅本人使用，通过 SSH 隧道访问 http://127.0.0.1:18080，详见 [运维说明](../deploy/README.md)。服务保持常驻。
-- **最近交付 commit**：`031ae8e` — `chore: configure Codex project subagents and model assignments`；本轮收尾另提交状态同步。既有 Phase 4 结项提交 `b8c28cf` 与根摘要 `f98920d` 保留，最近功能提交仍为 `bf7391c`。
+- **最近交付 commit**：`583bb84` — `fix: bind development server to loopback by default`；本轮收尾另提交状态同步。既有 Phase 4 结项与 Codex 子代理配置提交保留。
 - **当前测试基线**：P0-3 本机回归 32/32 套件、305/305 用例及根 / 四包类型检查通过；开发监听 / 首页 / 隔离 Mock 代理验证 3/3 通过，无新增测试用例，台账不变。Linux 最近基线仍为 32/32 套件、305/305 用例，本轮未重跑 Linux 构建或审计。
 - **当前功能验收**：Playground 仅连接后端服务；启动时恢复最近活动会话，无可恢复会话时创建新会话。发送仅提交本轮输入与 `sessionId`，由服务端加载完整上下文；清空对话归档旧会话并切换至新会话。旧版直连设置迁移为后端模式并清除浏览器存储的 Key 字段。
 
