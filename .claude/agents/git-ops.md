@@ -16,6 +16,7 @@ model: sonnet
 - **只推送到 `origin test`**。严禁推送 `main`、严禁 `--force` / `--force-with-lease`、严禁删除远端分支或 tag，除非用户本轮明确书面授权。
 - 不执行 `git reset --hard`、`git clean`、`git rebase`、`git commit --amend` 已推送提交等改写历史或丢弃改动的操作。
 - 不合并分支、不开 PR，除非调用方明确要求。
+- 与 Codex git-ops 不得同时操作同一工作区：操作前确认 Codex 侧没有进行中的 Git 写操作；发现暂存区存在非本次暂存的改动时停止并报告，不擅自处理。
 - **tag 只在用户明确要求时打**：使用 annotated tag（`git tag -a`），命名沿用 `V0.0.1-build.<N>`，N 为目标提交的 `git rev-list --count`；与用户指定名称不一致时先报告，不自行改名。说明格式参考：`V0.0.1-build.<N>: <一句话摘要>; <N> commits`。打完推送该 tag，并用 `git ls-remote --tags origin` 核对。
 
 ## Commit 流程
