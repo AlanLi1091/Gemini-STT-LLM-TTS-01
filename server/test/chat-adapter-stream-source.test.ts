@@ -393,3 +393,25 @@ describe('P0-1: 窗口与会话流装配', () => {
     expect((await c.storage.getSession(c.sessionId))!.messages.at(-1)?.content).toContain('内容已截断');
   }));
 });
+
+describe('P0-1 Step 2: 共享服务装配', () => {
+  it('环境工厂复用路由服务生成期间同一服务归档返回冲突', async () => {
+    const { SessionService } = await import('../session-service');
+    const directory = await mkdtemp(join(tmpdir(), 'shared-session-service-'));
+    try {
+      const storage = new JsonSessionStorage(directory); const service = new SessionService(storage); const session = await service.createSession();
+      const source = createChatStreamSourceFromEnv({}, { sessionService: service, mockAdapterOptions: { delayMs: 0, streamChunkDelayMs: 0 } });
+      const iterator = source({ sessionId: session.id, messages: [{ role: 'user', content: 'hi' }] }, { signal: new AbortController().signal })[Symbol.asyncIterator]();
+      await iterator.next();
+      try {
+        await expect(service.archiveSession(session.id)).rejects.toMatchObject({ name: 'SessionRequestConflictError' });
+        expect((await service.getSession(session.id))!.archivedAt).toBeUndefined();
+      } finally { await iterator.return?.(); }
+      await expect(service.archiveSession(session.id)).resolves.toMatchObject({ archivedAt: expect.any(Number) });
+    } finally { await rm(directory, { recursive: true }); }
+  });
+  it('同时传入服务和存储拒绝避免产生两个不一致实例', async () => {
+    const { SessionService } = await import('../session-service'); const storage = new JsonSessionStorage('/unused-fixture');
+    expect(() => createChatStreamSourceFromEnv({}, { sessionService: new SessionService(storage), sessionStorage: storage })).toThrow('not both');
+  });
+});

@@ -1,4 +1,4 @@
-import type { ResolveDiscordSessionRequest, ResolveDiscordSessionResponse } from '@gemini-chat/core';
+import type { ResolveDiscordSessionRequest, ResolveDiscordSessionResponse, ResetDiscordSessionRequest, ResetDiscordSessionResponse } from '@gemini-chat/core';
 import type { BotInput } from './message-entry';
 
 import { BackendError, describeFailure, type FailureKind } from './errors';
@@ -17,7 +17,7 @@ function errorMessage(code: unknown): string {
   return describeFailure(new BackendError('', errorKind(code))).message;
 }
 function errorKind(code: unknown): FailureKind {
-  return ['RATE_LIMIT', 'AUTH_ERROR', 'ABORTED', 'NETWORK_ERROR', 'MODEL_ERROR', 'CONTEXT_LIMIT'].includes(String(code)) ? code as FailureKind : 'BACKEND';
+  return ['RATE_LIMIT', 'AUTH_ERROR', 'ABORTED', 'NETWORK_ERROR', 'MODEL_ERROR', 'CONTEXT_LIMIT', 'REQUEST_CONFLICT'].includes(String(code)) ? code as FailureKind : 'BACKEND';
 }
 
 export class BackendClient {
@@ -29,6 +29,65 @@ export class BackendClient {
     this.fetcher = options.fetch ?? fetch;
     this.timeoutMs = options.timeoutMs ?? 120000;
     if (!Number.isFinite(this.timeoutMs) || this.timeoutMs <= 0) throw new BackendError('无效的后端超时配置。');
+  }
+
+  async reset(input: BotInput, signal?: AbortSignal): Promise<string> {
+    if (signal?.aborted) throw new BackendError('本次请求已取消。', 'ABORTED');
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    signal?.addEventListener('abort', abort, { once: true });
+    let timedOut = false;
+    let response: Response | undefined;
+    let cancel!: () => void;
+    const cancelled = new Promise<never>((_, reject) => {
+      cancel = () => {
+        void response?.body?.cancel().catch(() => {});
+        reject(new BackendError('本次请求已取消。', 'ABORTED'));
+      };
+      controller.signal.addEventListener('abort', cancel, { once: true });
+    });
+    const timer = setTimeout(() => { timedOut = true; controller.abort(); }, this.timeoutMs);
+    const uuid = (value: unknown): value is string => typeof value === 'string' &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+    const post = async (path: string, body: unknown) => {
+      if (controller.signal.aborted) throw new BackendError('本次请求已取消。', 'ABORTED');
+      response = await this.fetcher(`${this.baseUrl}${path}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(body), signal: controller.signal, redirect: 'error',
+      });
+      if (!response.ok) {
+        await response.body?.cancel();
+        const kind: FailureKind = response.status === 409 ? 'REQUEST_CONFLICT' : response.status === 429 ? 'RATE_LIMIT' :
+          [401, 403].includes(response.status) ? 'AUTH_ERROR' : 'BACKEND';
+        throw new BackendError(errorMessage(kind), kind);
+      }
+      try { return await response.json() as unknown; }
+      catch { throw new BackendError('后端会话重置响应无效。', 'PROTOCOL'); }
+    };
+    const perform = async () => {
+      const channel: ResolveDiscordSessionRequest = { guildId: input.guildId, channelId: input.channelId };
+      const value = await post('/api/discord/sessions/resolve', channel) as Partial<ResolveDiscordSessionResponse> | null;
+      if (!value || !uuid(value.sessionId)) throw new BackendError('后端会话解析响应无效。', 'PROTOCOL');
+      const request: ResetDiscordSessionRequest = { ...channel, sessionId: value.sessionId };
+      const result = await post('/api/discord/sessions/reset', request) as Partial<ResetDiscordSessionResponse> | null;
+      if (!result || !uuid(result.sessionId) || result.archivedSessionId !== request.sessionId || result.sessionId === request.sessionId) {
+        throw new BackendError('后端会话重置响应无效。', 'PROTOCOL');
+      }
+      if (controller.signal.aborted) throw new BackendError('本次请求已取消。', 'ABORTED');
+      return '频道会话已重置。下一条消息将使用新会话。';
+    };
+    try {
+      if (signal?.aborted) controller.abort();
+      return await Promise.race([perform(), cancelled]);
+    } catch (error) {
+      if (timedOut) throw new BackendError('会话重置请求超时，请稍后检查频道状态。', 'TIMEOUT', 'reset');
+      if (controller.signal.aborted) throw new BackendError('本次请求已取消。', 'ABORTED', 'reset');
+      if (error instanceof BackendError) throw new BackendError(error.message, error.kind, 'reset');
+      throw new BackendError('无法连接后端，请检查服务和网络后再试。', 'NETWORK_ERROR', 'reset');
+    } finally {
+      clearTimeout(timer); signal?.removeEventListener('abort', abort);
+      controller.signal.removeEventListener('abort', cancel);
+    }
   }
 
   async chat(input: BotInput, signal?: AbortSignal): Promise<string> {
@@ -49,7 +108,7 @@ export class BackendClient {
       });
       if (!response.ok) {
         await response.body?.cancel();
-        const code = response.status === 429 ? 'RATE_LIMIT' : [401, 403].includes(response.status) ? 'AUTH_ERROR' : 'BACKEND';
+        const code = response.status === 409 ? 'REQUEST_CONFLICT' : response.status === 429 ? 'RATE_LIMIT' : [401, 403].includes(response.status) ? 'AUTH_ERROR' : 'BACKEND';
         throw new BackendError(errorMessage(code), code);
       }
       return response;

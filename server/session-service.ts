@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { ChatUsage, Message } from '@core/index';
+import type { ChatUsage, Message, ResetDiscordSessionRequest, ResetDiscordSessionResponse } from '@core/index';
 import {
   type Session,
   SessionNotFoundError,
@@ -53,8 +53,28 @@ export class SessionService {
     return this.storage.getSession(sessionId);
   }
 
-  archiveSession(sessionId: string): Promise<Session> {
-    return this.storage.archiveSession(sessionId);
+  async archiveSession(sessionId: string): Promise<Session> {
+    const release = this.tryAcquireRequest(sessionId);
+    if (!release) throw new SessionRequestConflictError();
+    try { return await this.storage.archiveSession(sessionId); }
+    finally { release(); }
+  }
+
+  async resetDiscordSession(request: ResetDiscordSessionRequest): Promise<ResetDiscordSessionResponse> {
+    const { sessionId, guildId, channelId } = request;
+    const release = this.tryAcquireRequest(sessionId);
+    if (!release) throw new SessionRequestConflictError();
+    try {
+      const target = await this.storage.getSession(sessionId);
+      if (!target) throw new SessionNotFoundError(sessionId);
+      if (target.origin?.type !== 'discord' || target.origin.guildId !== guildId || target.origin.channelId !== channelId) {
+        throw new TypeError('Invalid Discord reset target');
+      }
+      // archiveSession is idempotent; do not acquire the same lock twice.
+      await this.storage.archiveSession(sessionId);
+      const next = await this.storage.resolveDiscordSession(guildId, channelId);
+      return { archivedSessionId: sessionId, sessionId: next.id };
+    } finally { release(); }
   }
 
   async appendTurnInputs(

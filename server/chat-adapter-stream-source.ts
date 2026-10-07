@@ -28,6 +28,8 @@ export interface ServerChatEnvironment {
 export interface ServerChatStreamSourceOptions {
   mockAdapterOptions?: MockChatAdapterOptions;
   sessionStorage?: SessionStorage;
+  /** Production routes and stream source must share this service / lock. */
+  sessionService?: SessionService;
   requestBudget?: RequestBudget;
 }
 
@@ -188,6 +190,9 @@ export function createChatStreamSourceFromEnv(
   environment: ServerChatEnvironment,
   options: ServerChatStreamSourceOptions = {},
 ): ChatStreamSource {
+  if (options.sessionService && options.sessionStorage) {
+    throw new Error('Provide one shared sessionService or sessionStorage, not both.');
+  }
   const contextConfig = readContextConfig(environment);
   const contextWindow = new ContextWindow(contextConfig);
   const apiKey = sanitizeGeminiApiKey(environment.GEMINI_API_KEY);
@@ -199,8 +204,9 @@ export function createChatStreamSourceFromEnv(
     requestsPerMinute: environment.GEMINI_REQUESTS_PER_MINUTE === undefined ? undefined : Number(environment.GEMINI_REQUESTS_PER_MINUTE),
     cooldownMs: environment.GEMINI_RATE_LIMIT_COOLDOWN_MS === undefined ? undefined : Number(environment.GEMINI_RATE_LIMIT_COOLDOWN_MS),
   }) : undefined;
-  if (options.sessionStorage) {
-    return createSessionChatStreamSource(adapter, new SessionService(options.sessionStorage), budget, contextWindow);
+  if (options.sessionService || options.sessionStorage) {
+    const service = options.sessionService ?? new SessionService(options.sessionStorage!);
+    return createSessionChatStreamSource(adapter, service, budget, contextWindow);
   }
   const source = createAdapterStreamSource(adapter, contextWindow);
   return budget ? guardStreamSource(source, budget) : source;

@@ -9,11 +9,12 @@ dotenv.config();
 
 const config = readServerConfig(process.env);
 const sessionStorage = new JsonSessionStorage(config.dataDirectory);
+const sessionService = new SessionService(sessionStorage);
 const app = createApp({
   staticDirectory: config.staticDirectory,
   allowedOrigins: parseAllowedOrigins(process.env.ALLOWED_ORIGINS),
-  sessionService: new SessionService(sessionStorage),
-  chatStreamSource: createChatStreamSourceFromEnv(process.env, { sessionStorage }),
+  sessionService,
+  chatStreamSource: createChatStreamSourceFromEnv(process.env, { sessionService }),
 });
 
 const server = app.listen(config.port, config.host, () => {

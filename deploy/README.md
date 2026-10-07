@@ -42,7 +42,7 @@
 
 历史轮次从 user 开始，连续 user 分别成轮，孤立 assistant 与历史 system 不进入窗口；裁剪仅影响模型视图，日志和页面历史仍完整保存。模型不会记住窗口外正文，本次没有摘要或长期记忆。输出 MAX_TOKENS 且有正文时附带一次截断提示并保存相同内容，提示会进入后续窗口；无正文则返回模型错误，不保存空助手回复，不自动续写。
 
-估算不是 tokenizer 的数学上界；promptTokenCount 校准只在内存提高系数，最高 4，重启恢复默认 1.25。部署仍要求单 Express 写入者；Discord /reset 与归档锁调整为 P0-1 第二步，尚未实施。
+估算不是 tokenizer 的数学上界；promptTokenCount 校准只在内存提高系数，最高 4，重启恢复默认 1.25。部署仍要求单 Express 写入者；Discord /reset 与共享归档锁已在P0-1第二步完成代码修复，现网发布仍须另行授权。
 
 ## 使用 Playground
 
@@ -55,6 +55,19 @@ ssh -N -L 127.0.0.1:18080:127.0.0.1:3001 -o ExitOnForwardFailure=yes -o ServerAl
 然后打开 http://127.0.0.1:18080 。本地转发仅监听 loopback，关闭终端即断开；VPS 两个 systemd 服务继续运行。若需要指定私钥，增加 `-i ~/.ssh/id_ed25519`。端口被占用时先检查占用，不随意换端口；更改端口需同时更新服务端 ALLOWED_ORIGINS 并重启 Express。
 
 管理命令：SSH 登录后用 `sudo systemctl status gemini-server gemini-bot`、`sudo journalctl -u gemini-server -u gemini-bot` 查看状态。不要用 systemctl show Environment 或 cat 环境文件输出密钥。systemd on-failure 每 15 秒重启，5 分钟内超过 5 次触发启动限制，修复后 reset-failed 再 start。
+
+
+## Discord 管理员会话重置（P0-1 第二步）
+
+本节说明代码行为，本轮没有发布或修改 VPS 环境文件。在 `/etc/gemini-chat/bot.env` 配置 `DISCORD_SESSION_ADMIN_IDS`，值为逗号分隔的管理员 Discord 用户 ID；本地开发对应根 `.env`。空值默认禁用重置；配置只接受17–20位无前导零的正十进制 ID，且不超过无符号64位范围，重复值去重，空项 / 非法值启动拒绝。仅配置到 Bot，不放入浏览器或 server.env。
+
+管理员在指定频道直接提及 Bot 后输入 `/reset`。去除直接提及与首尾空白后必须精确等于 `/reset`，大小写敏感；`/Reset`、`/reset extra` 等仍视为普通聊天，不注册 Discord 斜杠命令。空名单 / 非管理员会收到固定拒绝提示且不调用后端，仍计入冷却；普通消息和重置都经过同频道FIFO、队列容量与用户冷却。
+
+命令等待上一轮完整生成 / 分段发送结束，再由 Bot 先解析会话ID并POST本机 `/api/discord/sessions/reset`，提交 guildId、channelId、明确的旧sessionId。服务端核对目标确属该频道，在共享会话锁内归档该目标，再复用原resolve逻辑建立 / 获取新关联。返回的 archivedSessionId / 新sessionId 验证通过后才反馈成功；命令本身不调用模型、不进入日志，也不清零模型预算。旧消息日志保留，其他频道不变；重复同一目标的POST不会归档新会话，重复发送命令则是一次新的重置意图。
+
+生成、Web归档与频道重置共用同一个 SessionService / 锁，进行中返回409或SSE REQUEST_CONFLICT，Bot提示稍后重试。没有强制取消上游 / 绕过锁的重置路径，服务端上游超时仍属于P1-2。
+
+归档失败时旧会话保留；归档成功而新关联解析失败时不反馈成功，下一次现有resolve会自然创建新会话。网络取消 / 超时不回滚已发生的归档，不自动重发；Bot反馈未确认完成，须检查频道状态后再决定是否发送新命令。内部API仅继承loopback且无Origin访问边界，管理员验证在可信Bot入口，尚未引入通用API身份认证（P2）。
 
 ## 备份与恢复
 
