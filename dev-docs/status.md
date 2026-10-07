@@ -6,10 +6,10 @@ Phase 1–4 已完成并正式结项；Phase 4 Task 15–18全部完成，Task 1
 
 ## 当前授权
 
-- **授权任务**：用户确认 Codex 五个项目子代理的文件计划、固定模型与推理强度；配置与文档已落盘，验证通过，提交 `031ae8e` 已推送至 `origin/test`；本轮授权已完成。审计修复与后续阶段仍未授权。
+- **授权任务**：用户单独指派 P0-3 并确认六文件计划；开发脚本默认 loopback 已修复且验证通过，待提交与推送完成交付。P0-1、P0-2、其他审计项与后续阶段仍未授权。
 - **VPS 现状**：Vultr Seattle、1核1G、Ubuntu 26.04.1，内核 7.0.0-38、Node v24.21.0，Auto Backup 已开启；gemini-admin 公钥管理，禁用 root / 密码 SSH，UFW 仅开放 22/tcp。gemini-server / gemini-bot 两个非 root systemd 服务 active / enabled，Express 仅监听 127.0.0.1:3001，数据目录独立持久化。无域名、仅本人使用，通过 SSH 隧道访问 http://127.0.0.1:18080，详见 [运维说明](../deploy/README.md)。服务保持常驻。
 - **最近交付 commit**：`031ae8e` — `chore: configure Codex project subagents and model assignments`；本轮收尾另提交状态同步。既有 Phase 4 结项提交 `b8c28cf` 与根摘要 `f98920d` 保留，最近功能提交仍为 `bf7391c`。
-- **当前测试基线**：本机与 Linux 均 32/32 套件、305/305 用例与类型检查通过；本步不修改应用产物，既有 Linux 三构建与生产审计 0 漏洞结论保留；新增 11 项见 [tests.md](tests.md)。
+- **当前测试基线**：P0-3 本机回归 32/32 套件、305/305 用例及根 / 四包类型检查通过；开发监听 / 首页 / 隔离 Mock 代理验证 3/3 通过，无新增测试用例，台账不变。Linux 最近基线仍为 32/32 套件、305/305 用例，本轮未重跑 Linux 构建或审计。
 - **当前功能验收**：Playground 仅连接后端服务；启动时恢复最近活动会话，无可恢复会话时创建新会话。发送仅提交本轮输入与 `sessionId`，由服务端加载完整上下文；清空对话归档旧会话并切换至新会话。旧版直连设置迁移为后端模式并清除浏览器存储的 Key 字段。
 
 ## 下一步计划
@@ -17,6 +17,8 @@ Phase 1–4 已完成并正式结项；Phase 4 Task 15–18全部完成，Task 1
 Phase 4已正式结项；等待用户指派后续任务，Phase 5及其他预研不自动开工。
 
 ## 本轮验收与遗留
+
+- **P0-3（2026-10-06）**：根开发脚本改为 `--host=127.0.0.1`，保留 `--port=3000 --strictPort`；实际 `npm run dev` 所有 3000 监听均为 `127.0.0.1`，首页 HTTP 200，隔离 Mock `/api` 代理正确转发并保留既有 Origin 行为，3/3 通过。全量 32/32 套件、305/305 用例与根 / 四包类型检查通过。验证进程已停止、3000 无监听；临时验证脚本未入库，没有新增测试用例，未访问真实模型、Discord、VPS 或真实会话数据。仅本项修复，P0-1 / P0-2 未授权；显式 host 覆盖仍可由使用者主动开启。
 
 - **Codex 项目子代理配置（2026-10-06）**：五角色配置已创建于 `.codex/agents/`：code-explorer = GPT-6 Luna / high；implementer = GPT-6.1 Sol / high；test-writer = GPT-5.6 Terra / high；test-runner 与 git-ops = GPT-6 Luna / medium。只读探索、指定文件实现 / 测试、验证执行与 Git 交付分工，均要求继承当前授权；默认仅 git-ops 可推 origin/test。静态校验 5/5、全量 32/32 套件和 305/305 用例、根与四包类型检查通过；首次沙箱 listen EPERM 后经批准重跑通过。未实测自定义代理运行时加载或执行，未修改应用 / 测试 / 现网，测试台账不变；既存未跟踪 `.zcodeignore` 保留，不纳入交付。
 
