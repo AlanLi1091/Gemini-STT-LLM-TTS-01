@@ -6,9 +6,9 @@ Phase 1–4 已完成并正式结项；Phase 4 Task 15–18全部完成，Task 1
 
 ## 当前授权
 
-- **授权任务**：用户授权 P0-1 第一步并确认修订文件计划与 Claude 五项实现补充；有限窗口 / 配置 / ADR / 测试已完成并验证通过，待提交、推送、收尾与 tag。P0-1 第二步 Discord 重置 / 共享归档锁及其余审计项仍未授权。
+- **授权任务**：用户授权 P0-1 第一步并确认修订文件计划与 Claude 五项实现补充；有限窗口 / 配置 / ADR / 测试已完成并验证通过，功能提交 5142971 已推送至 origin/test，本步授权完成；状态收尾另行提交，交付 tag 预期 V0.0.1-build.135，最终远端核验见主会话汇报。P0-1 第二步 Discord 重置 / 共享归档锁及其余审计项仍未授权。
 - **VPS 现状**：Vultr Seattle、1核1G、Ubuntu 26.04.1，内核 7.0.0-38、Node v24.21.0，Auto Backup 已开启；gemini-admin 公钥管理，禁用 root / 密码 SSH，UFW 仅开放 22/tcp。gemini-server / gemini-bot 两个非 root systemd 服务 active / enabled，Express 仅监听 127.0.0.1:3001，数据目录独立持久化。无域名、仅本人使用，通过 SSH 隧道访问 http://127.0.0.1:18080，详见 [运维说明](../deploy/README.md)。服务保持常驻。
-- **最近交付 commit**：`e237596` — `chore: align Codex git-ops with required delivery tags`；状态收尾另行提交并推送，最终 tag 绑定收尾提交。P0-2 功能提交 `1388296` 保留。
+- **最近交付 commit**：`5142971` — `fix: bound chat context with conservative token windows`；状态收尾另行提交推送，tag 绑定最终收尾提交。P0-1 第二步未实施。
 - **当前测试基线**：P0-1 第一步本机 33/33 文件、355/355 用例、根 / 四包类型检查与 Web / Express / Bot 构建通过；新增 1 文件 / 28 项，台账逐文件逐项匹配 JSON。Linux 最近基线仍为32/32文件、305/305用例，本轮未部署或重跑Linux验收。
 - **当前功能验收**：Playground 仅连接后端服务；启动时恢复最近活动会话，无可恢复会话时创建新会话。发送仅提交本轮输入与 `sessionId`，由服务端加载完整上下文；清空对话归档旧会话并切换至新会话。旧版直连设置迁移为后端模式并清除浏览器存储的 Key 字段。
 
