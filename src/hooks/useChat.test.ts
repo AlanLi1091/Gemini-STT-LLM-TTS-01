@@ -385,3 +385,40 @@ describe('useChat Hook 领域逻辑测试', () => {
     expect(result.current.lastError?.message).toBe('网络中途断开');
   });
 });
+
+describe('P0-2: 输入标识', () => {
+  it('失败重试保留输入 UUID 且相同内容的新发送使用新 UUID', async () => {
+    const send = vi.fn().mockRejectedValueOnce(new ChatError('failed', 'MODEL_ERROR')).mockResolvedValue({ content: 'ok' });
+    const adapter: ChatAdapter = { id: 'test', name: 'Test', send, stream: async function* (messages) {
+      const response = await send(messages);
+      yield { delta: '', accumulated: response.content, done: true };
+    } };
+    const { result } = renderHook(() => useChat({ adapter }));
+    await act(async () => { await result.current.sendMessage('hi'); });
+    const id = result.current.messages[0].id;
+    expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    await act(async () => { await result.current.retryFailedSend(); });
+    expect(send.mock.calls.slice(0, 2).map(call => call[0].at(-1).id)).toEqual([id, id]);
+    expect(result.current.messages.filter(m => m.role === 'user')).toHaveLength(1);
+    await act(async () => { await result.current.sendMessage('hi'); });
+    expect(result.current.messages.filter(m => m.role === 'user')[1].id).not.toBe(id);
+  });
+  it('不支持 randomUUID 的非安全上下文使用 getRandomValues 生成 UUID', async () => {
+    const original = Object.getOwnPropertyDescriptor(crypto, 'randomUUID');
+    Object.defineProperty(crypto, 'randomUUID', { value: undefined, configurable: true });
+    const random = vi.spyOn(crypto, 'getRandomValues');
+    try {
+      const { result } = renderHook(() => useChat({ adapter: {
+        id: 'test', name: 'Test', send: async () => ({ content: 'ok' }),
+        stream: async function* () { yield { delta: '', accumulated: 'ok', done: true }; },
+      } }));
+      await act(async () => { await result.current.sendMessage('hi'); });
+      expect(random).toHaveBeenCalled();
+      expect(result.current.messages[0].id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    } finally {
+      random.mockRestore();
+      if (original) Object.defineProperty(crypto, 'randomUUID', original);
+      else Reflect.deleteProperty(crypto, 'randomUUID');
+    }
+  });
+});

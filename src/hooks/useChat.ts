@@ -23,6 +23,16 @@ export interface UseChatReturn {
   clearMessages: () => void;
 }
 
+function createInputId(): string {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  // getRandomValues remains available when a LAN HTTP origin is not secure.
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
 export function useChat(options: UseChatOptions = {}): UseChatReturn {
   const { initialMessages = [], mockDelayMs = 800, adapter = defaultMockAdapter } = options;
   const [messages, setMessages] = useState<Message[]>(initialMessages);
@@ -192,7 +202,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
       setLastError(null);
 
       const userMessage: Message = {
-        id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        id: createInputId(),
         role: 'user',
         content: trimmed,
         createdAt: Date.now(),

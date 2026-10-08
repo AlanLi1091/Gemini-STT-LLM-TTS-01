@@ -112,3 +112,45 @@ describe('Task 14 Step 1: JSON 会话存储层', () => {
     });
   });
 });
+
+describe('P0-2: 请求身份存储防线', () => {
+  const requestId = '11111111-1111-4111-8111-111111111111';
+  const input = (id: string): Message => ({ ...message(id, 'hi'), requestId });
+  const reply = (id: string): Message => ({ id, requestId, role: 'assistant', content: 'ok', createdAt: 2, usage: { totalTokens: 3 } });
+  it('并发不同消息 ID 的同请求输入仅保存一次', async () => {
+    const { storage } = await createStorage(); const session = await storage.createSession();
+    const results = await Promise.allSettled([storage.appendMessage(session.id, input('one')), storage.appendMessage(session.id, input('two'))]);
+    expect(results.map(r => r.status)).toEqual(['fulfilled', 'rejected']);
+    expect((results[1] as PromiseRejectedResult).reason.name).toBe('SessionRequestConflictError');
+    expect((await storage.getSession(session.id))!.messages).toEqual([input('one')]);
+  });
+  it('并发同请求回复仅保存一次且重启后仍拒绝重复回复', async () => {
+    const { storage, dataDirectory } = await createStorage(); const session = await storage.createSession();
+    await storage.appendMessage(session.id, input('user'));
+    const results = await Promise.allSettled([storage.appendMessage(session.id, reply('a1')), storage.appendMessage(session.id, reply('a2'))]);
+    expect(results.map(r => r.status)).toEqual(['fulfilled', 'rejected']);
+    const reloaded = new JsonSessionStorage(dataDirectory);
+    await expect(reloaded.appendMessage(session.id, reply('a3'))).rejects.toMatchObject({ name: 'SessionRequestConflictError' });
+    await expect(reloaded.appendMessage(session.id, input('user2'))).rejects.toMatchObject({ name: 'SessionRequestConflictError' });
+    expect((await reloaded.getSession(session.id))!.messages).toEqual([input('user'), reply('a1')]);
+  });
+  it('关联回复缺少末尾输入或会话已归档时拒绝写入', async () => {
+    const { storage } = await createStorage(); const session = await storage.createSession();
+    await expect(storage.appendMessage(session.id, reply('orphan'))).rejects.toMatchObject({ name: 'SessionRequestConflictError' });
+    await storage.appendMessage(session.id, input('user'));
+    await storage.appendMessage(session.id, message('later', 'later'));
+    await expect(storage.appendMessage(session.id, reply('stale'))).rejects.toMatchObject({ name: 'SessionRequestConflictError' });
+    await storage.archiveSession(session.id);
+    await expect(storage.appendMessage(session.id, { ...input('new'), requestId: '22222222-2222-4222-8222-222222222222' })).rejects.toMatchObject({ name: 'SessionRequestConflictError' });
+    expect((await storage.getSession(session.id))!.messages).toHaveLength(2);
+  });
+  it('无请求元数据的旧文件仍可追加且非法元数据不写入', async () => {
+    const { storage, dataDirectory } = await createStorage(); const session = await storage.createSession();
+    await storage.appendMessage(session.id, message('legacy', 'old'));
+    const reloaded = new JsonSessionStorage(dataDirectory);
+    await reloaded.appendMessage(session.id, input('user'));
+    await expect(reloaded.appendMessage(session.id, { ...reply('invalid'), requestId: 'bad' })).rejects.toThrow('Invalid message');
+    await reloaded.appendMessage(session.id, reply('valid'));
+    expect((await reloaded.getSession(session.id))!.messages.map(m => m.requestId)).toEqual([undefined, requestId, requestId]);
+  });
+});

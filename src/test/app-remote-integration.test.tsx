@@ -72,11 +72,10 @@ describe('Task 13 Step 3 / Task 14 Step 3: App 服务端会话装配', () => {
     await waitFor(() => expect(screen.getByText('服务端回复')).toBeInTheDocument());
     expect(fetchMock).toHaveBeenCalledWith('/api/chat/stream', expect.objectContaining({
       method: 'POST',
-      body: JSON.stringify({
-        sessionId: 'session-created',
-        messages: [{ role: 'user', content: '你好' }],
-      }),
+      body: expect.any(String),
     }));
+    const chatCall = fetchMock.mock.calls.find(([url]) => url === '/api/chat/stream');
+    expect(JSON.parse(chatCall![1].body)).toEqual({ sessionId: 'session-created', requestId: expect.stringMatching(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/), messages: [{ role: 'user', content: '你好' }] });
     expect(localStorage.getItem(RECENT_SESSION_STORAGE_KEY)).toBe('session-created');
   });
 
@@ -157,5 +156,40 @@ describe('Task 13 Step 3 / Task 14 Step 3: App 服务端会话装配', () => {
     await waitFor(() => expect(screen.getByText('[Mock 回复] 已收到')).toBeInTheDocument());
     expect(localStorage.getItem(SETTINGS_STORAGE_KEY)).toBe(JSON.stringify({ connectionMode: 'server' }));
     expect(fetchMock).toHaveBeenCalledWith('/api/chat/stream', expect.objectContaining({ method: 'POST' }));
+  });
+});
+
+describe('P0-2: Web 重试集成', () => {
+  afterEach(() => { vi.unstubAllGlobals(); localStorage.clear(); });
+  it('模型失败后点击重试复用输入标识且页面只显示一条用户消息', async () => {
+    localStorage.clear(); Element.prototype.scrollIntoView = vi.fn();
+    const bodies: { requestId: string }[] = [];
+    const fetchMock = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+      if (url === '/api/sessions') return Promise.resolve(sessionResponse({ id: 'retry-session', createdAt: 1, messages: [] }, 201));
+      if (url === '/api/chat/stream') {
+        bodies.push(JSON.parse(init!.body as string));
+        return Promise.resolve(bodies.length === 1
+          ? sseResponse('event: error\ndata: {"error":{"code":"MODEL_ERROR","message":"failed"}}\n\n')
+          : sseResponse('event: done\ndata: {"content":"retried"}\n\n'));
+      }
+      throw new Error('Unexpected URL');
+    });
+    vi.stubGlobal('fetch', fetchMock); render(<App />);
+    await waitFor(() => expect(screen.getByRole('textbox', { name: '输入消息' })).not.toBeDisabled());
+    fireEvent.change(screen.getByRole('textbox', { name: '输入消息' }), { target: { value: 'retry-hi' } });
+    fireEvent.click(screen.getByRole('button', { name: '发送消息' }));
+    fireEvent.click(await screen.findByRole('button', { name: '重试' }));
+    await screen.findByText('retried');
+    expect(bodies).toHaveLength(2); expect(bodies[1].requestId).toBe(bodies[0].requestId);
+    expect(screen.getAllByText('retry-hi')).toHaveLength(1);
+  });
+  it('请求冲突横幅使用固定提示并保留重试入口', async () => {
+    const { ChatErrorBanner } = await import('../components/ChatErrorBanner');
+    const { ChatError } = await import('../types');
+    const onRetry = vi.fn();
+    render(<ChatErrorBanner error={new ChatError('raw internal detail', 'REQUEST_CONFLICT')} onRetry={onRetry} />);
+    expect(screen.getByRole('alert')).toHaveTextContent('上一条回复仍在处理中');
+    expect(screen.queryByText('raw internal detail')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '重试' })); expect(onRetry).toHaveBeenCalledOnce();
   });
 });

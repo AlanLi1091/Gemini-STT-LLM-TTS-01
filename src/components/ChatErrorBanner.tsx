@@ -19,6 +19,16 @@ function resolveErrorInfo(
   originalMessage: string,
 ): ErrorDisplayInfo {
   switch (code) {
+    case 'CONTEXT_LIMIT':
+      return {
+        title: '输入超过上下文预算',
+        description: '本轮输入过长，请缩短内容后重新发送。',
+      };
+    case 'REQUEST_CONFLICT':
+      return {
+        title: '会话请求冲突',
+        description: '上一条回复仍在处理中，或会话已更新，请稍后重试；若仍有冲突，请刷新会话。',
+      };
     case 'AUTH_ERROR':
       return {
         title: '服务端鉴权或地区受限 (403/401)',

@@ -10,6 +10,7 @@ import { ChatError, Message } from '../types';
 // Mock @google/genai
 const mockGenerateContent = vi.fn();
 const mockGenerateContentStream = vi.fn();
+const mockCountTokens = vi.fn();
 
 vi.mock('@google/genai', () => {
   return {
@@ -18,6 +19,7 @@ vi.mock('@google/genai', () => {
         models: {
           generateContent: mockGenerateContent,
           generateContentStream: mockGenerateContentStream,
+          countTokens: mockCountTokens,
         },
       };
     }),
@@ -481,5 +483,50 @@ describe('GeminiChatAdapter Unit Tests (Task 7)', () => {
         return err instanceof ChatError && err.code === 'RATE_LIMIT' && err.status === 429;
       });
     });
+  });
+});
+
+describe('P0-1: 计数兼容与长度截断', () => {
+  beforeEach(() => { vi.clearAllMocks(); });
+  const messages: Message[] = [{ id: 'user', role: 'user', content: 'hi', createdAt: 1 }];
+  it('Developer API 计数不发送 systemInstruction 并透传 AbortSignal', async () => {
+    mockCountTokens.mockResolvedValueOnce({ totalTokens: 7 });
+    const controller = new AbortController();
+    const adapter = new GeminiChatAdapter({ apiKey: 'fake', systemInstruction: 'trusted' });
+    expect(await adapter.countTokens(messages, { signal: controller.signal })).toBe(7);
+    expect(mockCountTokens).toHaveBeenCalledWith({ model: 'gemini-3.8-flash', contents: [{ role: 'user', parts: [{ text: 'hi' }] }], config: { abortSignal: controller.signal } });
+    expect(mockCountTokens.mock.calls[0][0].config).not.toHaveProperty('systemInstruction');
+  });
+  it('计数拒绝无效结果且已中止请求不调用 SDK', async () => {
+    const adapter = new GeminiChatAdapter({ apiKey: 'fake' });
+    mockCountTokens.mockResolvedValueOnce({ totalTokens: NaN });
+    await expect(adapter.countTokens(messages)).rejects.toMatchObject({ code: 'MODEL_ERROR' });
+    const controller = new AbortController(); controller.abort();
+    await expect(adapter.countTokens(messages, { signal: controller.signal })).rejects.toMatchObject({ code: 'ABORTED' });
+    expect(mockCountTokens).toHaveBeenCalledOnce();
+  });
+  it('send 的 MAX_TOKENS 正文附带一次提示并保留用量', async () => {
+    mockGenerateContent.mockResolvedValueOnce({ text: 'partial', candidates: [{ finishReason: 'MAX_TOKENS' }], usageMetadata: { promptTokenCount: 2, candidatesTokenCount: 4, totalTokenCount: 6 } });
+    const result = await new GeminiChatAdapter({ apiKey: 'fake' }).send(messages, { maxTokens: 8192 });
+    expect(result.content).toBe('partial\n\n[回复已达到长度上限，内容已截断。]');
+    expect(result.usage?.totalTokens).toBe(6);
+    expect(mockGenerateContent.mock.calls[0][0].config.maxOutputTokens).toBe(8192);
+  });
+  it('stream 的重复 MAX_TOKENS 标志只在最终正文附带一次提示', async () => {
+    mockGenerateContentStream.mockResolvedValueOnce((async function* () {
+      yield { text: 'part', candidates: [{ finishReason: 'MAX_TOKENS' }] };
+      yield { text: 'ial', candidates: [{ finishReason: 'MAX_TOKENS' }], usageMetadata: { promptTokenCount: 3, candidatesTokenCount: 5, totalTokenCount: 8 } };
+    })());
+    const chunks = [];
+    for await (const chunk of new GeminiChatAdapter({ apiKey: 'fake' }).stream(messages)) chunks.push(chunk);
+    expect(chunks.at(-1)).toEqual({ delta: '', accumulated: 'partial\n\n[回复已达到长度上限，内容已截断。]', done: true, usage: { promptTokens: 3, completionTokens: 5, totalTokens: 8 } });
+    expect(chunks.filter(c => c.done)).toHaveLength(1);
+  });
+  it('MAX_TOKENS 无正文时 send 和 stream 都返回模型错误而非成功空回复', async () => {
+    const adapter = new GeminiChatAdapter({ apiKey: 'fake' });
+    mockGenerateContent.mockResolvedValueOnce({ text: ' ', candidates: [{ finishReason: 'MAX_TOKENS' }] });
+    await expect(adapter.send(messages)).rejects.toMatchObject({ code: 'MODEL_ERROR' });
+    mockGenerateContentStream.mockResolvedValueOnce((async function* () { yield { text: '', candidates: [{ finishReason: 'MAX_TOKENS' }] }; })());
+    await expect(async () => { for await (const _ of adapter.stream(messages)) {} }).rejects.toMatchObject({ code: 'MODEL_ERROR' });
   });
 });

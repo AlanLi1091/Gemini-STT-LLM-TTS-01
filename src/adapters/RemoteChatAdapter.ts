@@ -82,7 +82,7 @@ function parseSseBlock(block: string): ParsedSseEvent | undefined {
   }
 }
 
-/** 通过 Task 12 的无状态 SSE 接口访问服务端 ChatAdapter。 */
+/** Consumes shared SSE; session retries reuse the current input's UUID. */
 export class RemoteChatAdapter implements ChatAdapter {
   readonly id = 'remote-chat';
   readonly name = 'Backend Chat Service';
@@ -121,6 +121,7 @@ export class RemoteChatAdapter implements ChatAdapter {
         body: JSON.stringify(this.sessionId
           ? {
               sessionId: this.sessionId,
+              requestId: messages.at(-1)?.id,
               messages: messages.slice(-1).map(({ role, content }) => ({ role, content })),
             }
           : {

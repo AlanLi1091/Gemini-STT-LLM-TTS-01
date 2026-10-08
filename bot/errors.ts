@@ -1,9 +1,11 @@
 import { RESTJSONErrorCodes } from 'discord.js';
-export type FailureKind = 'AUTH_ERROR' | 'RATE_LIMIT' | 'NETWORK_ERROR' | 'MODEL_ERROR' | 'ABORTED' | 'TIMEOUT' | 'PROTOCOL' | 'BACKEND' | 'DISCORD_PERMISSION' | 'DISCORD_MESSAGE' | 'DISCORD_CHANNEL' | 'DISCORD_SEND' | 'UNEXPECTED';
+export type FailureKind = 'AUTH_ERROR' | 'RATE_LIMIT' | 'NETWORK_ERROR' | 'MODEL_ERROR' | 'CONTEXT_LIMIT' | 'REQUEST_CONFLICT' | 'ABORTED' | 'TIMEOUT' | 'PROTOCOL' | 'BACKEND' | 'DISCORD_PERMISSION' | 'DISCORD_MESSAGE' | 'DISCORD_CHANNEL' | 'DISCORD_SEND' | 'UNEXPECTED';
 export class BackendError extends Error {
-  constructor(message: string, readonly kind: FailureKind = 'BACKEND') { super(message); this.name = 'BackendError'; }
+  constructor(message: string, readonly kind: FailureKind = 'BACKEND', readonly operation?: 'reset') { super(message); this.name = 'BackendError'; }
 }
 const messages: Record<FailureKind, string> = {
+  REQUEST_CONFLICT: '频道会话仍在处理中，请稍后重试。',
+  CONTEXT_LIMIT: '本轮输入过长，请缩短内容后重新提问。',
   AUTH_ERROR: '模型服务鉴权失败，请检查服务端配置。',
   RATE_LIMIT: '模型请求达到限额，请稍后再试。',
   NETWORK_ERROR: '后端连接失败，请检查服务和网络后再试。',
@@ -27,8 +29,11 @@ export function describeFailure(error: unknown, sending = false): { kind: Failur
     else if (code === RESTJSONErrorCodes.UnknownMessage) kind = 'DISCORD_MESSAGE';
     else if (code === RESTJSONErrorCodes.UnknownChannel) kind = 'DISCORD_CHANNEL';
   }
-  return { kind, message: messages[kind] };
+  const message = error instanceof BackendError && error.operation === 'reset' && kind !== 'REQUEST_CONFLICT'
+    ? `未确认频道会话重置完成。${messages[kind]}请检查频道状态后再决定是否重试。`
+    : messages[kind];
+  return { kind, message };
 }
 export function startupFailureMessage(_error: unknown): string {
-  return 'Bot 启动失败；请检查本地 Token、频道 ID、后端地址、调度配置及网络。';
+  return 'Bot 启动失败；请检查本地 Token、频道 ID、管理员名单、后端地址、调度配置及网络。';
 }

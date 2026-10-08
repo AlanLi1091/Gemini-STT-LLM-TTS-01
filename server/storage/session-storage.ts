@@ -15,6 +15,8 @@ export interface Session {
 /**
  * Storage boundary for conversations. Implementations must never mutate or
  * replace a previously persisted message; they may only append a new one.
+ * ADR-012 request-tagged writes must atomically reject a duplicate role for
+ * the same requestId; a tagged reply must follow its corresponding input.
  */
 export interface SessionStorage {
   createSession(origin?: SessionOrigin): Promise<Session>;
@@ -35,5 +37,13 @@ export class DuplicateMessageIdError extends Error {
   constructor(messageId: string) {
     super(`Message already exists in this session: ${messageId}`);
     this.name = 'DuplicateMessageIdError';
+  }
+}
+
+/** A request identity cannot be reused for another input or completed reply. */
+export class SessionRequestConflictError extends Error {
+  constructor() {
+    super('会话请求正在处理或已发生变化，请稍后重试或刷新会话。');
+    this.name = 'SessionRequestConflictError';
   }
 }

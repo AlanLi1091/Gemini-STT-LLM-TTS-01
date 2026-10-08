@@ -5,7 +5,7 @@ import { CORE_VERSION, type HealthResponse } from '@core/index';
 import { createCorsMiddleware } from './cors';
 import { createChatStreamHandler, type ChatStreamSource } from './chat-stream';
 import { SessionService } from './session-service';
-import { SessionNotFoundError } from './storage/session-storage';
+import { SessionNotFoundError, SessionRequestConflictError } from './storage/session-storage';
 
 export interface AppOptions {
   staticDirectory?: string;
@@ -30,6 +30,10 @@ export function readServerConfig(env: NodeJS.ProcessEnv) {
 }
 
 function sendSessionError(error: unknown, res: Response): void {
+  if (error instanceof SessionRequestConflictError) {
+    res.status(409).json({ error: { code: 'REQUEST_CONFLICT', message: error.message } });
+    return;
+  }
   if (error instanceof SessionNotFoundError) {
     res.status(404).json({ error: 'Chat session was not found.' });
     return;
@@ -80,12 +84,17 @@ export function createApp(options: AppOptions = {}): Express {
     }
   });
 
-  app.post('/api/discord/sessions/resolve', async (req: Request, res: Response) => {
+  const requireLocalDiscordRequest = (req: Request, res: Response): boolean => {
     const address = req.socket.remoteAddress;
     if (req.get('Origin') || !['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(address ?? '')) {
       res.status(403).json({ error: 'Discord session resolution is local only.' });
-      return;
+      return false;
     }
+    return true;
+  };
+
+  app.post('/api/discord/sessions/resolve', async (req: Request, res: Response) => {
+    if (!requireLocalDiscordRequest(req, res)) return;
     if (!options.sessionService) {
       res.status(503).json({ error: 'Chat session storage is not configured.' });
       return;
@@ -98,6 +107,21 @@ export function createApp(options: AppOptions = {}): Express {
       const session = await options.sessionService.resolveDiscordSession(guildId, channelId);
       res.json({ sessionId: session.id });
     } catch (error) { sendSessionError(error, res); }
+  });
+
+  app.post('/api/discord/sessions/reset', async (req: Request, res: Response) => {
+    if (!requireLocalDiscordRequest(req, res)) return;
+    if (!options.sessionService) {
+      res.status(503).json({ error: 'Chat session storage is not configured.' }); return;
+    }
+    const { guildId, channelId, sessionId } = req.body ?? {};
+    const snowflake = (value: unknown) => typeof value === 'string' && /^\d{17,20}$/.test(value);
+    if (!snowflake(guildId) || !snowflake(channelId) || typeof sessionId !== 'string' ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sessionId)) {
+      res.status(400).json({ error: 'Invalid Discord reset request.' }); return;
+    }
+    try { res.json(await options.sessionService.resetDiscordSession({ guildId, channelId, sessionId })); }
+    catch (error) { sendSessionError(error, res); }
   });
 
   app.get('/api/sessions/:sessionId', async (req: Request, res: Response) => {

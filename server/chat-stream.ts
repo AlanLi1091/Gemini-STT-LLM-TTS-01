@@ -6,6 +6,8 @@ import {
   type ChatStreamRequest,
 } from '@core/index';
 
+const REQUEST_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export interface ChatStreamSourceOptions {
   signal: AbortSignal;
 }
@@ -27,13 +29,19 @@ function isChatStreamRequest(value: unknown): value is ChatStreamRequest {
   if (!Array.isArray(candidate.messages)) return false;
   if (candidate.sessionId !== undefined && typeof candidate.sessionId !== 'string') return false;
 
-  return candidate.messages.every(
+  const validMessages = candidate.messages.every(
     (message) =>
       !!message &&
       typeof message === 'object' &&
       (message.role === 'user' || message.role === 'assistant' || message.role === 'system') &&
       typeof message.content === 'string',
   );
+  if (!validMessages) return false;
+  if (candidate.requestId === undefined) return true;
+  return typeof candidate.requestId === 'string' && REQUEST_UUID.test(candidate.requestId) &&
+    typeof candidate.sessionId === 'string' && candidate.sessionId.length > 0 &&
+    candidate.messages.length === 1 && candidate.messages[0].role === 'user' &&
+    candidate.messages[0].content.trim().length > 0;
 }
 
 function serializeSseEvent(event: ChatSseEvent): string {

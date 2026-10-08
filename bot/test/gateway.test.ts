@@ -2,7 +2,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Client, Events, type ClientEvents } from 'discord.js';
 import { startGateway } from '../gateway';
-import { readBotConfig } from '../index';
+import { readBotConfig, createBotInputHandler } from '../index';
+import { normalizeMessage } from '../message-entry';
 import { BackendError } from '../backend-client';
 
 const input = { id: 'm1', guildId: 'g1', channelId: 'c1', userId: 'u1', content: 'hello' };
@@ -139,7 +140,7 @@ describe('Task 16 Step 1: Bot 网关骨架', () => {
   });
   it('正式入口读取根目录环境配置并清理空白', () => {
     expect(readBotConfig({ DISCORD_BOT_TOKEN: ' fake-secret ', DISCORD_TEST_CHANNEL_ID: ' 123456789012345678 ' }))
-      .toEqual({ token: 'fake-secret', channelId: '123456789012345678', backendUrl: 'http://127.0.0.1:3001', schedulerOptions: { maxPending: 3, cooldownMs: 5000 } });
+      .toEqual({ token: 'fake-secret', channelId: '123456789012345678', backendUrl: 'http://127.0.0.1:3001', sessionAdminIds: [], schedulerOptions: { maxPending: 3, cooldownMs: 5000 } });
   });
   it('缺少 Token 或无效频道时给出配置指引', () => {
     expect(() => readBotConfig({})).toThrow('DISCORD_BOT_TOKEN');
@@ -305,5 +306,68 @@ describe('Task 17 Step 3: 活动请求跨重连', () => {
     expect(signal.aborted).toBe(false); finish('完成'); await flush();
     expect(handler).toHaveBeenCalledOnce(); expect(msg.reply).toHaveBeenCalledOnce();
     expect(client.login).toHaveBeenCalledOnce();
+  });
+});
+
+describe('P0-1 Step 2: 管理员重置入口', () => {
+  const adminId = '111111111111111111';
+  it('管理员配置接受合法 ID 去重空配置禁用非法值启动拒绝', () => {
+    const env = { DISCORD_BOT_TOKEN: 'fake', DISCORD_TEST_CHANNEL_ID: '222222222222222222' };
+    expect(readBotConfig(env).sessionAdminIds).toEqual([]);
+    expect(readBotConfig({ ...env, DISCORD_SESSION_ADMIN_IDS: ` ${adminId},${adminId}, 333333333333333333 ` }).sessionAdminIds).toEqual([adminId, '333333333333333333']);
+    for (const ids of ['bad', '1', '00000000000000000', '99999999999999999999', `${adminId},`, `${adminId},bad`]) {
+      expect(() => readBotConfig({ ...env, DISCORD_SESSION_ADMIN_IDS: ids })).toThrow('DISCORD_SESSION_ADMIN_IDS');
+    }
+  });
+  it('精确命令才重置大小写参数和普通提问仍走聊天', async () => {
+    const backend = { chat: vi.fn().mockResolvedValue('chat'), reset: vi.fn().mockResolvedValue('reset') };
+    const handler = createBotInputHandler(backend, [adminId]); const signal = new AbortController().signal;
+    const botId = '444444444444444444', channelId = '222222222222222222';
+    const normalized = normalizeMessage({ id: 'm', guildId: '333333333333333333', channelId, author: { id: adminId, bot: false }, webhookId: null,
+      content: `<@${botId}>  /reset \n`, mentions: { users: { has: id => id === botId } } }, { botId, channelId })!;
+    expect(await handler(normalized, signal)).toBe('reset');
+    for (const content of ['/Reset', '/reset extra', '/resetting', 'hello']) await handler({ ...normalized, content }, signal);
+    expect(backend.reset).toHaveBeenCalledOnce(); expect(backend.chat).toHaveBeenCalledTimes(4);
+    expect(backend.chat.mock.calls.every(call => call[0].content !== '/reset')).toBe(true);
+  });
+  it('无管理员或非管理员命令只回复拒绝且不调用后端', async () => {
+    const backend = { chat: vi.fn(), reset: vi.fn() }; const signal = new AbortController().signal;
+    const command = { ...input, userId: adminId, content: '/reset' };
+    expect(await createBotInputHandler(backend, [])(command, signal)).toContain('未启用');
+    expect(await createBotInputHandler(backend, ['333333333333333333'])(command, signal)).toContain('没有');
+    expect(backend.chat).not.toHaveBeenCalled(); expect(backend.reset).not.toHaveBeenCalled();
+  });
+  it('拒绝重置仍计算用户冷却且反馈抑制提及', async () => {
+    const backend = { chat: vi.fn(), reset: vi.fn() }; const command = { ...input, content: '/reset' };
+    const { client } = await setup({ schedulerOptions: { cooldownMs: 5000 }, resolveInput: () => command, handleInput: createBotInputHandler(backend, [adminId]) });
+    const first = message(); emit(client, first); await flush();
+    expect(first.reply).toHaveBeenCalledWith({ content: expect.stringContaining('没有'), allowedMentions: { parse: [], repliedUser: false } });
+    const next = message(); emit(client, next); await flush();
+    expect(next.reply).toHaveBeenCalledWith(expect.objectContaining({ content: expect.stringContaining('冷却') }));
+    expect(backend.chat).not.toHaveBeenCalled(); expect(backend.reset).not.toHaveBeenCalled();
+  });
+  it('重置排在上一轮完整回复发送之后且随后聊天使用正常入口', async () => {
+    const backend = { chat: vi.fn().mockResolvedValue('reply'), reset: vi.fn().mockResolvedValue('reset-complete') };
+    let current = { ...input, userId: adminId };
+    const { client } = await setup({ resolveInput: () => current, handleInput: createBotInputHandler(backend, [adminId]) });
+    const first = message(); let finish!: () => void;
+    first.reply.mockImplementationOnce(() => new Promise(resolve => { finish = () => resolve({}); }));
+    emit(client, first); await flush(); current = { ...current, content: '/reset' };
+    const command = message(); emit(client, command); await flush();
+    expect(backend.reset).not.toHaveBeenCalled();
+    finish(); await flush(); expect(backend.reset).toHaveBeenCalledOnce();
+    expect(command.reply).toHaveBeenCalledWith(expect.objectContaining({ content: 'reset-complete' }));
+    current = { ...current, content: 'next' }; emit(client, message()); await flush();
+    expect(backend.chat).toHaveBeenCalledTimes(2);
+  });
+  it('重置失败不反馈成功且后续队列请求继续', async () => {
+    const backend = { chat: vi.fn().mockResolvedValue('reply'), reset: vi.fn().mockRejectedValue(new BackendError('internal-secret', 'REQUEST_CONFLICT')) };
+    let current = { ...input, userId: adminId, content: '/reset' };
+    const { client } = await setup({ resolveInput: () => current, handleInput: createBotInputHandler(backend, [adminId]) });
+    const command = message(); emit(client, command); await flush();
+    expect(command.reply).toHaveBeenCalledWith(expect.objectContaining({ content: expect.stringContaining('仍在处理') }));
+    expect(JSON.stringify(command.reply.mock.calls)).not.toContain('internal-secret');
+    current = { ...current, content: 'next' }; const next = message(); emit(client, next); await flush();
+    expect(backend.reset).toHaveBeenCalledOnce(); expect(next.reply).toHaveBeenCalledWith(expect.objectContaining({ content: 'reply' }));
   });
 });

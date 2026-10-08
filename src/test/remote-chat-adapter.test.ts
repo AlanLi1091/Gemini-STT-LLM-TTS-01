@@ -45,7 +45,7 @@ describe('Task 13 Step 1: RemoteChatAdapter', () => {
     const history: Message[] = [
       { id: 'message-1', role: 'user', content: '第一轮', createdAt: 1 },
       { id: 'message-2', role: 'assistant', content: '第一轮回复', createdAt: 2 },
-      { id: 'message-3', role: 'user', content: '第二轮', createdAt: 3 },
+      { id: '11111111-1111-4111-8111-111111111111', role: 'user', content: '第二轮', createdAt: 3 },
     ];
 
     await new RemoteChatAdapter({ sessionId: 'session-123' }).send(history);
@@ -53,6 +53,7 @@ describe('Task 13 Step 1: RemoteChatAdapter', () => {
     expect(fetchMock).toHaveBeenCalledWith('/api/chat/stream', expect.objectContaining({
       body: JSON.stringify({
         sessionId: 'session-123',
+        requestId: '11111111-1111-4111-8111-111111111111',
         messages: [{ role: 'user', content: '第二轮' }],
       }),
     }));
@@ -140,5 +141,20 @@ describe('Task 13 Step 1: RemoteChatAdapter', () => {
       (error: unknown) => error instanceof ChatError && error.code === 'ABORTED',
     );
     expect(fetchMock.mock.calls[0][1].signal).toBe(controller.signal);
+  });
+});
+
+describe('P0-2: 远端重试标识', () => {
+  it('失败重发携带同一输入 UUID 并解析 REQUEST_CONFLICT', async () => {
+    const requestId = '11111111-1111-4111-8111-111111111111';
+    const inputs: Message[] = [{ id: requestId, role: 'user', content: 'hi', createdAt: 1 }];
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(sseResponse('event: error\ndata: {"error":{"code":"REQUEST_CONFLICT","message":"conflict"}}\n\n'))
+      .mockResolvedValueOnce(sseResponse('event: done\ndata: {"content":"ok","usage":{"totalTokens":3}}\n\n'));
+    vi.stubGlobal('fetch', fetchMock);
+    const adapter = new RemoteChatAdapter({ sessionId: 'session' });
+    await expect(adapter.send(inputs)).rejects.toMatchObject({ code: 'REQUEST_CONFLICT' });
+    expect(await adapter.send(inputs)).toEqual({ content: 'ok', usage: { totalTokens: 3 } });
+    expect(fetchMock.mock.calls.map(call => JSON.parse(call[1].body).requestId)).toEqual([requestId, requestId]);
   });
 });
