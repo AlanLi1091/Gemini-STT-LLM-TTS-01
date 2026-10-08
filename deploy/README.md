@@ -102,3 +102,10 @@ Step 1 验证系统加固、两个非 root 服务启动、loopback / 隧道访�
 运维只读报告命令：sudo /opt/gemini-validation/validate-online.sh --report。验收采集是 VPS systemd 任务，Mac 关机不影响采样；聊天的后续检查仍需要本机 Codex 和 SSH 可用。VALIDATION_DIR / VALIDATION_BOOT_FILE / VALIDATION_HEALTH_URL 为测试注入变量，生产 unit 使用默认路径和 loopback 地址，不提供对外接口。
 
 本轮Step 2已通过，验收timer已disabled / inactive；最终保存报告与原始journal位于/var/lib/gemini-validation，详见[最终验收记录](../dev-docs/research/phase3-deployment.md#最终验收2026-10-06)。停采后动态报告会自然过期，保存的final-report.json记录验收时的新鲜度；两个应用仍保持常驻。
+
+
+## 当前私有发行物（2026-10-07）
+
+current已切换至 `/opt/gemini-chat/releases/v002-9b9a116`（固定源码9b9a116），包含P0修复；管理员名单已在VPS Bot EnvironmentFile配置。上下文配置沿用代码默认值，未额外调整模型预算。两服务active / enabled，Web真实回复与刷新恢复通过；用户已确认Discord普通回复 / 管理员reset / 新会话回复，服务端核对旧日志保留及新绑定通过；正式PR / tag收尾由主会话核验汇报，详见部署记录第11节。
+
+切版前一致性备份为 `/var/backups/gemini-chat/data-20261008T021952Z.tar.gz`；旧发行物task18-20261005-01及root专属bot.env.pre-v002保留用于回滚。回滚只切代码 / 配置，不覆盖会话日志。上述P0章节中的“本轮未部署”描述原代码交付时的历史边界，本节记录后续已授权现网更新。

@@ -178,3 +178,15 @@ Cloud Run 的超时、缩零与收费方式以[请求超时](https://cloud.googl
 | samples.jsonl | 8749c6f3b83cb64a491bb511bf24df6c3c24d9f985c0bde719ac199d03abeedd |
 
 本步只完成上线验收，Phase 4正式结项仍需用户指派Task 18 Step 3。
+
+
+## 11. V0.0.2 私有 VPS 更新（2026-10-07，部署验收通过）
+
+用户确认先部署验收、再PR合并main、最后正式tag，确认五份文档 / VPS文件计划并提供管理员ID。固定源码9b9a11669c6fdb9a3d564dc5ef9a36ae46e99af0，版本0.0.2；不启动Phase 5、P1或其他残余修复。
+
+- 新发行物 `/opt/gemini-chat/releases/v002-9b9a116` 由git archive导出，不含.env、data、macOS资源叉或本机依赖；复用旧发行物Linux package-lock.json，npm ci后本机 / Linux均33/33测试文件387/387用例、根 / 四包类型检查及Web / Express cjs / Bot构建通过。Linux安装审计0漏洞；prune后生产154包审计0漏洞。既有React act、node-domexception弃用、未批准安装脚本提示保留，未扩大脚本权限。
+- 先停Bot / Express，再运行旧版backup.sh，备份 `/var/backups/gemini-chat/data-20261008T021952Z.tar.gz` 与.sha256；归档和SHA-256通过。备份名使用UTC，用户本地日期仍为2026-10-07。新发行物 `data-before.sha256` 记录切版前3个文件校验，Express启动后、真实测试前全部一致；旧日志未回滚或清空。
+- 管理员名单仅更新root专属 `/etc/gemini-chat/bot.env`，0600；原文件备份 `/etc/gemini-chat/bot.env.pre-v002` 保留且不进入Git或前端。原子切换current，先Express健康检查、再Bot；两服务active / enabled、Bot shard ready / ready，Express仅127.0.0.1:3001。
+- Web通过SSH隧道恢复旧两轮对话，新请求真实回复“新版部署成功”，199 total tokens（prompt 52 / completion 4），刷新后持久化恢复通过；本机截图 `/private/tmp/gemini-v002-web.jpg` 为临时验收附件，不提交仓库。
+- Discord重置前绑定19c39a17-ce29-44b8-a376-4dd27acdf916，8条消息；用户确认普通回复、直接@Bot /reset、新会话回复均无误；旧会话归档后14条消息，备份中的原8条消息逐项保持一致，新绑定22d27ebd-3c46-4f5b-95f8-6adf27cc7f9e有2条消息，来源相同且未归档。两服务NRestarts=0、active且健康检查正常；PR / tag收尾由主会话核验汇报。
+- 回滚保留旧发行物 `/opt/gemini-chat/releases/task18-20261005-01`；失败时停两服务、恢复bot.env备份、原子将current切回旧目录、先启Express再启Bot，保留新旧会话日志。仅上线冒烟与Linux回归，不重复宣称新版本已有24小时在线验证。
