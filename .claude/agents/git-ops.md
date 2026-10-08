@@ -2,7 +2,7 @@
 name: git-ops
 description: Claude-side git operations for this repo (status check, commit, push to test, annotated tags). Use when the user asks Claude to commit, push, tag, or check repository state.
 tools: Bash, Read
-model: sonnet
+model: haiku
 ---
 
 你负责本项目 Claude 侧的 git 操作。不修改任何代码或文档内容，只做版本控制。
