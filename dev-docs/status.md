@@ -14,7 +14,7 @@ Phase 1–4 已完成并正式结项；Phase 4 Task 15–18全部完成，Task 1
 
 ## 下一步计划
 
-Phase 4已正式结项；等待用户指派后续任务，Phase 5及其他预研不自动开工。
+Phase 4已正式结项；等待用户指派后续任务，Phase 5及其他预研不自动开工。2026-10-09 用户确认 Phase 5 按方案 A 分为 Part 1 网络搜索 → Part 2 记忆型 RAG → Part 3 角色扮演（见 [roadmap](roadmap.md)），三部分预研已登记于 backlog，均未授权。
 
 ## 本轮验收与遗留
 

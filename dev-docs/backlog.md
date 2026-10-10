@@ -102,7 +102,9 @@
 
 - [x] **部署实施（本人私有访问）**：本轮独立授权并随 Task 18 Step 1 完成 VPS 单体部署，采用 SSH 隧道；公网反代 / TLS 不适用于当前私有范围，未来开放公网须另行授权；实施拆解见 [`research/phase3-deployment.md` 第 7 节](research/phase3-deployment.md#7-结论推荐倾向与实施拆解提案)与 [ADR-010](adr/0010-phase3-deployment-and-direct-connect.md)。
 - [x] **Phase 3 收尾预研**：部署方案（Cloud Run / VPS，显式声明不阻塞 Phase 3 退出条件）。
-- [ ] **Phase 5 预研**：角色数据格式调研（自定义 schema vs Character Card V2）。
+- [ ] **Phase 5 Part 1 预研：网络搜索**：对比 Gemini 内置 Google 搜索（grounding）与外部搜索 API + 结果注入；核实当前模型支持与计费；明确触发方式（模型自主 / 每次 / 显式命令）、适用入口（Web / Discord）、是否抓取网页全文；SSRF 与间接提示注入威胁模型、独立搜索预算、超时（关联 P1-2 / R2）、与 ADR-013 上下文预算及计数接口 `tools` 限制的协调、Discord 来源展示与链接预览抑制。
+- [ ] **Phase 5 Part 2 预研：记忆型 RAG**：窗口外历史的检索回填方案（检索粒度、相关性、与 ADR-013 预算协调）；JSON 存储（P1-5）是否需要替换以支持检索；与 Part 3 角色记忆的边界。
+- [ ] **Phase 5 Part 3 预研：角色扮演**：角色数据格式调研（自定义 schema vs Character Card V2）；按会话 / 角色的系统指令替代当前全局 `GEMINI_SYSTEM_INSTRUCTION` 的设计。
 - [ ] **消息重发/重生成与分支导航（基于 ADR-005 消息树模型）**（Phase 5）。
 - [ ] **Phase 6 预研**：语音链路方案对比（Gemini 原生音频 vs Whisper+TTS；Discord 语音通话直播主入口可行性与端到端延迟验证；Web 麦克风调试通道；直播文字伴随输出承载选型）。
 - [ ] **模型动态发现与拉取（提议，未授权）**：支持通过 Gemini API（models.list）动态拉取当前 Key 可用的模型列表，替代硬编码配置。
