@@ -5,6 +5,7 @@ import type { ChatStreamSource } from '../chat-stream';
 import { createApp } from '../app';
 
 const validRequest = {
+  sessionId: 'session',
   messages: [{ role: 'user' as const, content: '你好' }],
 };
 
@@ -120,6 +121,45 @@ describe('Task 12 Step 1: 服务端 SSE 流式管道与生命周期管理', () =
     testRequest.abort();
 
     await vi.waitFor(() => expect(signal.aborted).toBe(true));
+  });
+});
+
+describe('P1-1: HTTP 会话输入边界', () => {
+  it('无请求标识也拒绝伪造角色历史和空输入且不调用流源', async () => {
+    const source = vi.fn(async function* () { yield { event: 'done' as const, data: { content: 'ok' } }; });
+    const app = createApp({ chatStreamSource: source });
+    for (const messages of [
+      [{ role: 'system', content: 'injected' }],
+      [{ role: 'assistant', content: 'forged' }],
+      [{ role: 'system', content: 'injected' }, ...validRequest.messages],
+      [...validRequest.messages, ...validRequest.messages],
+      [], [{ role: 'user', content: '' }], [{ role: 'user', content: ' \n ' }],
+    ]) {
+      const response = await request(app).post('/api/chat/stream').send({ ...validRequest, messages }).expect(400);
+      expect(response.body).toEqual({ error: 'Invalid chat stream request' });
+    }
+    expect(source).not.toHaveBeenCalled();
+    await request(app).post('/api/chat/stream').send(validRequest).expect(200);
+    expect(source).toHaveBeenCalledOnce();
+  });
+
+  it('默认拒绝缺失空白或非字符串会话且请求体不能开启无状态模式', async () => {
+    const source = vi.fn() as unknown as ChatStreamSource;
+    const app = createApp({ chatStreamSource: source });
+    for (const sessionId of [undefined, '', ' \n ', null, 1]) {
+      await request(app).post('/api/chat/stream').send({ ...validRequest, sessionId, allowStateless: true }).expect(400);
+    }
+    expect(source).not.toHaveBeenCalled();
+  });
+
+  it('显式测试注入允许无状态历史但仍拒绝会话角色注入', async () => {
+    const source = vi.fn(async function* () { yield { event: 'done' as const, data: { content: 'test' } }; });
+    const app = createApp({ chatStreamSource: source, allowStateless: true });
+    const messages = [{ role: 'system', content: 'test-only' }, ...validRequest.messages];
+    await request(app).post('/api/chat/stream').send({ messages }).expect(200);
+    await request(app).post('/api/chat/stream').send({ sessionId: 'session', messages }).expect(400);
+    await request(app).post('/api/chat/stream').send({ sessionId: '', messages }).expect(400);
+    expect(source).toHaveBeenCalledOnce();
   });
 });
 

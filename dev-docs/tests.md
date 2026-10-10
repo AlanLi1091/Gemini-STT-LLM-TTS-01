@@ -1,7 +1,7 @@
 # 测试套件与测试用例台账
 
 > **维护规范**：
-> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（33 个套件）与具体测试用例（387 个断言项）。
+> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（33 个套件）与具体测试用例（394 个断言项）。
 > 2. **铁律联动**：后续开发中，每次有新功能开发、重构或测试内容更新时，**必须同步在此台账中维护新增或修改的测试项**，保持与实际测试套件 100% 同步。
 
 ## 1. 测试套件概览看板
@@ -24,12 +24,12 @@
 | 14 | `server/test/server-skeleton.test.ts` | Task 11 | Express 服务端骨架、双环境运行、根路径与健康检查响应 | 4 | ✅ 通过 |
 | 15 | `core/test/sse-contract.test.ts` | Task 11 | 共享 SSE 事件、错误载荷与 sessionId 演进契约 | 7 | ✅ 通过 |
 | 16 | `server/test/cors.test.ts` | Task 11 | CORS 白名单解析、允许/拒绝策略与预检链路 | 5 | ✅ 通过 |
-| 17 | `server/test/chat-stream.test.ts` | Task 12 | SSE 流式管道、心跳、续传声明与中断级联 | 8 | ✅ 通过 |
-| 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 / Task 17 Step 1 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 25 | ✅ 通过 |
+| 17 | `server/test/chat-stream.test.ts` | Task 12 | SSE 流式管道、心跳、续传声明与中断级联 | 11 | ✅ 通过 |
+| 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 / Task 17 Step 1 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 27 | ✅ 通过 |
 | 19 | `src/test/remote-chat-adapter.test.ts` | Task 13 / Task 14 Step 3 | RemoteChatAdapter 的 SSE 消费、错误映射、AbortSignal 与 sessionId 模式 | 8 | ✅ 通过 |
 | 20 | `src/test/app-remote-integration.test.tsx` | Task 13 Step 3 / Task 14 Step 3 / Phase 3 收尾 | App 的后端 SSE 装配、会话恢复、归档清空与旧配置迁移 | 7 | ✅ 通过 |
 | 21 | `server/test/json-session-storage.test.ts` | Task 14 Step 1 / Task 16 Step 2 | JSON 会话、频道关联、重启恢复与严格追加 | 12 | ✅ 通过 |
-| 22 | `server/test/session-api.test.ts` | Task 14 Step 2 / Task 16 Step 2 | 会话 API、频道上下文、归档与来源隔离 | 18 | ✅ 通过 |
+| 22 | `server/test/session-api.test.ts` | Task 14 Step 2 / Task 16 Step 2 | 会话 API、频道上下文、归档与来源隔离 | 20 | ✅ 通过 |
 | 23 | `server/test/discord-demo.test.ts` | Task 15 Step 2 | 配置、测试频道回显、连接事件、日志脱敏与退出清理（网络 Mock） | 14 | ✅ 通过 |
 | 24 | `bot/test/gateway.test.ts` | Task 16 / Task 17 Step 1–3 | 正式网关、typing、错误、重连、长时模拟与资源清理（网络 Mock） | 48 | ✅ 通过 |
 | 25 | `bot/test/message-entry.test.ts` | Task 16 Step 1 | 指定频道直接 @Bot、提及清理与消息过滤 | 14 | ✅ 通过 |
@@ -41,7 +41,7 @@
 | 31 | `server/test/deployment.test.ts` | Task 18 Step 1 | 私有 loopback 配置、静态托管、SSE / API 隔离与文件边界 | 7 | ✅ 通过 |
 | 32 | `server/test/deployment-validation.test.ts` | Task 18 Step 2 | 采集故障、重连中断、24 小时 / 新鲜度 / 证据缺口判定 | 11 | ✅ 通过 |
 | 33 | `server/test/context-window.test.ts` | P0-1 第一步 | 轮次窗口、计数降级、超时与内存校准 | 23 | ✅ 通过 |
-| **合计** | **33 个测试文件** | **Phase 1–4 / 审计修复** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **387** | **✅ 100% 通过** |
+| **合计** | **33 个测试文件** | **Phase 1–4 / 审计修复** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **394** | **✅ 100% 通过** |
 
 ---
 
@@ -336,7 +336,7 @@
 - [x] **白名单外来源应被拒绝并返回 403**
 - [x] **白名单内来源的 OPTIONS 预检应返回 204 与允许的方法和请求头**
 
-### 2.17 `server/test/chat-stream.test.ts` (8 项)
+### 2.17 `server/test/chat-stream.test.ts` (11 项)
 > **任务对应**：Task 12 Step 1 · 服务端 SSE 流式管道与生命周期管理
 
 #### Task 12 Step 1: 服务端 SSE 流式管道与生命周期管理
@@ -353,7 +353,14 @@
 - [x] **带标识请求要求严格 UUID 会话和单条非空 user 输入**
 
 
-### 2.18 `server/test/chat-adapter-stream-source.test.ts` (25 项)
+#### P1-1 新增回归
+
+- [x] **无请求标识也拒绝伪造角色历史和空输入且不调用流源**
+- [x] **默认拒绝缺失空白或非字符串会话且请求体不能开启无状态模式**
+- [x] **显式测试注入允许无状态历史但仍拒绝会话角色注入**
+
+
+### 2.18 `server/test/chat-adapter-stream-source.test.ts` (27 项)
 > **任务对应**：Task 17 Step 2 / Task 12 Step 2–3 · 服务端 Adapter 承载、自动降级与错误透传
 
 #### Task 12 Step 3: Adapter 自动选择与统一错误透传
@@ -395,6 +402,12 @@
 
 - [x] **环境工厂复用路由服务生成期间同一服务归档返回冲突**
 - [x] **同时传入服务和存储拒绝避免产生两个不一致实例**
+
+
+#### P1-1 新增回归
+
+- [x] **直接调用拒绝非法会话输入且不读写存储不耗预算不调用模型**
+- [x] **环境工厂会话模式不再回退到无状态模型流**
 
 
 ### 2.19 `src/test/remote-chat-adapter.test.ts` (8 项)
@@ -453,14 +466,14 @@
 - [x] **无请求元数据的旧文件仍可追加且非法元数据不写入**
 
 
-### 2.22 `server/test/session-api.test.ts` (18 项)
+### 2.22 `server/test/session-api.test.ts` (20 项)
 > **任务对应**：Task 17 Step 2 / Task 16 Step 2 / Task 14 Step 2 · 会话 API、多轮全量上下文与归档语义
 
 #### Task 14 Step 2: 会话 API 与多轮上下文
 - [x] **创建、读取并归档会话；归档仅写标记而保留消息日志**
 - [x] **按 sessionId 加载全量历史，并严格追加本轮输入与最终回复**
 - [x] **归档后保留可读取日志，但拒绝继续追加会话轮次**
-- [x] **未携带 sessionId 时保留无状态流式兼容**
+- [x] **未携带 sessionId 时拒绝无状态请求且不调用模型**
 
 - [x] **Bot 经真实 HTTP/SSE 多轮对话并按频道复用持久化上下文**
 - [x] **解析 API 归档后切换会话，并显式区分 Web 来源**
@@ -488,6 +501,12 @@
 - [x] **归档失败保持旧会话且释放锁允许随后重置**
 - [x] **归档成功而新关联解析失败不宣称成功下一次解析自然恢复**
 - [x] **Bot经真实本机HTTP重置后下一条聊天只包含新会话输入**
+
+
+#### P1-1 新增回归
+
+- [x] **有无请求标识的角色注入和伪造历史均不改变已有日志**
+- [x] **共享生产装配在 Mock 降级时也拒绝无状态伪造历史**
 
 
 ### 2.23 `server/test/discord-demo.test.ts` (14 项)

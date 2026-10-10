@@ -43,7 +43,7 @@ describe('Task 18 Step 1: 私有生产部署', () => {
     const { web } = await fixture(); const app = createApp({ staticDirectory: web, allowedOrigins: ['http://127.0.0.1:18080'], chatStreamSource: async function* () { yield { event: 'done', data: { content: 'done' } }; } });
     await request(app).get('/api/health').expect(200);
     const missing = await request(app).get('/api/missing').expect(404); expect(missing.headers['content-type']).toContain('json');
-    const stream = await request(app).post('/api/chat/stream').set('Origin', 'http://127.0.0.1:18080').send({ messages: [{ role: 'user', content: 'hello' }] }).expect(200);
+    const stream = await request(app).post('/api/chat/stream').set('Origin', 'http://127.0.0.1:18080').send({ sessionId: 'session', messages: [{ role: 'user', content: 'hello' }] }).expect(200);
     expect(stream.headers['content-type']).toContain('text/event-stream'); expect(stream.text).toContain('event: done');
     expect(stream.headers['cache-control']).toContain('no-transform');
     await request(app).post('/api/chat/stream').set('Origin', 'https://foreign.example').send({}).expect(403);

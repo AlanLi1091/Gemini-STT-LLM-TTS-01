@@ -23,10 +23,11 @@ vi.mock('@google/genai', () => ({
 
 async function collectEvents(
   source: ReturnType<typeof createChatStreamSourceFromEnv>,
+  sessionId?: string,
 ): Promise<ChatSseEvent[]> {
   const events: ChatSseEvent[] = [];
   for await (const event of source(
-    { messages: [{ role: 'user', content: '问候' }] },
+    { sessionId, messages: [{ role: 'user', content: '问候' }] },
     { signal: new AbortController().signal },
   )) {
     events.push(event);
@@ -51,7 +52,8 @@ describe('Task 12 Step 3: Adapter 自动选择与统一错误透传', () => {
       const storage = new JsonSessionStorage(directory); const session = await storage.resolveDiscordSession('111111111111111111', '222222222222222222');
       mockGenerateContentStream.mockResolvedValueOnce((async function* () { yield { text: '回复' }; })());
       const source = createChatStreamSourceFromEnv({ GEMINI_API_KEY: 'fake' }, { sessionStorage: storage, requestBudget: new RequestBudget({ requestsPerMinute: 1 }) });
-      await collectEvents(source);
+      const webSession = await storage.createSession();
+      await collectEvents(source, webSession.id);
       const events = [];
       for await (const event of source({ sessionId: session.id, messages: [{ role: 'user', content: '不应写入' }] }, { signal: new AbortController().signal })) events.push(event);
       expect(events).toEqual([expect.objectContaining({ event: 'error', data: { error: { code: 'RATE_LIMIT', message: expect.stringContaining('预算') } } })]);
@@ -392,6 +394,64 @@ describe('P0-1: 窗口与会话流装配', () => {
     if (last.event === 'done') expect((await c.storage.getSession(c.sessionId))!.messages.at(-1)?.content).toBe(last.data.content);
     expect((await c.storage.getSession(c.sessionId))!.messages.at(-1)?.content).toContain('内容已截断');
   }));
+});
+
+describe('P1-1: 会话流源输入防护', () => {
+  it('直接调用拒绝非法会话输入且不读写存储不耗预算不调用模型', async () => {
+    const { SessionService } = await import('../session-service');
+    const { createSessionChatStreamSource } = await import('../chat-adapter-stream-source');
+    const directory = await mkdtemp(join(tmpdir(), 'p11-source-'));
+    try {
+      const storage = new JsonSessionStorage(directory);
+      const service = new SessionService(storage);
+      const session = await service.createSession();
+      const before = await storage.getSession(session.id);
+      const getSession = vi.spyOn(storage, 'getSession');
+      const appendMessage = vi.spyOn(storage, 'appendMessage');
+      const acquireLock = vi.spyOn(service, 'tryAcquireRequest');
+      const budget = new RequestBudget({ requestsPerMinute: 1 });
+      const acquireBudget = vi.spyOn(budget, 'acquire');
+      const countTokens = vi.fn(async () => 1);
+      const stream = vi.fn(async function* () { yield { delta: 'ok', accumulated: 'ok', done: true }; });
+      const source = createSessionChatStreamSource({ id: 'p11', name: 'P1-1', send: async () => ({ content: '' }), stream, countTokens }, service, budget);
+      const input = { sessionId: session.id, messages: [{ role: 'user' as const, content: 'hi' }] };
+      for (const body of [
+        ...[undefined, '', ' \n '].map(sessionId => ({ ...input, sessionId })),
+        ...[
+          [{ role: 'system' as const, content: 'injected' }],
+          [{ role: 'assistant' as const, content: 'forged' }],
+          [...input.messages, ...input.messages], [],
+          [{ role: 'user' as const, content: ' \n ' }],
+        ].map(messages => ({ ...input, messages })),
+      ]) {
+        const events = [];
+        for await (const event of source(body, { signal: new AbortController().signal })) events.push(event);
+        expect(events).toEqual([{ event: 'error', data: { error: { code: 'UNKNOWN', message: 'Invalid chat stream request' } } }]);
+      }
+      expect(getSession).not.toHaveBeenCalled(); expect(appendMessage).not.toHaveBeenCalled();
+      expect(acquireLock).not.toHaveBeenCalled(); expect(acquireBudget).not.toHaveBeenCalled();
+      expect(stream).not.toHaveBeenCalled(); expect(countTokens).not.toHaveBeenCalled();
+      expect(await storage.getSession(session.id)).toEqual(before);
+      const events = [];
+      for await (const event of source(input, { signal: new AbortController().signal })) events.push(event);
+      expect(events.at(-1)?.event).toBe('done');
+      expect(stream).toHaveBeenCalledOnce(); expect(acquireBudget).toHaveBeenCalledOnce();
+      expect((await storage.getSession(session.id))!.messages.map(m => m.role)).toEqual(['user', 'assistant']);
+    } finally { await rm(directory, { recursive: true }); }
+  });
+
+  it('环境工厂会话模式不再回退到无状态模型流', async () => {
+    const { SessionService } = await import('../session-service');
+    const storage = new JsonSessionStorage('/unused-p11-fixture');
+    const getSession = vi.spyOn(storage, 'getSession');
+    const budget = new RequestBudget({ requestsPerMinute: 1 });
+    const source = createChatStreamSourceFromEnv({ GEMINI_API_KEY: 'fake' }, { sessionService: new SessionService(storage), requestBudget: budget });
+    const callsBefore = mockGenerateContentStream.mock.calls.length;
+    expect(await collectEvents(source)).toEqual([{ event: 'error', data: { error: { code: 'UNKNOWN', message: 'Invalid chat stream request' } } }]);
+    expect(getSession).not.toHaveBeenCalled();
+    expect(mockGenerateContentStream.mock.calls.length).toBe(callsBefore);
+    expect(budget.acquire()).toBe(0);
+  });
 });
 
 describe('P0-1 Step 2: 共享服务装配', () => {

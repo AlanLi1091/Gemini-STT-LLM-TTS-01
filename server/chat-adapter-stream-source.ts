@@ -7,7 +7,7 @@ import {
   type Message,
   type MockChatAdapterOptions,
 } from '@core/index';
-import type { ChatStreamSource } from './chat-stream';
+import { isChatStreamRequest, type ChatStreamSource } from './chat-stream';
 import { SessionArchivedError, SessionService } from './session-service';
 import { SessionNotFoundError, SessionRequestConflictError, type SessionStorage } from './storage/session-storage';
 import { guardStreamSource, RequestBudget } from './request-budget';
@@ -87,8 +87,8 @@ export function createAdapterStreamSource(adapter: ChatAdapter, contextWindow = 
 
 /**
  * Adds Task 14 session addressing to an adapter source. In session mode,
- * request messages are this turn's inputs and the adapter receives the full
- * persisted history. Omitting sessionId preserves Task 13's stateless mode.
+ * request messages must contain exactly this turn's single user input. The
+ * adapter context is selected from the server's persisted history.
  */
 export function createSessionChatStreamSource(
   adapter: ChatAdapter,
@@ -96,13 +96,10 @@ export function createSessionChatStreamSource(
   requestBudget?: RequestBudget,
   contextWindow = new ContextWindow(),
 ): ChatStreamSource {
-  const adapterSource = createAdapterStreamSource(adapter, contextWindow);
-  const statelessSource = requestBudget ? guardStreamSource(adapterSource, requestBudget) : adapterSource;
-
   return async function* sessionChatStreamSource(request, { signal }) {
     if (signal.aborted) return;
-    if (!request.sessionId) {
-      yield* statelessSource(request, { signal });
+    if (!isChatStreamRequest(request) || !request.sessionId) {
+      yield { event: 'error', data: { error: { code: 'UNKNOWN', message: 'Invalid chat stream request' } } };
       return;
     }
 

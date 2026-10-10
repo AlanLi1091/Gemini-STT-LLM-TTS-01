@@ -12,6 +12,8 @@ export interface AppOptions {
   allowedOrigins?: readonly string[];
   chatStreamSource?: ChatStreamSource;
   chatStreamHeartbeatIntervalMs?: number;
+  /** Code-only opt-in for legacy stateless tests; never enabled by the production entry point. */
+  allowStateless?: boolean;
   sessionService?: SessionService;
 }
 
@@ -158,6 +160,7 @@ export function createApp(options: AppOptions = {}): Express {
     createChatStreamHandler({
       source: options.chatStreamSource,
       heartbeatIntervalMs: options.chatStreamHeartbeatIntervalMs,
+      allowStateless: options.allowStateless,
     }),
   );
 

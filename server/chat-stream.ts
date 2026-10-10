@@ -20,9 +20,11 @@ export type ChatStreamSource = (
 export interface ChatStreamHandlerOptions {
   source?: ChatStreamSource;
   heartbeatIntervalMs?: number;
+  /** Explicit injection for legacy stateless tests; production keeps the default false. */
+  allowStateless?: boolean;
 }
 
-function isChatStreamRequest(value: unknown): value is ChatStreamRequest {
+export function isChatStreamRequest(value: unknown, allowStateless = false): value is ChatStreamRequest {
   if (!value || typeof value !== 'object') return false;
 
   const candidate = value as Partial<ChatStreamRequest>;
@@ -37,10 +39,11 @@ function isChatStreamRequest(value: unknown): value is ChatStreamRequest {
       typeof message.content === 'string',
   );
   if (!validMessages) return false;
-  if (candidate.requestId === undefined) return true;
-  return typeof candidate.requestId === 'string' && REQUEST_UUID.test(candidate.requestId) &&
-    typeof candidate.sessionId === 'string' && candidate.sessionId.length > 0 &&
-    candidate.messages.length === 1 && candidate.messages[0].role === 'user' &&
+  if (candidate.requestId !== undefined &&
+    (typeof candidate.requestId !== 'string' || !REQUEST_UUID.test(candidate.requestId))) return false;
+  if (candidate.sessionId === undefined) return allowStateless && candidate.requestId === undefined;
+  return candidate.sessionId.trim().length > 0 &&
+    candidate.messages.length === 1 && candidate.messages[0]?.role === 'user' &&
     candidate.messages[0].content.trim().length > 0;
 }
 
@@ -57,7 +60,7 @@ export function createChatStreamHandler(options: ChatStreamHandlerOptions): Requ
       return;
     }
 
-    if (!isChatStreamRequest(req.body)) {
+    if (!isChatStreamRequest(req.body, options.allowStateless ?? false)) {
       res.status(400).json({ error: 'Invalid chat stream request' });
       return;
     }
