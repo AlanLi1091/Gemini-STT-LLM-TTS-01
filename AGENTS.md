@@ -30,8 +30,8 @@
 | `dev-docs/risks.md` | 风险与阻塞台账 | 出现新风险时 |
 | `dev-docs/tests.md` | 测试台账与维护规范 | 新增测试时 |
 | `dev-docs/research/` | 预研与调研报告（决策输入文档） | 随预研任务产生 |
-| `dev-docs/adr/` | 架构决策记录 ADR-001 至 ADR-011 | 新决策时追加 |
+| `dev-docs/adr/` | 架构决策记录 ADR-001 至 ADR-014 | 新决策时追加 |
 
 ## 当前状态
 
-Phase 1–4 已完成并正式结项；Task 18 Step 1–3 与本人私有 VPS 部署均已完成，Web Playground 通过 SSH 隧道访问，Bot 与 Express 保持常驻。Phase 5 及后续任务未启动、未授权，须等待用户指派。详见 `dev-docs/status.md`、`dev-docs/backlog.md` 与 `dev-docs/roadmap.md`。
+Phase 1–4 已完成并正式结项；Task 18 Step 1–3 与本人私有 VPS 部署均已完成，Web Playground 通过 SSH 隧道访问，Bot 与 Express 保持常驻。Phase 4 结项后审计的 P0-1–P0-3 已修复，并以 V0.0.2 部署上线、合入 main；P1 及其余审计项未授权。Phase 5 已规划为 Part 1 网络搜索 → Part 2 记忆型 RAG → Part 3 角色扮演，及后续任务均未启动、未授权，须等待用户指派。详见 `dev-docs/status.md`、`dev-docs/backlog.md` 与 `dev-docs/roadmap.md`。
