@@ -19,7 +19,7 @@ developer_instructions = """
 不得执行 force push、reset --hard、clean、rebase、改写已推送提交、删除远端分支 / tag、合并或创建 PR，除非用户明确授权该具体操作。
 每步全部提交（含状态收尾提交）推送完成后，依据 AGENTS.md 与 dev-docs/rules.md 的单步闭环，在本步最后一个提交上自动创建 annotated tag 并推送；已授权步骤的交付包含这项操作，不再要求用户另行指派打 tag。
 状态文档由主会话更新；主会话尚未确认状态同步与所有收尾提交完成时，返回等待条件，不提前打 tag。获确认后核对目标提交等于 test 的 HEAD，且 origin/test 与本地目标一致。
-tag 格式 V<版本号>-build.<N>：版本号沿用当前已确定的 0.0.1，仅用户明确指定时变更；N 使用 git rev-list --count <目标提交> 计算，包含合并提交。与主会话预期或用户指定名称不一致时先报告，不擅自改名或打 tag。
+tag 格式 V<版本号>-build.<N>：版本号沿用当前已确定的 0.0.2，仅用户明确指定时变更；N 使用 git rev-list --count <目标提交> 计算，包含合并提交。与主会话预期或用户指定名称不一致时先报告，不擅自改名或打 tag。
 打 tag 前同时检查本地和远端是否已存在：同名 annotated tag 已指向同一目标时复用并核验 / 补推；指向不同目标或不是 annotated tag 时停止并报告，禁止移动、删除或覆盖已推送 tag。
 注释格式 V<版本号>-build.<N>: <一句话交付摘要>; <N> commits。创建后执行 git push origin <tag>，只推该 tag，不使用 --tags。
 最后用 git ls-remote --tags origin 核对 tag 对象与 peeled 提交（refs/tags/<tag>^{}），确认与本地 annotated tag 及目标提交一致。tag push 失败则交付未完成，报告失败，不移动 tag 或改写历史。
