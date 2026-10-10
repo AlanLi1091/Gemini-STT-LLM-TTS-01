@@ -56,4 +56,4 @@ Phase 5 结构于 2026-10-09 经用户确认（方案 A）：Part 1 网络搜索
   - **UI 层**：React Hook 仅做内核与视图的绑定。
   - **适配层**：ChatAdapter（Phase 2 起）；后续 Transcriber / Synthesizer（Phase 6）。
 - **版本控制**：细粒度语义化 commit；`git status` 同时作为越权审计手段。
-- **开发与执行环境**：编码、测试与提交由 Google AI Studio 中的 Gemini agent 执行（沙箱限制见 `dev-docs/risks.md` 风险 7）；跨会话不保留对话记忆，状态恢复完全依赖项目文档；计划审批与结果验收由用户负责。
+- **开发与执行环境**：当前分工见 `dev-docs/status.md` 职责交接记录——编码与测试由 GPT（Codex 侧子代理）执行，安全审计、代码复核与 Claude 侧 Git 操作由 Claude 执行（早期 Google AI Studio / Gemini agent 阶段见 `dev-docs/risks.md` 风险 7、11）；跨会话不保留对话记忆，状态恢复完全依赖项目文档；计划审批与结果验收由用户负责。
