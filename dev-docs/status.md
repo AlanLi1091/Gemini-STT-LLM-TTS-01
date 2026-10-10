@@ -6,20 +6,23 @@ Phase 1–4 已完成并正式结项；Phase 4 Task 15–18全部完成，Task 1
 
 ## 当前授权
 
-- **本轮授权已完成（2026-10-10）**：用户确认方式 A，将审计 P1-1、P1-2 + R2、P1-3、P1-7 登记为 Phase 5 Part 1 前置并写明依赖顺序，审计报告追加前置复核（提交 `a60ac1f` 已推送 origin/test）；仅文档，未实施任何修复。本状态收尾提交后按最终累计提交数创建 annotated tag。前置四项与 Task 19–22 均未授权；对 Task 19–22 正文的审查意见另开一轮处理。
+- **本轮授权已完成（2026-10-10）**：用户确认十二文件计划并指派 P1-1 修复，HTTP 默认会话单条 user 校验与流源防御已实现；提交 `1ea6c50`（`fix: enforce user-only session input and disable stateless chat by default`）已推送 origin/test。本状态收尾提交后按最终累计160提交创建 annotated tag `V0.0.2-build.160`，最终远端核验见主会话汇报。未部署 VPS；P1-2 + R2、P1-3、P1-7 与 Task 19–22 仍未授权。
+- **前次文档授权已完成（2026-10-10）**：用户确认方式 A，将审计 P1-1、P1-2 + R2、P1-3、P1-7 登记为 Phase 5 Part 1 前置并写明依赖顺序，审计报告追加前置复核（提交 `a60ac1f` 已推送 origin/test）；仅文档，未实施任何修复。本状态收尾提交后按最终累计提交数创建 annotated tag。前置四项与 Task 19–22 均未授权；对 Task 19–22 正文的审查意见另开一轮处理。
 - **前一轮授权已完成（2026-10-09）**：用户确认 GLM-5.3 提案，Phase 5 Part 1 网络搜索拆解为 Task 19–22 登记 backlog（提交 `a211f88`），收尾 tag `V0.0.2-build.156`。
 - **更早授权已完成（2026-10-09）**：Codex git-ops 当前 tag 版本号已从 0.0.1 修正为 0.0.2；配置 / backlog / history 提交 `3c778a6` 已推送 origin/test，收尾 tag `V0.0.2-build.154`。
 - **授权任务**：2026-10-07 V0.0.2 私有VPS部署、双入口与管理员重置验收完成；四份交付记录87b1617与状态提交8b5731c已推送origin/test，发布PR为[#5](https://github.com/AlanLi1091/Gemini-STT-LLM-TTS-01/pull/5)。本提交补充最终交付信息，随后按已确认计划合并PR并创建annotated tag `V0.0.2-build.149`（test最终提交累计数，非main合并提交计数）；最终远端PR / tag核验见主会话汇报。Phase 5、P1与其余残余仍未授权。
 - **VPS 现状**：Vultr Seattle、1核1G、Ubuntu 26.04.1，内核 7.0.0-38、Node v24.21.0，Auto Backup 已开启；gemini-admin 公钥管理，禁用 root / 密码 SSH，UFW 仅开放 22/tcp。gemini-server / gemini-bot 两个非 root systemd 服务 active / enabled，Express 仅监听 127.0.0.1:3001，数据目录独立持久化。无域名、仅本人使用，通过 SSH 隧道访问 http://127.0.0.1:18080，详见 [运维说明](../deploy/README.md)。服务保持常驻。
-- **最近交付 commit**：`a60ac1f` — `docs: register audit prerequisites for Phase 5 Part 1`（tag 见收尾）；Part 1 前置四项与 Task 19–22 均未授权。应用源码仍固定 `9b9a116`（V0.0.2 部署版本），之后仅文档变更。
-- **当前测试基线**：P0-1第二步本机33/33文件、387/387用例、根 / 四包类型检查和Web / Express / Bot构建通过；新增23项、台账逐项匹配JSON。本轮 VPS Linux 同样33/33文件、387/387用例、类型检查与三构建通过。
+- **最近交付 commit**：`1ea6c50` — `fix: enforce user-only session input and disable stateless chat by default`；P1-1 本机代码修复完成，最终 tag 预期 `V0.0.2-build.160`。VPS 应用源码仍固定 `9b9a116`（V0.0.2 部署版本），本次修复尚未部署。
+- **当前测试基线**：P1-1 本机33/33文件、394/394用例、根 / 四包类型检查及 Web / Express / Bot 构建通过；新增7项，台账逐个文件 / 标题 / 数量匹配JSON，定向4/4文件65/65用例通过。既有 React act 警告保留。VPS Linux 保持此前33/33文件、387/387用例基线，未部署本次修复。
 - **当前功能验收**：Playground 仅连接后端服务；启动时恢复最近活动会话，无可恢复会话时创建新会话。发送仅提交本轮输入、`sessionId` 与稳定 `requestId`；失败重试复用同一 `requestId`，不重复保存输入，已完成回复直接回放（ADR-012）。服务端从完整持久化日志中选取有限上下文窗口送入模型，完整日志不变（ADR-013）。清空对话归档旧会话并切换至新会话。Discord 管理员可在指定频道以 `@Bot /reset` 归档并重置频道会话（ADR-014）。旧版直连设置迁移为后端模式并清除浏览器存储的 Key 字段。
 
 ## 下一步计划
 
-Phase 4已正式结项；等待用户指派后续任务，Phase 5及其他预研不自动开工。Phase 5 已确认按方案 A 拆为 Part 1 网络搜索 → Part 2 记忆型 RAG → Part 3 角色扮演（见 [roadmap](roadmap.md)）。2026-10-09 Part 1 网络搜索已由用户确认拆解为 Task 19–22 登记于 backlog（均未授权，须逐个指派）；2026-10-10 用户确认方式 A，依赖顺序为审计前置四项（P1-1、P1-2 + R2、P1-3、P1-7）→ Task 19 → 20 → 21 → 22，下一个待办为由用户指派前置四项；Part 2 / Part 3 预研仍为占位待办。
+Phase 4已正式结项；等待用户指派后续任务，Phase 5及其他预研不自动开工。Phase 5 已确认按方案 A 拆为 Part 1 网络搜索 → Part 2 记忆型 RAG → Part 3 角色扮演（见 [roadmap](roadmap.md)）。2026-10-09 Part 1 网络搜索已由用户确认拆解为 Task 19–22 登记于 backlog（均未授权，须逐个指派）；2026-10-10 用户确认方式 A，依赖顺序为审计前置四项（P1-1、P1-2 + R2、P1-3、P1-7）→ Task 19 → 20 → 21 → 22，P1-1 本机代码修复已完成，下一个待办为用户指派 P1-2 + R2，其余前置 P1-3 / P1-7 继续等待授权；Part 2 / Part 3 预研仍为占位待办。
 
 ## 本轮验收与遗留
+
+- **P1-1 修复验收（2026-10-10）**：HTTP 默认要求非空白 sessionId、单条非空白 user，覆盖无 requestId 的 Bot；缺失会话和伪造历史返回400。allowStateless 仅代码显式测试注入，生产入口不启用；会话流源在锁 / 存储 / 预算 / 模型前复用校验且移除无状态回退，非法直接调用返回固定 UNKNOWN，无副作用。新增7项、33/33文件394/394用例、根 / 四包类型检查及三构建通过，台账逐项一致；历史日志不改写。未访问真实 Gemini / Discord / VPS / data，现网仍为原版本，既有 React act 警告和未跟踪 `.zcodeignore` 保留；其余前置与 Phase 5 未授权。
 
 - **Phase 5 Part 1 审计前置登记（2026-10-10）**：Claude 复核 Task 19–22 与审计未修项，用户确认方式 A。backlog 审计修复组新增「Phase 5 Part 1 前置」四项，Phase 5 章节写明依赖顺序、P1-4 + R3 / P1-8 定案前裁决及 P3-7 / P3-3 / P2-4 视裁决再定；审计报告追加前置复核一节。仅修改 backlog / history / 审计报告 / status，未修改应用 / 测试 / 配置或现网；全量33/33文件387/387用例、根 / 四包类型检查通过，无新增测试，测试台账不变。前置四项与 Task 19–22 均未授权；既有未跟踪 `.zcodeignore` 保留。
 
