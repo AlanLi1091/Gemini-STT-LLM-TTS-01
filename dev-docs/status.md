@@ -6,18 +6,21 @@ Phase 1–4 已完成并正式结项；Phase 4 Task 15–18全部完成，Task 1
 
 ## 当前授权
 
-- **本轮授权已完成（2026-10-09）**：用户确认四文件计划，Codex git-ops 当前 tag 版本号已从 0.0.1 修正为 0.0.2；配置 / backlog / history 提交 `3c778a6`（`fix: align git-ops tag version with 0.0.2`）已推送 origin/test。本状态收尾提交后按最终累计154提交创建 annotated tag `V0.0.2-build.154`，分支 / tag 远端核验结果见主会话汇报；Phase 5及其他审计项仍未授权。
+- **本轮授权已完成（2026-10-09）**：用户确认 GLM-5.3 提案，Phase 5 Part 1 网络搜索拆解为 Task 19–22 登记 backlog（提交 `a211f88` 已推送 origin/test），移除已覆盖的原 Part 1 预研占位项；仅文档规划，未实施任何 Task。本状态收尾提交后按最终累计提交数创建 annotated tag，远端核验见主会话汇报；Task 19–22 及其他预研均未授权。
+- **前一轮授权已完成（2026-10-09）**：Codex git-ops 当前 tag 版本号已从 0.0.1 修正为 0.0.2；配置 / backlog / history 提交 `3c778a6` 已推送 origin/test，收尾 tag `V0.0.2-build.154`。
 - **授权任务**：2026-10-07 V0.0.2 私有VPS部署、双入口与管理员重置验收完成；四份交付记录87b1617与状态提交8b5731c已推送origin/test，发布PR为[#5](https://github.com/AlanLi1091/Gemini-STT-LLM-TTS-01/pull/5)。本提交补充最终交付信息，随后按已确认计划合并PR并创建annotated tag `V0.0.2-build.149`（test最终提交累计数，非main合并提交计数）；最终远端PR / tag核验见主会话汇报。Phase 5、P1与其余残余仍未授权。
 - **VPS 现状**：Vultr Seattle、1核1G、Ubuntu 26.04.1，内核 7.0.0-38、Node v24.21.0，Auto Backup 已开启；gemini-admin 公钥管理，禁用 root / 密码 SSH，UFW 仅开放 22/tcp。gemini-server / gemini-bot 两个非 root systemd 服务 active / enabled，Express 仅监听 127.0.0.1:3001，数据目录独立持久化。无域名、仅本人使用，通过 SSH 隧道访问 http://127.0.0.1:18080，详见 [运维说明](../deploy/README.md)。服务保持常驻。
-- **最近交付 commit**：`6d8e6d0` — `docs: restructure Phase 5 into search, memory RAG and roleplay parts`（tag `V0.0.2-build.150`）；本轮文档一致性修正另有两次提交，tag 见主会话汇报。应用源码仍固定 `9b9a116`（V0.0.2 部署版本），之后仅文档变更。
+- **最近交付 commit**：`a211f88` — `docs: register Phase 5 Part 1 tasks 19-22 in backlog`（tag 见收尾）；Phase 5 Part 1 已拆解为 Task 19–22（均未授权）。应用源码仍固定 `9b9a116`（V0.0.2 部署版本），之后仅文档变更。
 - **当前测试基线**：P0-1第二步本机33/33文件、387/387用例、根 / 四包类型检查和Web / Express / Bot构建通过；新增23项、台账逐项匹配JSON。本轮 VPS Linux 同样33/33文件、387/387用例、类型检查与三构建通过。
 - **当前功能验收**：Playground 仅连接后端服务；启动时恢复最近活动会话，无可恢复会话时创建新会话。发送仅提交本轮输入、`sessionId` 与稳定 `requestId`；失败重试复用同一 `requestId`，不重复保存输入，已完成回复直接回放（ADR-012）。服务端从完整持久化日志中选取有限上下文窗口送入模型，完整日志不变（ADR-013）。清空对话归档旧会话并切换至新会话。Discord 管理员可在指定频道以 `@Bot /reset` 归档并重置频道会话（ADR-014）。旧版直连设置迁移为后端模式并清除浏览器存储的 Key 字段。
 
 ## 下一步计划
 
-Phase 4已正式结项；等待用户指派后续任务，Phase 5及其他预研不自动开工。2026-10-09 用户确认 Phase 5 按方案 A 分为 Part 1 网络搜索 → Part 2 记忆型 RAG → Part 3 角色扮演（见 [roadmap](roadmap.md)），三部分预研已登记于 backlog，均未授权。
+Phase 4已正式结项；等待用户指派后续任务，Phase 5及其他预研不自动开工。Phase 5 已确认按方案 A 拆为 Part 1 网络搜索 → Part 2 记忆型 RAG → Part 3 角色扮演（见 [roadmap](roadmap.md)）。2026-10-09 Part 1 网络搜索已由用户确认拆解为 Task 19–22 登记于 backlog（均未授权，须逐个指派）；Part 2 / Part 3 预研仍为占位待办。
 
 ## 本轮验收与遗留
+
+- **Phase 5 Part 1 任务拆解登记（2026-10-09）**：用户确认 GLM-5.3 提案后，backlog 新增 Phase 5 章节登记 Task 19（预研与架构定案：方案对比 / 真实探针、裁决清单、ADR-015）、Task 20（服务端实现：搜索接入与触发、独立预算超时与 ADR-013 协调、SSRF 与间接提示注入防护）、Task 21（Web / Discord 双入口来源展示）、Task 22（真实验收、VPS 切版与结项），并移除已被覆盖的原 Part 1 预研占位项。仅修改 backlog / history / status，未实施任何 Task，未触碰应用 / 测试 / 配置或现网；全量33/33文件387/387用例、根 / 四包类型检查通过，无新增测试，测试台账不变。Task 19–22 均未授权；Part 2 / Part 3 预研、P1 及其余审计项不在本轮范围；既有未跟踪 `.zcodeignore` 保留。
 
 - **Codex git-ops 当前版本号修正（2026-10-09）**：仅修改 `.codex/agents/git-ops.toml` 的当前 tag 版本为0.0.2，并同步 backlog / history / status；TOML解析、版本断言与diff检查通过，全量33/33文件387/387用例、根 / 四包类型检查通过。首次沙箱HTTP监听EPERM后经批准重跑通过，无新增测试，测试台账与应用源码不变；既有未跟踪 `.zcodeignore` 保留。
 
