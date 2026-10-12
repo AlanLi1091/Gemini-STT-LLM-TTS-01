@@ -6,6 +6,8 @@ Phase 1–4 已完成并正式结项；Phase 4 Task 15–18全部完成，Task 1
 
 ## 当前授权
 
+- **本轮 P1-3 修复授权已完成（2026-10-12）**：用户确认二十一文件计划并指派执行，存储 / 会话分阶段分类、SSE 固定文案、白名单错误日志及 Web 浏览器错误固定文案已完成；实现 / 回归 / ADR / 交付记录提交 `2826331`（`fix: separate session failures and sanitize chat error responses`）已推送 origin/test。本状态收尾提交并推送后，在最后提交按累计168提交创建 annotated tag `V0.0.2-build.168`，最终分支 / tag远端核验见主会话汇报；等待Claude复核，未部署VPS。P1-7及P1-4 / P1-5 / P1-6 / P2-5、E1–E3、F1 / F2、Task19–22均未授权。
+
 - **本轮授权已完成（2026-10-12）**：用户指派 Claude 复核 P1-2 + R2 并确认记录计划；复核通过，审计报告追加「P1-2 复核」，backlog 登记低优先级残余 F1 / F2 并补充 R3 超时触发路径（提交 `4cd7d03` 已推送 origin/test）。仅文档，未修改应用 / 测试代码；本状态收尾提交后按最终累计提交数创建 annotated tag。F1 / F2、E1–E3、P1-3、P1-4、P1-7 与 Task 19–22 均未授权。
 - **P1-2 修复授权已完成（2026-10-12）**：用户确认十四文件计划并指派 P1-2 服务端上游超时及 R2 会话锁释放修复，代码 / 回归 / 配置 / ADR / 交付记录已完成；提交 `137a94b`（`fix: bound server generation timeouts and release session locks`）已推送 origin/test。本状态收尾提交后按最终累计164提交创建 annotated tag `V0.0.2-build.164`，最终分支 / tag 远端核验见主会话汇报；Claude 复核待完成，未部署 VPS。P1-3、P1-4、P1-7、E1–E3及 Task 19–22 未授权。
 - **P1-1 复核授权已完成（2026-10-12）**：用户指派 Claude 复核 P1-1 并确认残余登记计划；复核通过，审计报告追加「P1-1 复核」，backlog 登记低优先级残余 E1–E3（提交 `9dc57d5` 已推送 origin/test）。仅文档，未修改应用 / 测试代码；本状态收尾提交后按最终累计提交数创建 annotated tag。E1–E3、P1-2 + R2、P1-3、P1-7 与 Task 19–22 均未授权。
@@ -15,15 +17,17 @@ Phase 1–4 已完成并正式结项；Phase 4 Task 15–18全部完成，Task 1
 - **更早授权已完成（2026-10-09）**：Codex git-ops 当前 tag 版本号已从 0.0.1 修正为 0.0.2；配置 / backlog / history 提交 `3c778a6` 已推送 origin/test，收尾 tag `V0.0.2-build.154`。
 - **授权任务**：2026-10-07 V0.0.2 私有VPS部署、双入口与管理员重置验收完成；四份交付记录87b1617与状态提交8b5731c已推送origin/test，发布PR为[#5](https://github.com/AlanLi1091/Gemini-STT-LLM-TTS-01/pull/5)。本提交补充最终交付信息，随后按已确认计划合并PR并创建annotated tag `V0.0.2-build.149`（test最终提交累计数，非main合并提交计数）；最终远端PR / tag核验见主会话汇报。Phase 5、P1与其余残余仍未授权。
 - **VPS 现状**：Vultr Seattle、1核1G、Ubuntu 26.04.1，内核 7.0.0-38、Node v24.21.0，Auto Backup 已开启；gemini-admin 公钥管理，禁用 root / 密码 SSH，UFW 仅开放 22/tcp。gemini-server / gemini-bot 两个非 root systemd 服务 active / enabled，Express 仅监听 127.0.0.1:3001，数据目录独立持久化。无域名、仅本人使用，通过 SSH 隧道访问 http://127.0.0.1:18080，详见 [运维说明](../deploy/README.md)。服务保持常驻。
-- **最近交付 commit**：`4cd7d03` — `docs: record Claude P1-2 review and residuals F1-F2`（tag 见收尾）；P1-2 + R2 修复 `137a94b`（tag `V0.0.2-build.164`）经 Claude 复核通过。P1-1 已复核通过；VPS 应用源码仍固定 `9b9a116`，本次修复未部署。
-- **当前测试基线**：P1-2 + R2 本机34/34文件、405/405用例、根 / 四包类型检查及 Web / Express / Bot 构建通过；新增1文件11项，台账逐个文件 / 标题 / 数量匹配JSON，定向3/3文件49/49用例通过。HTTP沙箱监听EPERM后经批准重跑通过；既有 React act 警告保留。VPS Linux 保持此前33/33文件、387/387用例基线，本轮未部署。
+- **最近交付 commit**：`2826331` — `fix: separate session failures and sanitize chat error responses`（收尾tag `V0.0.2-build.168`）；P1-3修复待Claude复核。P1-1、P1-2 + R2已复核通过；VPS应用源码仍固定 `9b9a116`，本次修复未部署。
+- **当前测试基线**：P1-3本机35/35文件、445/445用例，根 / 四包类型检查及Web / Express / Bot构建通过；新增1文件40项，Vitest JSON与台账逐文件 / 标题 / 数量一致。首次沙箱HTTP监听EPERM后获准重跑全量通过；既有React act警告记录保留。VPS Linux保持此前33/33文件、387/387用例基线，本轮未部署。
 - **当前功能验收**：Playground 仅连接后端服务；启动时恢复最近活动会话，无可恢复会话时创建新会话。发送仅提交本轮输入、`sessionId` 与稳定 `requestId`；失败重试复用同一 `requestId`，不重复保存输入，已完成回复直接回放（ADR-012）。服务端从完整持久化日志中选取有限上下文窗口送入模型，完整日志不变（ADR-013）。清空对话归档旧会话并切换至新会话。Discord 管理员可在指定频道以 `@Bot /reset` 归档并重置频道会话（ADR-014）。旧版直连设置迁移为后端模式并清除浏览器存储的 Key 字段。
 
 ## 下一步计划
 
-Phase 4已正式结项；等待用户指派后续任务，Phase 5及其他预研不自动开工。Phase 5 已确认按方案 A 拆为 Part 1 网络搜索 → Part 2 记忆型 RAG → Part 3 角色扮演（见 [roadmap](roadmap.md)）。2026-10-09 Part 1 网络搜索已由用户确认拆解为 Task 19–22 登记于 backlog（均未授权，须逐个指派）；2026-10-10 用户确认方式 A，依赖顺序为审计前置四项（P1-1、P1-2 + R2、P1-3、P1-7）→ Task 19 → 20 → 21 → 22，P1-1 本机修复已复核通过，P1-2 + R2 本机代码修复已完成并等待 Claude 复核；下一个待办为用户指派 P1-3，前置 P1-7 继续等待授权；Part 2 / Part 3 预研仍为占位待办。
+Phase 4已正式结项；等待用户指派后续任务，Phase 5及其他预研不自动开工。Phase 5 已确认按方案 A 拆为 Part 1 网络搜索 → Part 2 记忆型 RAG → Part 3 角色扮演（见 [roadmap](roadmap.md)）。2026-10-09 Part 1 网络搜索已由用户确认拆解为 Task 19–22 登记于 backlog（均未授权，须逐个指派）；2026-10-10 用户确认方式 A，依赖顺序为审计前置四项（P1-1、P1-2 + R2、P1-3、P1-7）→ Task 19 → 20 → 21 → 22，P1-1 本机修复已复核通过，P1-2 + R2已通过Claude复核，P1-3本机修复已完成并等待Claude复核；下一个前置待办为用户指派P1-7；Part 2 / Part 3 预研仍为占位待办。
 
 ## 本轮验收与遗留
+
+- **P1-3错误分类与安全下发验收（2026-10-12）**：会话流源标记storage / count / model，inspectRequest / appendTurnInputs / appendAssistantResponse普通失败返回UNKNOWN固定存储文案，不调用模型分类器；收窄TypeError网络判定，会话 / 低层 / Mock路径的SSE仅固定文案，日志只记录受约束的stage / code / name / errno / status，不记录message / stack / 正文 / Token / Key / URL，省略sessionId / requestId。Web HTTP / 浏览器错误固定文案，横幅及Bot业务代码不变，Bot UNKNOWN固定BACKEND提示与日志已验证；既有超时、冲突、窗口、计数降级、429暂停、保存失败不发done、锁释放和同标识重试 / 回放语义保持。新增1文件40项，35/35文件445/445用例、根 / 四包类型检查及三构建通过，台账逐项一致，首次沙箱HTTP监听EPERM后获准重跑全量通过。ADR-009 / 审计报告 / backlog / history已同步；仅Mock与隔离临时JSON存储，未访问真实Gemini / Discord / VPS / 会话数据，未部署。既有React act警告与未跟踪.zcodeignore保留，等待Claude复核，其余任务未授权。
 
 - **Claude P1-2 复核与残余登记（2026-10-12）**：复核 `137a94b` / `8db43c8` 通过，重跑全量34/34文件405/405用例、根 / 四包类型检查通过；残余 F1（超长回复可能触发90秒总期限）、F2（超时后上游可能仍在计费）登记为低优先级未授权项，R3 补充超时触发路径。仅修改 backlog / history / 审计报告 / status，无新增测试，测试台账不变；下一个待办为用户指派 P1-3 或 P1-7。既有未跟踪 `.zcodeignore` 保留。
 
