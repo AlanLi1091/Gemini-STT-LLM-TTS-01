@@ -656,3 +656,52 @@ describe('P1-7: 来源预算启动校验', () => {
     ]) expect(() => createChatStreamSourceFromEnv({ GEMINI_API_KEY: key, ...config }, { requestBudget: new RequestBudget() })).toThrow('budget configuration');
   });
 });
+
+
+describe('K1: SDK 空正文会话重试', () => {
+  it('各结束原因空正文不保存不发 done释放锁且同标识重试回放不暂停预算', async () => {
+    const { SessionService } = await import('../session-service');
+    const { createSessionChatStreamSource } = await import('../chat-adapter-stream-source');
+    const { GeminiChatAdapter } = await import('@core/index');
+    const directory = await mkdtemp(join(tmpdir(), 'k1-sdk-empty-'));
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const storage = new JsonSessionStorage(directory); const service = new SessionService(storage);
+      for (const finishReason of ['MALFORMED_FUNCTION_CALL', 'SAFETY', 'RECITATION', 'OTHER', 'STOP']) {
+        for (const text of ['', ' \n\t ']) {
+          const session = await service.createSession();
+          const requestId = '11111111-1111-4111-8111-111111111111';
+          const request = { sessionId: session.id, requestId, messages: [{ role: 'user' as const, content: 'hi' }] };
+          const budget = new SourceRequestBudget({ requestsPerMinute: 3, sourceLimits: { discord: 2 } });
+          const pause = vi.spyOn(budget, 'pause'), acquire = vi.spyOn(budget, 'acquire');
+          const append = vi.spyOn(service, 'appendAssistantResponse');
+          const source = createSessionChatStreamSource(new GeminiChatAdapter({ apiKey: 'fake' }), service, budget);
+          const collect = async () => {
+            const events: ChatSseEvent[] = [];
+            for await (const event of source(request, { signal: new AbortController().signal })) events.push(event);
+            return events;
+          };
+          mockGenerateContentStream.mockResolvedValueOnce((async function* () { yield { text, candidates: [{ finishReason }] }; })());
+          const failed = await collect();
+          expect(failed.at(-1)).toEqual({ event: 'error', data: { error: { code: 'MODEL_ERROR', message: '模型未返回有效正文，请稍后重新提问。' } } });
+          expect(failed.some(event => event.event === 'done')).toBe(false);
+          expect(append).not.toHaveBeenCalled();
+          expect((await storage.getSession(session.id))!.messages.map(m => [m.role, m.content, m.requestId]))
+            .toEqual([['user', 'hi', requestId]]);
+          expect(JSON.parse(warn.mock.calls.at(-1)![0])).toEqual({ stage: 'model', code: 'MODEL_ERROR', name: 'Error', finishReason });
+          const release = service.tryAcquireRequest(session.id); expect(release).toBeTypeOf('function'); release!();
+          mockGenerateContentStream.mockResolvedValueOnce((async function* () { yield { text: 'ok', candidates: [{ finishReason: 'STOP' }] }; })());
+          expect((await collect()).at(-1)).toMatchObject({ event: 'done', data: { content: 'ok' } });
+          expect(mockGenerateContentStream.mock.calls.at(-1)![0].contents).toEqual([{ role: 'user', parts: [{ text: 'hi' }] }]);
+          expect((await storage.getSession(session.id))!.messages.map(m => [m.role, m.content, m.requestId]))
+            .toEqual([['user', 'hi', requestId], ['assistant', 'ok', requestId]]);
+          const attempts = mockGenerateContentStream.mock.calls.length;
+          expect(await collect()).toEqual([{ event: 'done', data: { content: 'ok', usage: undefined } }]);
+          expect(mockGenerateContentStream).toHaveBeenCalledTimes(attempts);
+          expect(acquire).toHaveBeenCalledTimes(2); expect(pause).not.toHaveBeenCalled();
+          append.mockRestore();
+        }
+      }
+    } finally { warn.mockRestore(); await rm(directory, { recursive: true }); }
+  });
+});

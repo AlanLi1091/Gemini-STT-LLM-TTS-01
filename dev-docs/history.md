@@ -154,3 +154,10 @@
 - Step1已勾选；Step2 / 3和Task20–22未授权。既有.zcodeignore保留，按规范提交推送origin/test并在状态收尾后打V0.0.2 annotated tag，最终编号见主会话汇报。
 
 - [x] **Claude Task 19 Step 1 审核登记（2026-10-12）**：Claude 审核 Task 19 Step 1 预研 `4ab1344` / `6d5d4aa` 通过（重算临时探针 / 结果 SHA256 一致，结果无 Key，真实调用与费用边界符合确认计划）。backlog 新增「Claude Task 19 Step 1审核发现」登记 K1（非 MAX_TOKENS 空正文被保存为空 assistant、Web 空气泡、Bot 静默不回复，建议 Task 20 前修复，未授权）；L1（Discord 可见性 / 留存与条款冲突，先裁决是否开放 Discord 搜索）、L2（延迟样本不代表生产）、L3（Interactions API 迁移风险）并入 Task 19 Step 2 裁决输入；审计报告与预研报告追加审核记录。仅文档，未修改应用 / 测试代码，测试台账不变。
+
+## 2026-10-12：Part A K1空模型正文修复
+
+- 用户单独指派Part A并确认13文件计划；Gemini send / stream统一拒绝空白正文，固定MODEL_ERROR「模型未返回有效正文，请稍后重新提问。」；MAX_TOKENS专用提示及有正文截断不变。会话 / 非会话流源增加纵深检查，不保存新空assistant、不发done、不校准失败空回复。
+- fixedHints精确白名单及finishReason枚举日志已覆盖；其他adapter空done、锁释放、已存user保留、同requestId重试 / 成功回放、生成预算不pause与Bot固定可读反馈通过。历史空assistant不改写、不额外跳过窗口、已有回放保持；旧空回复回放仍可空气泡 / Bot静默。
+- 新增9项，定向4/4文件151/151用例，全量36/36文件471/471用例、根 / 四包类型检查、Web / Express / Bot构建通过；先复现7失败再实现，台账逐项同步。只用Mock / 隔离临时JSON，未访问真实Gemini / Discord / 会话 / VPS、未部署。
+- 同步ADR-013 / 审计证据 / tests / backlog / history / status，K1已勾选，待Claude复核。origin/test提交及状态收尾后annotated tag V0.0.2-build.<累计数>见主会话汇报；既有.zcodeignore保留。Part B须用户明确说「继续 Part B」，未开始任何后续任务。

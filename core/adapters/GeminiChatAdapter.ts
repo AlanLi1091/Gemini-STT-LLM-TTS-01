@@ -43,10 +43,15 @@ export function resolveSystemInstruction(
 
 const TRUNCATED_NOTICE = '\n\n[回复已达到长度上限，内容已截断。]';
 
-function markTruncated(content: string, truncated: boolean): string {
-  if (!truncated) return content;
-  if (!content.trim()) throw new ChatError('模型达到生成长度上限但未返回正文，请稍后重新提问。', 'MODEL_ERROR');
-  return content + TRUNCATED_NOTICE;
+function markTruncated(content: string, truncated: boolean, finishReason?: string): string {
+  if (!content.trim()) {
+    throw new ChatError(truncated
+      ? '模型达到生成长度上限但未返回正文，请稍后重新提问。'
+      : '模型未返回有效正文，请稍后重新提问。', 'MODEL_ERROR', {
+      originalError: { finishReason: truncated ? 'MAX_TOKENS' : finishReason ?? 'OTHER' },
+    });
+  }
+  return truncated ? content + TRUNCATED_NOTICE : content;
 }
 
 /** 结构化分类并映射 Gemini 异常为共享 ChatError。 */
@@ -192,7 +197,8 @@ export class GeminiChatAdapter implements ChatAdapter {
         },
       });
 
-      const content = markTruncated(response.text || '', response.candidates?.[0]?.finishReason === 'MAX_TOKENS');
+      const finishReason = response.candidates?.[0]?.finishReason;
+      const content = markTruncated(response.text || '', finishReason === 'MAX_TOKENS', finishReason);
       let usage: ChatUsage | undefined;
       if (response.usageMetadata) {
         usage = {
@@ -248,10 +254,12 @@ export class GeminiChatAdapter implements ChatAdapter {
       let accumulated = '';
       let latestUsage: ChatUsage | undefined;
       let truncated = false;
+      let finishReason: string | undefined;
 
       for await (const chunk of streamResponse) {
         if (signal?.aborted) throw new ChatError('The operation was aborted.', 'ABORTED');
         if (chunk.candidates?.[0]?.finishReason === 'MAX_TOKENS') truncated = true;
+        if (chunk.candidates?.[0]?.finishReason) finishReason = chunk.candidates[0].finishReason;
 
         if (chunk.usageMetadata) {
           latestUsage = {
@@ -270,7 +278,7 @@ export class GeminiChatAdapter implements ChatAdapter {
 
       if (signal?.aborted) throw new ChatError('The operation was aborted.', 'ABORTED');
 
-      accumulated = markTruncated(accumulated, truncated);
+      accumulated = markTruncated(accumulated, truncated, finishReason);
 
       yield {
         delta: '',

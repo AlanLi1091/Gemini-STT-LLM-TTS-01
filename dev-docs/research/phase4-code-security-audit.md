@@ -347,3 +347,12 @@
 - **范围与证据**：审阅 `4ab1344`（预研）与 `6d5d4aa`（状态收尾）、`research/phase5-search.md` 全文及临时探针脚本；重算 `probe.mjs` / `result.json` SHA256 与报告一致，结果文件无 Key、权限 0600。真实调用仅模型列表1次、countTokens 1次、生成2次，无重试 / 翻页 / 换模型 / 第三方调用，未访问真实会话、VPS 或 Discord，费用经用户事先确认。无工具对照请求在脚本中确认未声明工具。
 - **K1 空回复被静默保存（中低）**：`core/adapters/GeminiChatAdapter.ts` 的 `markTruncated` 仅在 `MAX_TOKENS` 时把空正文视为错误；其他结束原因（如 `MALFORMED_FUNCTION_CALL`、`SAFETY`）的空正文照常产生 done，服务端 `appendAssistantResponse` 保存空 assistant 并进入后续上下文，Web 显示空气泡，Bot 因 `bot/gateway.ts` 仅在正文非空时发送而静默不回复。ADR-013「无正文不存空 assistant」只覆盖 `MAX_TOKENS`。Step 1 无工具对照即出现此情形（单样本，探针 `thinkingLevel=LOW` / 输出上限1024 与生产不同，复现概率未知）。建议统一处理空正文并在 Task 20 前修复。
 - **Step 2 补充输入**：L1–L3 记录于 [预研报告第 9 节](phase5-search.md#9-claude-审核补充2026-10-12)。价格与条款原文依据预研引用，Claude 未独立联网核实。
+
+### K1 修复证据（2026-10-12，Codex；未部署）
+
+- 用户指派Part A并确认13文件计划；Gemini send / stream在所有结束原因下拒绝空 / 纯空白正文，固定MODEL_ERROR「模型未返回有效正文，请稍后重新提问。」；MAX_TOKENS既有文案与有正文截断行为不变。
+- 两种流源在完成chunk校准前拒绝空done，会话流源在模型阶段失败，不调用appendAssistantResponse、不发送done。已追加user保留、锁释放、同requestId复用输入重试成功，完成回放不调用模型 / 计数 / 预算；空回复不pause，已耗生成额度不返还。Bot后端MODEL_ERROR走现有固定反馈。
+- safeStreamError精确白名单下发新文案，拼接原始文本仍降为通用文案；logChatFailure新增仅模型阶段的finishReason枚举白名单，未知值OTHER、缺失省略，不包含正文 / Key / URL / stack。SDK保留原始原因仅用于该受约束字段。
+- 历史空assistant日志不改写，窗口不额外跳过，原轮次配对 / ADR-012回放保持；旧空回复回放仍可能空气泡 / Bot静默，此项不纳入本次修复。见ADR-013的K1修订。
+- TDD先复现7个失败用例（含SDK、流源和文案 / 日志），实现后定向4/4文件151/151用例，全量36/36文件471/471用例、根 / 四包类型检查及Web / Express / Bot构建通过，新增9用例、台账同步。测试只用SDK / 网关Mock和隔离临时JSON；未访问真实Gemini / Discord / VPS / 真实会话，未部署。
+- K1代码修复完成，待Claude复核；Part B须用户明确说「继续 Part B」才开始，其他残余未实施。

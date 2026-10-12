@@ -139,3 +139,58 @@ describe('P1-3: 服务端错误安全边界', () => {
     expect(JSON.parse(log.mock.calls[1][0])).toEqual({ stage: 'count', code: 'AUTH_ERROR', name: 'TypeError', errno: 'ENOSPC', status: 403 });
   });
 });
+
+
+describe('K1: 空 done 纵深防御与安全日志', () => {
+  const emptyMessage = '模型未返回有效正文，请稍后重新提问。';
+  it('其他 adapter 的空白 done 在两种流源中均失败且同标识可重试', async () => {
+    for (const content of ['', ' \n\t ']) {
+      const id = (await service.createSession()).id;
+      const model = adapter();
+      model.stream = vi.fn(async function* () { yield { delta: '', accumulated: content, done: true, usage: { promptTokens: 90000 } }; });
+      const append = vi.spyOn(service, 'appendAssistantResponse');
+      const window = new ContextWindow(); const observe = vi.spyOn(window, 'observe');
+      const source = createSessionChatStreamSource(model, service, undefined, window);
+      expect(await collect(source, input(id))).toEqual([failure('MODEL_ERROR', emptyMessage)]);
+      expect(await collect(createAdapterStreamSource(model, window), input())).toEqual([failure('MODEL_ERROR', emptyMessage)]);
+      expect(append).not.toHaveBeenCalled(); expect(observe).not.toHaveBeenCalled();
+      expect((await storage.getSession(id))!.messages.map(m => m.role)).toEqual(['user']);
+      const release = service.tryAcquireRequest(id); expect(release).toBeTypeOf('function'); release!();
+      model.stream = vi.fn(async function* () { yield { delta: '', accumulated: 'ok', done: true }; });
+      expect(await collect(source, input(id))).toEqual([{ event: 'done', data: { content: 'ok', usage: undefined } }]);
+      expect((await storage.getSession(id))!.messages.map(m => m.role)).toEqual(['user', 'assistant']);
+      append.mockRestore();
+    }
+  });
+  it('新固定提示精确下发而带原始文本的变体仍脱敏', async () => {
+    const { safeStreamError } = await import('../chat-errors');
+    expect(safeStreamError(new ChatError(emptyMessage, 'MODEL_ERROR'), 'model', 'MODEL_ERROR')).toEqual({ code: 'MODEL_ERROR', message: emptyMessage });
+    expect(safeStreamError(new ChatError(emptyMessage + raw, 'MODEL_ERROR'), 'model', 'MODEL_ERROR')).toEqual({ code: 'MODEL_ERROR', message: modelMessage });
+  });
+  it('finishReason 日志只接受已知枚举未知值归 OTHER且不泄露正文', () => {
+    const log = vi.fn();
+    for (const finishReason of ['MALFORMED_FUNCTION_CALL', 'SAFETY', 'STOP', 'MAX_TOKENS', raw, null, { secret }]) {
+      logChatFailure(new ChatError(raw, 'MODEL_ERROR', { originalError: { finishReason, message: raw, stack: raw, text: raw } }), 'model', 'MODEL_ERROR', log);
+      expect(JSON.parse(log.mock.calls.at(-1)![0])).toEqual({ stage: 'model', code: 'MODEL_ERROR', name: 'Error',
+        finishReason: typeof finishReason === 'string' && !finishReason.includes(secret) ? finishReason : 'OTHER' });
+    }
+    expect(JSON.stringify(log.mock.calls)).not.toContain(secret);
+    logChatFailure(new Error(raw), 'model', 'MODEL_ERROR', log);
+    expect(JSON.parse(log.mock.calls.at(-1)![0])).toEqual({ stage: 'model', code: 'MODEL_ERROR', name: 'Error' });
+  });
+  it('历史空 assistant 的原日志窗口配对及已完成回放不改写', async () => {
+    const request = input(sessionId);
+    await service.appendTurnInputs(sessionId, request.messages, request.requestId);
+    await service.appendAssistantResponse(sessionId, '', undefined, request.requestId);
+    const before = await storage.getSession(sessionId);
+    const model = adapter();
+    const source = createSessionChatStreamSource(model, service);
+    expect(await collect(source, request)).toEqual([{ event: 'done', data: { content: '', usage: undefined } }]);
+    expect(model.stream).not.toHaveBeenCalled();
+    const next = { ...request, requestId: '22222222-2222-4222-8222-222222222222', messages: [{ role: 'user' as const, content: 'next' }] };
+    await collect(source, next);
+    const selected = vi.mocked(model.stream).mock.calls[0][0];
+    expect(selected.map(m => [m.role, m.content])).toEqual([['user', 'private-user-body'], ['assistant', ''], ['user', 'next']]);
+    expect((await storage.getSession(sessionId))!.messages.slice(0, 2)).toEqual(before!.messages);
+  });
+});

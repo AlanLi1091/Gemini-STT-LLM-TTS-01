@@ -385,3 +385,17 @@ describe('P1-3: Bot 存储失败日志', () => {
     expect(JSON.stringify(msg.reply.mock.calls)).not.toContain('/var/lib/private');
   });
 });
+
+
+describe('K1: Bot 空正文错误反馈', () => {
+  it('后端 MODEL_ERROR 给出固定可读提示且后续请求正常处理', async () => {
+    const { client, handleInput, log } = await setup();
+    handleInput.mockRejectedValueOnce(new BackendError('模型未返回有效正文，请稍后重新提问。 private-secret', 'MODEL_ERROR'));
+    const first = message(); emit(client, first); await flush();
+    expect(first.reply).toHaveBeenCalledWith({ content: '模型生成失败，请稍后重新提问。', allowedMentions: { parse: [], repliedUser: false } });
+    expect(log.mock.calls.map(([entry]) => entry)).toContain('[bot] failure kind=MODEL_ERROR');
+    expect(JSON.stringify([first.reply.mock.calls, log.mock.calls])).not.toContain('private-secret');
+    const next = message(); emit(client, next); await flush();
+    expect(next.reply).toHaveBeenCalledOnce(); expect(handleInput).toHaveBeenCalledTimes(2);
+  });
+});

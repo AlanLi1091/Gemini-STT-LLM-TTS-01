@@ -525,9 +525,9 @@ describe('P0-1: 计数兼容与长度截断', () => {
   it('MAX_TOKENS 无正文时 send 和 stream 都返回模型错误而非成功空回复', async () => {
     const adapter = new GeminiChatAdapter({ apiKey: 'fake' });
     mockGenerateContent.mockResolvedValueOnce({ text: ' ', candidates: [{ finishReason: 'MAX_TOKENS' }] });
-    await expect(adapter.send(messages)).rejects.toMatchObject({ code: 'MODEL_ERROR' });
+    await expect(adapter.send(messages)).rejects.toMatchObject({ code: 'MODEL_ERROR', message: '模型达到生成长度上限但未返回正文，请稍后重新提问。' });
     mockGenerateContentStream.mockResolvedValueOnce((async function* () { yield { text: '', candidates: [{ finishReason: 'MAX_TOKENS' }] }; })());
-    await expect(async () => { for await (const _ of adapter.stream(messages)) {} }).rejects.toMatchObject({ code: 'MODEL_ERROR' });
+    await expect(async () => { for await (const _ of adapter.stream(messages)) {} }).rejects.toMatchObject({ code: 'MODEL_ERROR', message: '模型达到生成长度上限但未返回正文，请稍后重新提问。' });
   });
 });
 
@@ -542,5 +542,44 @@ describe('P1-3: 网络错误分类边界', () => {
   it.each(['ECONNREFUSED', 'ENOTFOUND', 'ECONNRESET', 'ETIMEDOUT'])('fetch failed 的 %s cause 保留网络分类', code => {
     const error = new TypeError('fetch failed', { cause: { code } });
     expect(classifyGeminiError(error).code).toBe('NETWORK_ERROR');
+  });
+});
+
+
+describe('K1: 空模型正文失败', () => {
+  beforeEach(() => vi.clearAllMocks());
+  const messages: Message[] = [{ id: 'k1-user', role: 'user', content: 'hi', createdAt: 1 }];
+  const reasons = ['MALFORMED_FUNCTION_CALL', 'SAFETY', 'RECITATION', 'OTHER', 'STOP', undefined];
+  const message = '模型未返回有效正文，请稍后重新提问。';
+  it('send 在各种结束原因下拒绝缺失空白正文并保留原因元数据', async () => {
+    const adapter = new GeminiChatAdapter({ apiKey: 'fake' });
+    for (const finishReason of reasons) for (const text of [undefined, '', ' \n\t ']) {
+      mockGenerateContent.mockResolvedValueOnce({ text, candidates: [{ finishReason, finishMessage: 'private-provider-text' }] });
+      await expect(adapter.send(messages)).rejects.toMatchObject({ code: 'MODEL_ERROR', message,
+        originalError: { finishReason: finishReason ?? 'OTHER' } });
+    }
+  });
+  it('stream 在各种结束原因下拒绝缺失空白正文且不产生 done', async () => {
+    const adapter = new GeminiChatAdapter({ apiKey: 'fake' });
+    for (const finishReason of reasons) for (const text of [undefined, '', ' \n\t ']) {
+      mockGenerateContentStream.mockResolvedValueOnce((async function* () {
+        yield { text, candidates: [{ finishReason, finishMessage: 'private-provider-text' }] };
+      })());
+      const chunks: import('@core/index').ChatChunk[] = [];
+      await expect(async () => { for await (const chunk of adapter.stream(messages)) chunks.push(chunk); })
+        .rejects.toMatchObject({ code: 'MODEL_ERROR', message, originalError: { finishReason: finishReason ?? 'OTHER' } });
+      expect(chunks.some(chunk => chunk.done)).toBe(false);
+    }
+  });
+  it('stream 无 chunk 时失败并从先前 chunk 保留结束原因', async () => {
+    const adapter = new GeminiChatAdapter({ apiKey: 'fake' });
+    mockGenerateContentStream.mockResolvedValueOnce((async function* () {})());
+    await expect(async () => { for await (const _ of adapter.stream(messages)) {} })
+      .rejects.toMatchObject({ code: 'MODEL_ERROR', message, originalError: { finishReason: 'OTHER' } });
+    mockGenerateContentStream.mockResolvedValueOnce((async function* () {
+      yield { candidates: [{ finishReason: 'SAFETY' }] }; yield { usageMetadata: { totalTokenCount: 1 } };
+    })());
+    await expect(async () => { for await (const _ of adapter.stream(messages)) {} })
+      .rejects.toMatchObject({ code: 'MODEL_ERROR', message, originalError: { finishReason: 'SAFETY' } });
   });
 });

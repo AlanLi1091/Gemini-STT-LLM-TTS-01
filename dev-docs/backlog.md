@@ -129,11 +129,11 @@
 - [ ] **H2（保留额度比例未校验）**：启动校验未约束「计数保留 ≥ 2 × 生成保留」，例如计数保留 2、生成保留 4 时 Web 频繁退回本地降级；属 C4 延伸，处理 C4 时一并加启动告警。
 - [ ] **H3（生成额度耗尽前仍先计数）**：窗口选择与计数先于生成预算判定，Discord 生成额度用完后仍会先发最多 2 次真实 countTokens 再被拒（消耗 Discord 计数份额，不影响 Web，P1-7 前即如此）。Phase 5 搜索成本更高，Task 20 须在发起搜索前判定搜索预算。
 
-### Claude Task 19 Step 1审核发现（未授权，须单独指派）
+### Claude Task 19 Step 1审核发现（K1于2026-10-12单独授权修复完成，待复核）
 
 依据 [Task 19 Step 1 审核](research/phase4-code-security-audit.md#task-19-step-1-审核2026-10-12claude)；登记不构成实施授权。
 
-- [ ] **K1（空回复被静默保存，现网既有缺陷，中低优先级）**：`GeminiChatAdapter` 仅在 `MAX_TOKENS` 时把空正文视为错误；`MALFORMED_FUNCTION_CALL`、`SAFETY` 等结束原因返回空正文时，服务端保存空 assistant 消息并进入后续上下文，Web 显示空气泡，Bot 静默不回复（`bot/gateway.ts` 仅在正文非空时发送）。Step 1 无工具对照即返回 `MALFORMED_FUNCTION_CALL` 空正文（单样本、探针配置与生产不同，复现概率未知）。建议对任何结束原因的空正文统一返回固定 MODEL_ERROR、不保存空 assistant，增加回归；Task 20「搜索失败降级为无搜索回复」会走同一路径，建议在 Task 20 前修复。
+- [x] **K1（空回复被静默保存；2026-10-12代码修复完成，待Claude复核，未部署）**：`GeminiChatAdapter` 仅在 `MAX_TOKENS` 时把空正文视为错误；`MALFORMED_FUNCTION_CALL`、`SAFETY` 等结束原因返回空正文时，服务端保存空 assistant 消息并进入后续上下文，Web 显示空气泡，Bot 静默不回复（`bot/gateway.ts` 仅在正文非空时发送）。Step 1 无工具对照即返回 `MALFORMED_FUNCTION_CALL` 空正文（单样本、探针配置与生产不同，复现概率未知）。建议对任何结束原因的空正文统一返回固定 MODEL_ERROR、不保存空 assistant，增加回归；Task 20「搜索失败降级为无搜索回复」会走同一路径，建议在 Task 20 前修复。 完成：SDK send / stream和流源纵深检查拒绝空正文，新固定提示经白名单下发，finishReason安全日志、同标识重试 / 锁 / 不暂停及Bot反馈已覆盖；历史日志 / 窗口 / 回放不改写。新增9项，全量36/36文件471/471用例、类型检查及三构建通过，证据见[审计修复记录](research/phase4-code-security-audit.md#k1-修复证据2026-10-12codex未部署)。
 
 ## V0.0.2 发布（2026-10-07 本轮明确授权）
 

@@ -1,4 +1,5 @@
 import {
+  ChatError,
   GeminiChatAdapter,
   MockChatAdapter,
   classifyGeminiError,
@@ -68,6 +69,7 @@ export function createAdapterStreamSource(
       for await (const chunk of streamWithGenerationTimeout(adapter, selected,
         { signal, maxTokens: contextWindow.config.outputTokens }, generationTimeoutConfig)) {
         if (chunk.done) {
+          if (!chunk.accumulated.trim()) throw new ChatError('模型未返回有效正文，请稍后重新提问。', 'MODEL_ERROR');
           contextWindow.observe(selected, chunk.usage?.promptTokens);
           yield {
             event: 'done',
@@ -154,6 +156,8 @@ export function createSessionChatStreamSource(
         { signal, maxTokens: contextWindow.config.outputTokens }, generationTimeoutConfig)) {
         if (signal.aborted) return;
         if (chunk.done) {
+          // Reject empty output while still in the model stage, before calibration or storage.
+          if (!chunk.accumulated.trim()) throw new ChatError('模型未返回有效正文，请稍后重新提问。', 'MODEL_ERROR');
           contextWindow.observe(selected, chunk.usage?.promptTokens);
           stage = 'storage';
           await sessionService.appendAssistantResponse(

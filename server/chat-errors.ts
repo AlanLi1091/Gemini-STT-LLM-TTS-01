@@ -30,7 +30,8 @@ export function safeStreamError(error: unknown, stage: ErrorStage, code: ChatErr
     const fixedHints: Partial<Record<ChatErrorCode, readonly string[]>> = {
       AUTH_ERROR: ['API Key 中包含不可见的非法字符，请重新复制粘贴。',
         'Gemini API key is required. Please configure your API key.'],
-      MODEL_ERROR: ['模型达到生成长度上限但未返回正文，请稍后重新提问。', '模型计数结果无效。'],
+      MODEL_ERROR: ['模型达到生成长度上限但未返回正文，请稍后重新提问。', '模型计数结果无效。',
+        '模型未返回有效正文，请稍后重新提问。'],
     };
     const hint = fixedHints[code]?.find(message => message === error.message);
     if (hint) return { code, message: hint };
@@ -46,6 +47,10 @@ const SAFE_ERRNOS = new Set(['ENOSPC', 'EDQUOT', 'EACCES', 'EPERM', 'ENOENT', 'E
   'EMFILE', 'ENFILE', 'EEXIST', 'EINVAL', 'ENOTDIR', 'EISDIR', 'ENOTEMPTY', 'EXDEV',
   'ENOTFOUND', 'ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'EAI_AGAIN', 'EHOSTUNREACH',
   'ENETUNREACH', 'EPIPE']);
+const SAFE_FINISH_REASONS = new Set(['FINISH_REASON_UNSPECIFIED', 'STOP', 'MAX_TOKENS',
+  'SAFETY', 'RECITATION', 'LANGUAGE', 'OTHER', 'BLOCKLIST', 'PROHIBITED_CONTENT', 'SPII',
+  'MALFORMED_FUNCTION_CALL', 'IMAGE_SAFETY', 'UNEXPECTED_TOOL_CALL', 'TOO_MANY_TOOL_CALLS',
+  'IMAGE_PROHIBITED_CONTENT', 'NO_IMAGE', 'IMAGE_RECITATION', 'IMAGE_OTHER', 'CONTINUATION']);
 function object(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' ? value as Record<string, unknown> : {};
 }
@@ -56,7 +61,7 @@ function httpStatus(value: unknown): number | undefined {
 /** Allowlisted keys AND values; never serialize an Error, message, stack, or URL. */
 export function logChatFailure(error: unknown, stage: ErrorStage, code: ChatErrorCode,
   log: (record: string) => void = console.warn): void {
-  const record: { stage: ErrorStage; code: ChatErrorCode; name: string; errno?: string; status?: number } = { stage, code, name: 'Error' };
+  const record: { stage: ErrorStage; code: ChatErrorCode; name: string; errno?: string; status?: number; finishReason?: string } = { stage, code, name: 'Error' };
   try {
     const outer = object(error);
     const original = error instanceof ChatError && error.originalError !== undefined ? object(error.originalError) : outer;
@@ -66,6 +71,10 @@ export function logChatFailure(error: unknown, stage: ErrorStage, code: ChatErro
     if (typeof errno === 'string') record.errno = errno;
     const status = [original.status, original.statusCode, outer.status].map(httpStatus).find(value => value !== undefined);
     if (status !== undefined) record.status = status;
+    if (stage === 'model' && original.finishReason !== undefined) {
+      const reason = original.finishReason;
+      record.finishReason = typeof reason === 'string' && SAFE_FINISH_REASONS.has(reason) ? reason : 'OTHER';
+    }
   } catch { /* Malformed metadata cannot prevent a safe error response. */ }
   try { log(JSON.stringify(record)); } catch { /* Logging must not alter request/lock semantics. */ }
 }
