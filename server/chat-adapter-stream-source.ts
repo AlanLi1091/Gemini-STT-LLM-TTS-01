@@ -10,7 +10,7 @@ import {
 import { isChatStreamRequest, type ChatStreamSource } from './chat-stream';
 import { SessionService } from './session-service';
 import { SessionRequestConflictError, type SessionStorage } from './storage/session-storage';
-import { guardStreamSource, RequestBudget } from './request-budget';
+import { guardStreamSource, RequestBudget, SourceRequestBudget, readSourceBudgetConfig } from './request-budget';
 import { ContextWindow, readContextConfig } from './context-window';
 import { logChatFailure, safeStreamError, type ErrorStage } from './chat-errors';
 import {
@@ -23,6 +23,7 @@ import {
 export interface ServerChatEnvironment {
   GEMINI_API_KEY?: string;
   GEMINI_REQUESTS_PER_MINUTE?: string;
+  GEMINI_WEB_RESERVED_REQUESTS_PER_MINUTE?: string;
   GEMINI_RATE_LIMIT_COOLDOWN_MS?: string;
   CHAT_CONTEXT_INPUT_TOKENS?: string;
   CHAT_CONTEXT_HISTORY_TURNS?: string;
@@ -31,6 +32,7 @@ export interface ServerChatEnvironment {
   CHAT_GENERATION_FIRST_CHUNK_TIMEOUT_MS?: string;
   CHAT_GENERATION_TOTAL_TIMEOUT_MS?: string;
   CHAT_COUNTS_PER_MINUTE?: string;
+  CHAT_WEB_RESERVED_COUNTS_PER_MINUTE?: string;
   GEMINI_SYSTEM_INSTRUCTION?: string;
 }
 
@@ -133,11 +135,13 @@ export function createSessionChatStreamSource(
       const inputs: Message[] = state.inputExists ? state.session.messages.slice(-1) :
         request.messages.map((message, index) => ({ ...message, id: requestId ?? `pending-${index}`, createdAt: 0 }));
       const history = state.inputExists ? state.session.messages.slice(0, -1) : state.session.messages;
+      // Only persisted session metadata determines the budget source. Legacy is web.
+      const source = state.session.origin?.type === 'discord' ? 'discord' : 'web';
       stage = 'count';
-      const selected = await contextWindow.select(history, inputs, adapter, signal);
+      const selected = await contextWindow.select(history, inputs, adapter, signal, source);
       if (signal.aborted) return;
       // Replay and rejected conflicts do not consume upstream model budget.
-      const wait = requestBudget?.acquire();
+      const wait = requestBudget?.acquire(source);
       if (wait) {
         yield { event: 'error', data: { error: { code: 'RATE_LIMIT', message: `模型请求预算已满或暂时暂停，请等待 ${Math.ceil(wait / 1000)} 秒后再试。` } } };
         return;
@@ -190,16 +194,21 @@ export function createChatStreamSourceFromEnv(
     throw new Error('Provide one shared sessionService or sessionStorage, not both.');
   }
   const contextConfig = readContextConfig(environment);
-  const contextWindow = new ContextWindow(contextConfig);
+  // Validate even in Mock mode or when a test injects its own budget.
+  const budgetConfig = readSourceBudgetConfig(environment);
+  const countBudget = new SourceRequestBudget({ requestsPerMinute: budgetConfig.countsPerMinute,
+    sourceLimits: { discord: budgetConfig.countsPerMinute - budgetConfig.webReservedCounts } });
+  const contextWindow = new ContextWindow(contextConfig, { countBudget });
   const generationTimeoutConfig = readGenerationTimeoutConfig(environment, contextConfig.countTimeoutMs);
   const apiKey = sanitizeGeminiApiKey(environment.GEMINI_API_KEY);
   const adapter: ChatAdapter = apiKey
     ? new GeminiChatAdapter({ apiKey, systemInstruction: contextConfig.systemInstruction })
     : new MockChatAdapter(options.mockAdapterOptions);
 
-  const budget = apiKey ? options.requestBudget ?? new RequestBudget({
-    requestsPerMinute: environment.GEMINI_REQUESTS_PER_MINUTE === undefined ? undefined : Number(environment.GEMINI_REQUESTS_PER_MINUTE),
-    cooldownMs: environment.GEMINI_RATE_LIMIT_COOLDOWN_MS === undefined ? undefined : Number(environment.GEMINI_RATE_LIMIT_COOLDOWN_MS),
+  const budget = apiKey ? options.requestBudget ?? new SourceRequestBudget({
+    requestsPerMinute: budgetConfig.requestsPerMinute,
+    sourceLimits: { discord: budgetConfig.requestsPerMinute - budgetConfig.webReservedRequests },
+    cooldownMs: budgetConfig.cooldownMs,
   }) : undefined;
   if (options.sessionService || options.sessionStorage) {
     const service = options.sessionService ?? new SessionService(options.sessionStorage!);

@@ -319,3 +319,14 @@
 - **残余项（均为低优先级）**：
   - **G1 部分真实网络故障归为 UNKNOWN**：Node fetch 的 `UND_ERR_*` 与 TLS 证书错误不在网络码集合和日志 errno 白名单内，提示为「服务暂时不可用」，排障只见 TypeError；不涉及安全。
   - **G2 Web 横幅信任服务端文案**：`ChatErrorBanner` 对 MODEL_ERROR / UNKNOWN 展示服务端 message；Phase 5 新增错误路径（含搜索）须经 `safeStreamError`，建议写入 Task 20 验收或 ADR-015。
+
+
+### P1-7 修复证据（2026-10-12，Codex）
+
+- **授权与范围**：用户确认十七文件计划并指派执行；采用全局总守卫 + Web保留额度、不加单频道上限、账户级429全局暂停对应预算及计数同样保留方案。只修复预算分配与暂停语义，未扩展P1-4 / P1-5 / P1-6 / P1-8 / P2-*、C3–C5、D1 / D2、E1–E3、F1 / F2、G1 / G2或Task19–22；未修改Bot冷却 / 排队，未实现搜索。
+- **生成预算**：保留GEMINI_REQUESTS_PER_MINUTE默认10，新增GEMINI_WEB_RESERVED_REQUESTS_PER_MINUTE默认4；Discord合计最多6，Web可使用全部10，所有来源总量不超过10。SourceRequestBudget用通用来源键子上限，同步检查全局 / 来源守卫后才扣额，拒绝不扣生成额度；多个频道共享Discord额度，无单频道限制。
+- **可信归属**：来源来自inspectRequest的持久化session.origin，discord按discord、缺少origin的旧会话按web；请求体origin / source / guildId等字段不参与判断。来源显式传入窗口计数，不使用共享可变当前来源。此项不实现P2-3的会话访问控制。
+- **计数及暂停**：CHAT_COUNTS_PER_MINUTE默认20，新增CHAT_WEB_RESERVED_COUNTS_PER_MINUTE默认8，Discord合计12、Web可使用全部20；独立预算实例复用同一来源结构。模型阶段429全局暂停生成（默认60000ms），计数阶段429只全局暂停计数（沿用60000ms）并继续既有降级；超时不pause。相同Key的账户级429仍可能暂停Web，来源保留只能防止Discord挤占本地次数容量，不能保证避免真实TPM / RPD等限额，未查询实际账户配额。
+- **配置与语义**：保留值为正安全整数且严格小于对应总额度，默认固定4 / 8不自动缩放；总额度 / 冷却为正安全整数、计数总量1–1000，空值及非法值启动拒绝，Mock或预算测试注入也校验环境配置。回放 / 冲突不耗计数或生成预算；生成准入仍在窗口选择后、输入写入前，超限不追加输入，已发生窗口计数不回滚。锁、幂等、SSE结构 / 固定等待模板、Bot RATE_LIMIT提示及窗口算法不变；低层测试仍可显式注入原RequestBudget。
+- **验证**：新增1文件17项，定向4/4文件80/80用例、全量36/36文件462/462用例、根 / 四包类型检查及Web / Express / Bot构建通过。覆盖多频道Discord额度、Web保留与全局量、原子拒绝、来源防伪 / 无origin旧会话、全局429跨来源、计数保留 / 全局计数暂停 / 降级、交错计数来源、回放 / 冲突 / 超限 / 超时和配置校验；台账逐文件 / 标题 / 数量一致。首次沙箱HTTP监听EPERM后获准重跑通过。
+- **交付与边界**：.env.example、deploy/server.env.example、运维说明及ADR-012 / ADR-013同步；前置四项代码修复均已完成，P1-7待Claude复核，Task19仍未授权。假时钟 / 模型和Discord Mock、隔离临时JSON存储，未访问真实Gemini / Discord / VPS / 会话数据，未部署。既有未跟踪.zcodeignore保留；现网源码仍为此前版本。

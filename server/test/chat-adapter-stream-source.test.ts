@@ -3,7 +3,7 @@ import { GoogleGenAI } from '@google/genai';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChatSseEvent } from '@core/contracts/sse';
 import { createChatStreamSourceFromEnv } from '../chat-adapter-stream-source';
-import { RequestBudget } from '../request-budget';
+import { RequestBudget, SourceRequestBudget } from '../request-budget';
 import { JsonSessionStorage } from '../storage/json-session-storage';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -48,18 +48,21 @@ describe('Task 12 Step 3: Adapter 自动选择与统一错误透传', () => {
     vi.clearAllMocks();
   });
 
-  it('Web 与频道共用预算，超限不调用 SDK 或追加会话输入', async () => {
+  it('Discord 子预算超限不调用 SDK 或追加输入且 Web 保留额度仍可用', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'gemini-budget-'));
     try {
       const storage = new JsonSessionStorage(directory); const session = await storage.resolveDiscordSession('111111111111111111', '222222222222222222');
       mockGenerateContentStream.mockResolvedValueOnce((async function* () { yield { text: '回复' }; })());
-      const source = createChatStreamSourceFromEnv({ GEMINI_API_KEY: 'fake' }, { sessionStorage: storage, requestBudget: new RequestBudget({ requestsPerMinute: 1 }) });
+      const source = createChatStreamSourceFromEnv({ GEMINI_API_KEY: 'fake' }, { sessionStorage: storage, requestBudget: new SourceRequestBudget({ requestsPerMinute: 2, sourceLimits: { discord: 1 } }) });
       const webSession = await storage.createSession();
-      await collectEvents(source, webSession.id);
+      await collectEvents(source, session.id);
+      const before = await storage.getSession(session.id);
       const events = [];
       for await (const event of source({ sessionId: session.id, messages: [{ role: 'user', content: '不应写入' }] }, { signal: new AbortController().signal })) events.push(event);
       expect(events).toEqual([expect.objectContaining({ event: 'error', data: { error: { code: 'RATE_LIMIT', message: expect.stringContaining('预算') } } })]);
-      expect(mockGenerateContentStream).toHaveBeenCalledOnce(); expect((await storage.getSession(session.id))?.messages).toEqual([]);
+      expect(mockGenerateContentStream).toHaveBeenCalledOnce(); expect(await storage.getSession(session.id)).toEqual(before);
+      mockGenerateContentStream.mockResolvedValueOnce((async function* () { yield { text: 'Web 回复' }; })());
+      expect((await collectEvents(source, webSession.id)).at(-1)?.event).toBe('done');
     } finally { await rm(directory, { recursive: true }); }
   });
   it('上游 429 后暂停，期间不调用 SDK，到期可恢复', async () => {
@@ -637,5 +640,19 @@ describe('P1-3: SDK 与 Mock 流源脱敏', () => {
       ]);
       expect(log.mock.calls).toEqual([[JSON.stringify({ stage: 'model', code: 'UNKNOWN', name: 'Error' })]]);
     } finally { stream.mockRestore(); log.mockRestore(); }
+  });
+});
+
+
+describe('P1-7: 来源预算启动校验', () => {
+  it('有无 Gemini Key 及注入预算时均拒绝非法保留配置', () => {
+    for (const key of [undefined, 'fake']) for (const config of [
+      { GEMINI_WEB_RESERVED_REQUESTS_PER_MINUTE: '10' },
+      { GEMINI_WEB_RESERVED_REQUESTS_PER_MINUTE: '0' },
+      { GEMINI_REQUESTS_PER_MINUTE: '4' },
+      { CHAT_WEB_RESERVED_COUNTS_PER_MINUTE: '20' },
+      { CHAT_WEB_RESERVED_COUNTS_PER_MINUTE: '1.5' },
+      { CHAT_COUNTS_PER_MINUTE: '8' },
+    ]) expect(() => createChatStreamSourceFromEnv({ GEMINI_API_KEY: key, ...config }, { requestBudget: new RequestBudget() })).toThrow('budget configuration');
   });
 });

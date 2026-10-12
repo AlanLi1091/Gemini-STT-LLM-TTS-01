@@ -100,8 +100,8 @@ export class ContextWindow {
   private limit(): never {
     throw new ChatError('本轮输入超过上下文预算，请缩短内容后重新发送。', 'CONTEXT_LIMIT');
   }
-  private async count(adapter: ChatAdapter, messages: Message[], signal: AbortSignal): Promise<number | undefined> {
-    if (!adapter.countTokens || this.countBudget.acquire()) return undefined;
+  private async count(adapter: ChatAdapter, messages: Message[], signal: AbortSignal, source: string): Promise<number | undefined> {
+    if (!adapter.countTokens || this.countBudget.acquire(source)) return undefined;
     const controller = new AbortController();
     const abort = () => controller.abort();
     signal.addEventListener('abort', abort, { once: true });
@@ -128,7 +128,7 @@ export class ContextWindow {
       clearTimeout(timer); signal.removeEventListener('abort', abort);
     }
   }
-  async select(history: readonly Message[], inputs: readonly Message[], adapter: ChatAdapter, signal: AbortSignal): Promise<Message[]> {
+  async select(history: readonly Message[], inputs: readonly Message[], adapter: ChatAdapter, signal: AbortSignal, source = 'web'): Promise<Message[]> {
     if (signal.aborted) throw new ChatError('The operation was aborted.', 'ABORTED');
     const current = historyTurns(inputs).flat();
     const allTurns = this.config.historyTurns === 0 ? [] : historyTurns(history).slice(-this.config.historyTurns);
@@ -147,7 +147,7 @@ export class ContextWindow {
     let knownSafe: Message[] | undefined;
     let knownOver: Message[] | undefined;
     for (let attempt = 0; attempt < 2; attempt++) {
-      const contentsTokens = await this.count(adapter, selected, signal);
+      const contentsTokens = await this.count(adapter, selected, signal, source);
       if (signal.aborted) throw new ChatError('The operation was aborted.', 'ABORTED');
       if (contentsTokens === undefined) break;
       const measured = contentsTokens + systemReserve;

@@ -201,3 +201,33 @@ describe('P1-3: 计数降级日志', () => {
     expect(log.mock.calls).toEqual([[JSON.stringify({ stage: 'count', code: 'RATE_LIMIT', name: 'Error', status: 429 })]]);
   });
 });
+
+
+describe('P1-7: 计数来源参数', () => {
+  it('Discord 计数占满子额度后 Web 保留额度仍精确计数', async () => {
+    const { SourceRequestBudget } = await import('../request-budget');
+    const countBudget = new SourceRequestBudget({ requestsPerMinute: 3, sourceLimits: { discord: 1 } });
+    const counter = vi.fn(async () => 100); const model = adapter(counter);
+    const policy = new ContextWindow({ inputTokens: 1000 }, { countBudget });
+    const current = user('x'.repeat(400));
+    expect(await policy.select([], [current], model, signal(), 'discord')).toEqual([current]);
+    expect(counter).toHaveBeenCalledOnce();
+    await expect(policy.select([], [current], model, signal(), 'discord')).rejects.toMatchObject({ code: 'CONTEXT_LIMIT' });
+    expect(counter).toHaveBeenCalledOnce();
+    expect(await policy.select([], [current], model, signal(), 'web')).toEqual([current]);
+    expect(await policy.select([], [current], model, signal())).toEqual([current]);
+    expect(counter).toHaveBeenCalledTimes(3);
+  });
+  it('交错计数不覆盖另一请求的来源参数', async () => {
+    const { SourceRequestBudget } = await import('../request-budget');
+    const budget = new SourceRequestBudget({ requestsPerMinute: 3, sourceLimits: { discord: 1 } });
+    const acquire = vi.spyOn(budget, 'acquire'); let finish!: (tokens: number) => void;
+    const counter = vi.fn().mockImplementationOnce(() => new Promise<number>(resolve => { finish = resolve; })).mockResolvedValue(100);
+    const policy = new ContextWindow({ inputTokens: 1000 }, { countBudget: budget });
+    const current = user('x'.repeat(400));
+    const discord = policy.select([], [current], adapter(counter), signal(), 'discord');
+    expect(await policy.select([], [current], adapter(counter), signal(), 'web')).toEqual([current]);
+    finish(100); expect(await discord).toEqual([current]);
+    expect(acquire.mock.calls).toEqual([['discord'], ['web']]);
+  });
+});

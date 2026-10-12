@@ -1,7 +1,7 @@
 # 测试套件与测试用例台账
 
 > **维护规范**：
-> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（35 个套件）与具体测试用例（445 个断言项）。
+> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（36 个套件）与具体测试用例（462 个断言项）。
 > 2. **铁律联动**：后续开发中，每次有新功能开发、重构或测试内容更新时，**必须同步在此台账中维护新增或修改的测试项**，保持与实际测试套件 100% 同步。
 
 ## 1. 测试套件概览看板
@@ -25,7 +25,7 @@
 | 15 | `core/test/sse-contract.test.ts` | Task 11 | 共享 SSE 事件、错误载荷与 sessionId 演进契约 | 7 | ✅ 通过 |
 | 16 | `server/test/cors.test.ts` | Task 11 | CORS 白名单解析、允许/拒绝策略与预检链路 | 5 | ✅ 通过 |
 | 17 | `server/test/chat-stream.test.ts` | Task 12 | SSE 流式管道、心跳、续传声明与中断级联 | 14 | ✅ 通过 |
-| 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 / Task 17 Step 1 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 35 | ✅ 通过 |
+| 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 / Task 17 Step 1 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 36 | ✅ 通过 |
 | 19 | `src/test/remote-chat-adapter.test.ts` | Task 13 / Task 14 Step 3 | RemoteChatAdapter 的 SSE 消费、错误映射、AbortSignal 与 sessionId 模式 | 15 | ✅ 通过 |
 | 20 | `src/test/app-remote-integration.test.tsx` | Task 13 Step 3 / Task 14 Step 3 / Phase 3 收尾 | App 的后端 SSE 装配、会话恢复、归档清空与旧配置迁移 | 7 | ✅ 通过 |
 | 21 | `server/test/json-session-storage.test.ts` | Task 14 Step 1 / Task 16 Step 2 | JSON 会话、频道关联、重启恢复与严格追加 | 12 | ✅ 通过 |
@@ -36,14 +36,15 @@
 | 26 | `bot/test/backend-client.test.ts` | Task 16 Step 2 | 本机 HTTP / SSE、最终回复、错误、中止与重启解析 | 25 | ✅ 通过 |
 | 27 | `bot/test/split-message.test.ts` | Task 16 Step 3 | 长回复完整分段、段落 / 换行优先、UTF-16 与 CRLF 边界 | 10 | ✅ 通过 |
 | 28 | `bot/test/request-scheduler.test.ts` | Task 17 Step 1 | FIFO、跨频道、队满、用户冷却、失败恢复与退出 | 7 | ✅ 通过 |
-| 29 | `server/test/request-budget.test.ts` | Task 17 Step 1 | 滚动请求预算、限流暂停与恢复 | 4 | ✅ 通过 |
+| 29 | `server/test/request-budget.test.ts` | Task 17 Step 1 | 滚动请求预算、限流暂停与恢复 | 10 | ✅ 通过 |
 | 30 | `bot/test/errors.test.ts` | Task 17 Step 2 | 固定安全反馈、Discord 错误分类与启动日志脱敏 | 7 | ✅ 通过 |
 | 31 | `server/test/deployment.test.ts` | Task 18 Step 1 | 私有 loopback 配置、静态托管、SSE / API 隔离与文件边界 | 7 | ✅ 通过 |
 | 32 | `server/test/deployment-validation.test.ts` | Task 18 Step 2 | 采集故障、重连中断、24 小时 / 新鲜度 / 证据缺口判定 | 11 | ✅ 通过 |
-| 33 | `server/test/context-window.test.ts` | P0-1 第一步 | 轮次窗口、计数降级、超时与内存校准 | 24 | ✅ 通过 |
+| 33 | `server/test/context-window.test.ts` | P0-1 第一步 | 轮次窗口、计数降级、超时与内存校准 | 26 | ✅ 通过 |
 | 34 | `server/test/generation-timeout.test.ts` | P1-2 / R2 | 首包 / 总期限、取消、迭代等待与清理边界、启动配置（假时钟 / Mock） | 4 | ✅ 通过 |
 | 35 | `server/test/chat-error-safety.test.ts` | P1-3 | 存储错误分类、上游脱敏、固定提示与白名单日志 | 18 | ✅ 通过 |
-| **合计** | **35 个测试文件** | **Phase 1–4 / 审计修复** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **445** | **✅ 100% 通过** |
+| 36 | `server/test/source-budget.test.ts` | P1-7 | 持久化来源防伪、Web保留额度、总守卫与计数 / 生成暂停 | 8 | ✅ 通过 |
+| **合计** | **36 个测试文件** | **Phase 1–4 / 审计修复** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **462** | **✅ 100% 通过** |
 
 ---
 
@@ -389,7 +390,7 @@
 - [x] **流源意外抛错的兜底日志仅记录白名单且保持现有 UNKNOWN 文案**
 
 
-### 2.18 `server/test/chat-adapter-stream-source.test.ts` (35 项)
+### 2.18 `server/test/chat-adapter-stream-source.test.ts` (36 项)
 > **任务对应**：Task 17 Step 2 / Task 12 Step 2–3 · 服务端 Adapter 承载、自动降级与错误透传
 
 #### Task 12 Step 3: Adapter 自动选择与统一错误透传
@@ -397,7 +398,7 @@
 - [x] **缺少、空白或不可见字符 Key 时应自动降级共享 MockAdapter**
 - [x] **Gemini 错误应通过 SSE error 事件返回标准 code 与固定 message**
 
-- [x] **Web 与频道共用预算，超限不调用 SDK 或追加会话输入**
+- [x] **Discord 子预算超限不调用 SDK 或追加输入且 Web 保留额度仍可用**
 - [x] **上游 429 后暂停，期间不调用 SDK，到期可恢复**
 - [x] **Mock 不消耗或受 Gemini 预算影响**
 - [x] **已中止请求不消耗预算或调用 SDK**
@@ -453,6 +454,11 @@
 
 - [x] **SDK 403 包含伪造 Key 时 SSE 与日志均不泄露**
 - [x] **Mock 降级流源的原始错误同样转换为固定 UNKNOWN**
+
+
+#### P1-7 来源保留预算回归
+
+- [x] **有无 Gemini Key 及注入预算时均拒绝非法保留配置**
 
 
 ### 2.19 `src/test/remote-chat-adapter.test.ts` (15 项)
@@ -735,13 +741,23 @@
 
 - [x] **禁用等待时已完成请求立即释放频道**
 
-### 2.29 `server/test/request-budget.test.ts` (4 项)
+### 2.29 `server/test/request-budget.test.ts` (10 项)
 > **任务对应**：Task 17 Step 1 · 时钟 / 任务注入验证，无真实模型配额消耗。
 
 - [x] **滚动一分钟预算原子占位，边界恢复**
 - [x] **上游限流开启暂停，到期后恢复**
 - [x] **再次限流延长暂停且不缩短已有窗口**
 - [x] **拒绝非法预算配置**
+
+#### P1-7 来源保留预算回归
+
+- [x] **Discord 占满子额度后重复拒绝不扣全局额度，Web 用完保留额度**
+- [x] **Web 可独占全部额度，混合来源总量仍受全局守卫**
+- [x] **不同来源共享 pause，窗口恢复与再次暂停不缩短等待**
+- [x] **默认来源为 web，通用来源键子额度拒绝时不会占用其他额度**
+- [x] **默认配置保持生成10保留4与计数20保留8及60秒暂停**
+- [x] **拒绝非法总额度保留额度和子额度，省略保留值不自动缩放**
+
 
 ### 2.30 `bot/test/errors.test.ts` (7 项)
 > **任务对应**：Task 17 Step 2 · 错误原文隔离与安全提示。
@@ -791,7 +807,7 @@
 - [x] **keeps old interruption samples failed when journal evidence is missing**
 
 
-### 2.33 `server/test/context-window.test.ts` (24 项)
+### 2.33 `server/test/context-window.test.ts` (26 项)
 > **任务对应**：P0-1 第一步 / ADR-013 · 窗口算法与可注入计数器，网络无真实调用。
 
 - [x] **过滤 system 与孤立 assistant 连续 user 分别成轮且不修改原数组**
@@ -826,6 +842,12 @@
 #### P1-3 错误分类与安全文案回归
 
 - [x] **计数 429 仅记录白名单字段并保持独立预算暂停和窗口降级**
+
+
+#### P1-7 来源保留预算回归
+
+- [x] **Discord 计数占满子额度后 Web 保留额度仍精确计数**
+- [x] **交错计数不覆盖另一请求的来源参数**
 
 
 ## 3. Phase 4 结项回归（Task 18 Step 3，2026-10-06）
@@ -899,3 +921,24 @@
 - 新增1文件40项，35/35文件445/445用例通过；根 / 四包类型检查与 Web / Express / Bot 构建通过。
 - 覆盖非法 ID ../x、损坏 JSON、输入 / 回复写入 ENOSPC、保存失败不发 done 与锁释放后同标识重试、SDK 403 伪造 Key、429 预算暂停、fetch cause 网络分类、MODEL_ERROR / UNKNOWN 脱敏、低层 / Mock 流源、HTTP SSE 序列化、浏览器错误 / 横幅与 Bot 固定提示和日志；既有超时、冲突、窗口、归档与回放回归通过。
 - Vitest JSON 结果逐文件数量与逐项标题对照台账一致；首次沙箱本机 HTTP 监听 EPERM 后获准重跑全量通过，未跳过测试。数据仅隔离临时目录，模型 / Discord 全 Mock；未访问真实 Gemini / Discord / VPS / 会话数据。
+
+### 2.36 `server/test/source-budget.test.ts` (8 项)
+> **任务对应**：P1-7 · 持久化来源、生成 / 计数保留预算与暂停边界
+
+#### P1-7 来源保留预算回归
+
+- [x] **多个 Discord 频道共享六次额度且无法挤占 Web 四次保留额度**
+- [x] **Web 可以使用全部全局额度，Web 加 Discord 总量不超过上限**
+- [x] **请求体伪造 web 来源无法绕过持久化 Discord 来源，旧会话无 origin 按 web**
+- [x] **Discord 上游429全局暂停生成，另一来源暂停期间不写输入且到期恢复**
+- [x] **回放与两种冲突不调用预算或追加输入，重复预算拒绝不占用Web额度**
+- [x] **Discord 生成超时不暂停预算且 Web 可立即使用保留额度**
+- [x] **生产计数预算保留八次给 Web，Discord 用满十二次后仅本地降级**
+- [x] **计数429全局暂停计数但不暂停任一来源生成并继续既有窗口降级**
+
+
+## 9. P1-7 修复回归（2026-10-12）
+
+- 新增1文件17项，36/36文件462/462用例通过；根 / 四包类型检查与Web / Express / Bot构建通过。
+- 假时钟、Mock模型及隔离JSON存储验证Discord多频道共享额度、Web保留和使用全部总额度、总量上限、拒绝原子不扣额、持久化来源防伪、旧会话无origin、全局生成429、计数429仅暂停计数、计数保留 / 降级、交错计数来源、回放 / 两种冲突 / 超限无输入副作用、生成超时不pause和默认 / 非法配置启动校验。
+- Vitest JSON逐文件数量与逐项标题映射一致；首次沙箱HTTP监听EPERM后获准重跑全量通过，没有跳过测试；既有Web / Bot / 幂等 / 窗口 / 超时 / 错误脱敏回归通过。未访问真实Gemini / Discord / VPS / 会话数据。
