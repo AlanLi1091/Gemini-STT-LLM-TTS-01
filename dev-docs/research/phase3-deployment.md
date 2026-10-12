@@ -190,3 +190,16 @@ Cloud Run 的超时、缩零与收费方式以[请求超时](https://cloud.googl
 - Web通过SSH隧道恢复旧两轮对话，新请求真实回复“新版部署成功”，199 total tokens（prompt 52 / completion 4），刷新后持久化恢复通过；本机截图 `/private/tmp/gemini-v002-web.jpg` 为临时验收附件，不提交仓库。
 - Discord重置前绑定19c39a17-ce29-44b8-a376-4dd27acdf916，8条消息；用户确认普通回复、直接@Bot /reset、新会话回复均无误；旧会话归档后14条消息，备份中的原8条消息逐项保持一致，新绑定22d27ebd-3c46-4f5b-95f8-6adf27cc7f9e有2条消息，来源相同且未归档。两服务NRestarts=0、active且健康检查正常；PR / tag收尾由主会话核验汇报。
 - 回滚保留旧发行物 `/opt/gemini-chat/releases/task18-20261005-01`；失败时停两服务、恢复bot.env备份、原子将current切回旧目录、先启Express再启Bot，保留新旧会话日志。仅上线冒烟与Linux回归，不重复宣称新版本已有24小时在线验证。
+
+
+## 12. P1前置四项私有VPS部署（2026-10-12，验收通过）
+
+用户指派部署VPS并确认六份文档 / VPS文件计划；固定当前已复核源码 `6f810486df9b99f9e32f777c394a4353e2109909`（来源tag `V0.0.2-build.174`），版本号保持0.0.2。本轮仅部署P1-1 / P1-2 + R2 / P1-3 / P1-7，不修复其余残余，不启动Phase5、不合并或推送main。
+
+- **准备及回归**：源包git archive导出，165个条目，不含真实.env / data / node_modules / macOS lockfile，SHA-256 `8dac6c3019c34602f13f087480991026db6a26dc17d73ec86d031d77a20d75df`。VPS Node v24.21.0 / npm11.19.0，约14G可用；新发行物 `/opt/gemini-chat/releases/v002-6f81048` 复用现网Linux package-lock.json并npm ci，安装后锁SHA一致。旧服务构建期间持续active；本机 / Linux均36/36文件462/462用例、根 / 四包类型检查与Web / Express cjs / Bot构建通过，prune后生产审计0漏洞；发行物root所有、应用不可写。
+- **备份与切换**：UTC 2026-10-12T18:19:09Z开始切版（用户本地2026-10-12）；停Bot再停Express，运行旧backup.sh且原服务已停，因此备份后不自动重启。归档 `/var/backups/gemini-chat/data-20261012T181910Z.tar.gz` 与SHA校验通过；摘要 `ef0c98e6026c5b55f6fee5bf2cc0f4cdd53688cade1c6d966dc96f20916973d6`，隔离恢复目录 `/var/backups/gemini-chat/p1-verify-20261012T181909Z.AdI3Iy` 中全部5持久文件与现网一致；本机data/vps-backups副本再次校验通过，目录0700 / 文件0600。
+- **配置与回滚**：server.env备份 `/etc/gemini-chat/server.env.pre-p1-20261012T181909Z`，root / 0600；写入生成10 / Web保留4、计数20 / Web保留8、首包60秒 / 总90秒，原冷却60秒及其他配置 / 密钥保留。bot.env / systemd单元 / SSH / UFW未改。原子切current，失败自动停两服务、恢复配置和旧current后重启；实际切版成功，没有执行回滚。旧目录v002-9b9a116保留，回滚不覆盖数据。
+- **启动与完整性**：先Express健康检查，真实验收前5个文件字节SHA全部保持一致，再启Bot并确认ready；两服务active / enabled，PID分别69114 / 69125、NRestarts=0，实际进程cwd均为新发行物，Express仅127.0.0.1:3001。之后逐会话比较备份中消息与现网前缀，所有旧消息 / 创建时间 / 归档状态完整保留，Discord绑定不变。
+- **双入口真实验收**：Web隧道恢复旧6条，真实回复“P1部署成功”，193 total tokens（prompt74 / completion4），刷新后8条恢复；临时验收截图 `/private/tmp/gemini-p1-web.png` 不入Git。用户直接@Bot测试并确认Discord正常；服务端input handled=1、failed=0，活动频道会话从0条增至2条（user / assistant），原归档频道14条 / 2条不变。没有冒充用户主动向频道发消息或执行/reset。
+- **错误边界及证据**：无sessionId流请求HTTP400；../x在SSE返回UNKNOWN +「会话读取或保存失败，请稍后重试。」，不调用模型或写入数据。未人为触发真实429或挂起，超时 / 预算 / 错误脱敏由全量Mock回归证明。Linux tests.json、类型 / 构建日志、lock / 产物校验、production-audit.json、cutover.json与smoke-metadata.json留在新发行物deployment-evidence；不记录密钥和原会话正文。
+- **交付边界**：本次只验证发布冒烟及回归，不重复宣称24小时或主机重启验收。服务保持常驻，SSH隧道当前监听本机127.0.0.1:18080；后续仍可按deploy/README.md自行启动隧道。Task19及其余审计项 / 残余仍未授权，最终交付提交 / tag见status收尾及主会话汇报。

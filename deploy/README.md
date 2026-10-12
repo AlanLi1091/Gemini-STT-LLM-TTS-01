@@ -46,7 +46,7 @@
 
 ## 服务端生成超时（P1-2 / R2）
 
-本节说明仓库行为，未部署 VPS。两项配置只属于 Express 的服务端环境变量，Gemini 与无 Key 的 Mock 降级均受约束；Bot 本地 120 秒超时保持不变。
+本节行为已随2026-10-12的P1修复发行物部署到VPS。两项配置只属于 Express 的服务端环境变量，Gemini 与无 Key 的 Mock 降级均受约束；Bot 本地 120 秒超时保持不变。
 
 | 配置 | 默认值 | 含义 |
 | :--- | :--- | :--- |
@@ -119,7 +119,7 @@ Step 1 验证系统加固、两个非 root 服务启动、loopback / 隧道访�
 本轮Step 2已通过，验收timer已disabled / inactive；最终保存报告与原始journal位于/var/lib/gemini-validation，详见[最终验收记录](../dev-docs/research/phase3-deployment.md#最终验收2026-10-06)。停采后动态报告会自然过期，保存的final-report.json记录验收时的新鲜度；两个应用仍保持常驻。
 
 
-## 当前私有发行物（2026-10-07）
+## 上次私有发行物（2026-10-07）
 
 current已切换至 `/opt/gemini-chat/releases/v002-9b9a116`（固定源码9b9a116），包含P0修复；管理员名单已在VPS Bot EnvironmentFile配置。上下文配置沿用代码默认值，未额外调整模型预算。两服务active / enabled，Web真实回复与刷新恢复通过；用户已确认Discord普通回复 / 管理员reset / 新会话回复，服务端核对旧日志保留及新绑定通过；正式PR / tag收尾由主会话核验汇报，详见部署记录第11节。
 
@@ -142,4 +142,15 @@ current已切换至 `/opt/gemini-chat/releases/v002-9b9a116`（固定源码9b9a1
 
 同一个Key的429继续按账户级状态处理：模型阶段429暂停所有来源的生成预算；计数阶段429只暂停所有来源的计数预算（沿用60秒冷却），继续既有窗口降级，不暂停生成。次数额度仅本地进程策略，不代表真实RPM / TPM / RPD；Web保留额度不能绕过账户级429、网络故障或已消耗的全局额度。生成超时不暂停预算。
 
-回放和请求冲突先于计数 / 生成，不扣额度；生成准入仍在窗口选择之后、输入写入之前，超限不占用生成额度、不追加输入。窗口选择已经发生的计数不回滚；计数不可用时按ADR-013降级，最小输入仍可能CONTEXT_LIMIT。本节仅更新配置说明，本轮未部署或修改VPS环境文件。
+回放和请求冲突先于计数 / 生成，不扣额度；生成准入仍在窗口选择之后、输入写入之前，超限不占用生成额度、不追加输入。窗口选择已经发生的计数不回滚；计数不可用时按ADR-013降级，最小输入仍可能CONTEXT_LIMIT。上述配置已随2026-10-12的P1修复发行物部署，server.env已写入生成10 / 保留4、计数20 / 保留8；其他配置和密钥保留。
+
+
+## 当前私有发行物（2026-10-12）
+
+- 当前源码固定 `6f810486df9b99f9e32f777c394a4353e2109909`（`V0.0.2-build.174`），current指向 `/opt/gemini-chat/releases/v002-6f81048`；P1-1 / P1-2 + R2 / P1-3 / P1-7均经Claude复核并已部署，版本号仍为0.0.2。本轮不合并或推送main，不启动Phase5。
+- 本机 / Linux均36/36文件462/462用例、根 / 四包类型检查及Web / Express cjs / Bot构建通过；新目录复用现网Linux lockfile执行npm ci，锁文件校验通过，生产依赖审计0漏洞。构建及测试期间旧服务继续运行。
+- 停Bot再停Express，一致性备份 `/var/backups/gemini-chat/data-20261012T181910Z.tar.gz`，SHA-256 `ef0c98e6026c5b55f6fee5bf2cc0f4cdd53688cade1c6d966dc96f20916973d6`；隔离恢复和切版后真实测试前全部5文件字节校验一致。本机受保护副本位于Git忽略的 `data/vps-backups/`。
+- server.env原件备份 `/etc/gemini-chat/server.env.pre-p1-20261012T181909Z`（root / 0600），更新生成总10 / Web保留4、计数总20 / Web保留8、首包60000ms / 总生成90000ms；其他配置和密钥保留，bot.env与systemd单元未改。
+- 原子切current，先Express健康检查、后Bot ready；两服务active / enabled，NRestarts=0，Express仅127.0.0.1:3001。Web旧6条恢复、新增user / assistant各1条，真实回复“P1部署成功”（193 total tokens）并刷新恢复；用户确认Discord正常，Bot input handled=1 / failed=0，新频道会话新增user / assistant各1条。原有消息逐项保留，绑定未改变。
+- 无sessionId请求返回400；非法sessionId ../x返回UNKNOWN固定存储失败文案，探针不调用模型或追加输入。预算与超时异常用Mock回归，不人为消耗真实账户配额。仅本次上线冒烟，不宣称新版本已有24小时在线验收。
+- 构建、审计、切版及安全元数据证据位于新发行物 `deployment-evidence/`；旧发行物 `/opt/gemini-chat/releases/v002-9b9a116` 保留。回滚时停两服务，恢复本次server.env备份，原子切回旧发行物，先启动Express再Bot；代码 / 配置回滚不覆盖会话日志。
