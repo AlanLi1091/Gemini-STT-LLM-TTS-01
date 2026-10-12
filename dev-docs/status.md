@@ -6,9 +6,10 @@ Phase 1–4 已完成并正式结项；Phase 4 Task 15–18全部完成，Task 1
 
 ## 当前授权
 
-- **本轮VPS部署授权已完成（2026-10-12）**：用户确认六份文档 / VPS文件计划，固定已复核源码6f81048（来源tag V0.0.2-build.174）部署到v002-6f81048；P1-1 / P1-2 + R2 / P1-3 / P1-7均已上线。本机 / Linux回归、备份 / 隔离恢复 / 旧消息保留、Web真实回复 / 刷新恢复、用户确认Discord正常均通过。交付记录提交 `7f52533`（`docs: record verified P1 VPS deployment`）已推送origin/test。本状态收尾提交并推送后，在最后提交按累计176提交创建annotated tag `V0.0.2-build.176`，最终远端核验见主会话汇报。版本号仍0.0.2，没有合并或推送main；Task19及其余项仍未授权，服务保持常驻。
+- **本轮授权已完成（2026-10-12）**：用户确认 Claude 修订计划，依据对 GLM-5.3 拆解的审查意见及残余 G2 / H3 / F1 补充 Task 19–22 正文（提交 `2312399` 已推送 origin/test）。仅文档，未开工任何 Task；本状态收尾提交后按最终累计提交数创建 annotated tag。Task 19–22 均未授权，下一个待办为用户指派 Task 19 Step 1。
+- **P1 VPS部署授权已完成（2026-10-12）**：用户确认六份文档 / VPS文件计划，固定已复核源码6f81048（来源tag V0.0.2-build.174）部署到v002-6f81048；P1-1 / P1-2 + R2 / P1-3 / P1-7均已上线。本机 / Linux回归、备份 / 隔离恢复 / 旧消息保留、Web真实回复 / 刷新恢复、用户确认Discord正常均通过。交付记录提交 `7f52533`（`docs: record verified P1 VPS deployment`）已推送origin/test。本状态收尾提交并推送后，在最后提交按累计176提交创建annotated tag `V0.0.2-build.176`，最终远端核验见主会话汇报。版本号仍0.0.2，没有合并或推送main；Task19及其余项仍未授权，服务保持常驻。
 
-- **本轮授权已完成（2026-10-12）**：用户指派 Claude 复核 P1-7 并记录低优先级残余、推送打 tag；复核通过，审计报告追加「P1-7 复核」，backlog 登记残余 H1–H3（提交 `545adaa` 已推送 origin/test）。仅文档，未修改应用 / 测试代码；本状态收尾提交后按最终累计提交数创建 annotated tag。Phase 5 Part 1 前置四项均已完成并经复核；H1–H3 及其他残余与 Task 19–22 均未授权。
+- **P1-7 复核授权已完成（2026-10-12）**：用户指派 Claude 复核 P1-7 并记录低优先级残余、推送打 tag；复核通过，审计报告追加「P1-7 复核」，backlog 登记残余 H1–H3（提交 `545adaa` 已推送 origin/test）。仅文档，未修改应用 / 测试代码；本状态收尾提交后按最终累计提交数创建 annotated tag。Phase 5 Part 1 前置四项均已完成并经复核；H1–H3 及其他残余与 Task 19–22 均未授权。
 - **P1-7 修复授权已完成（2026-10-12）**：用户确认十七文件计划并指派执行；来源保留预算、持久化 origin 分组、对应预算全局 429 暂停及配置 / ADR / 回归 / 交付记录已完成。提交 `e762790`（`fix: reserve generation and count budgets for web sessions`）已推送 origin/test。本状态收尾提交并推送后，在最后提交按累计172提交创建 annotated tag `V0.0.2-build.172`；最终远端核验见主会话汇报。Part 1 前置四项代码修复全部完成，P1-7 待 Claude 复核，Task 19 仍未授权；未部署 VPS，其余项未授权。
 
 - **P1-3 复核授权已完成（2026-10-12）**：用户指派 Claude 复核 P1-3 并记录低优先级残余、推送打 tag；复核通过，审计报告追加「P1-3 复核」，backlog 登记残余 G1 / G2（提交 `403ac26` 已推送 origin/test）。仅文档，未修改应用 / 测试代码；本状态收尾提交后按最终累计提交数创建 annotated tag。G1 / G2、F1 / F2、E1–E3、P1-7 与 Task 19–22 均未授权。
@@ -23,7 +24,7 @@ Phase 1–4 已完成并正式结项；Phase 4 Task 15–18全部完成，Task 1
 - **更早授权已完成（2026-10-09）**：Codex git-ops 当前 tag 版本号已从 0.0.1 修正为 0.0.2；配置 / backlog / history 提交 `3c778a6` 已推送 origin/test，收尾 tag `V0.0.2-build.154`。
 - **授权任务**：2026-10-07 V0.0.2 私有VPS部署、双入口与管理员重置验收完成；四份交付记录87b1617与状态提交8b5731c已推送origin/test，发布PR为[#5](https://github.com/AlanLi1091/Gemini-STT-LLM-TTS-01/pull/5)。本提交补充最终交付信息，随后按已确认计划合并PR并创建annotated tag `V0.0.2-build.149`（test最终提交累计数，非main合并提交计数）；最终远端PR / tag核验见主会话汇报。Phase 5、P1与其余残余仍未授权。
 - **VPS 现状**：Vultr Seattle、1核1G、Ubuntu 26.04.1，内核 7.0.0-38、Node v24.21.0，Auto Backup 已开启；gemini-admin 公钥管理，禁用 root / 密码 SSH，UFW 仅开放 22/tcp。gemini-server / gemini-bot 两个非 root systemd 服务 active / enabled，Express 仅监听 127.0.0.1:3001，数据目录独立持久化。无域名、仅本人使用，通过 SSH 隧道访问 http://127.0.0.1:18080，详见 [运维说明](../deploy/README.md)。服务保持常驻。 当前发行物v002-6f81048，两个服务实际进程cwd均为该目录，NRestarts=0；server.env配置生成10 / Web保留4、计数20 / Web保留8及首包60秒 / 总90秒，bot.env和systemd单元未改。
-- **最近交付 commit**：`7f52533` — `docs: record verified P1 VPS deployment`（收尾tag `V0.0.2-build.176`）；VPS源码固定 `6f810486df9b99f9e32f777c394a4353e2109909`（来源tag `V0.0.2-build.174`），current指向 `/opt/gemini-chat/releases/v002-6f81048`。前置四项已修复、复核并部署；后续任务未授权。
+- **最近交付 commit**：`2312399` — `docs: refine Phase 5 Part 1 tasks 19-22 from review findings`（tag 见收尾）；此前 P1 部署记录 `7f52533`（收尾tag `V0.0.2-build.176`）；VPS源码固定 `6f810486df9b99f9e32f777c394a4353e2109909`（来源tag `V0.0.2-build.174`），current指向 `/opt/gemini-chat/releases/v002-6f81048`。前置四项已修复、复核并部署；后续任务未授权。
 - **当前测试基线**：本轮本机 / VPS Linux各36/36文件、462/462用例，根 / 四包类型检查及Web / Express cjs / Bot构建通过；无新增或修改测试代码。Linux复用现网lockfile并校验，生产依赖审计0漏洞；Web真实回复与刷新恢复、Discord用户确认及服务端元数据通过；既有React act警告记录保留，当前为上线冒烟，不宣称新版24小时验收。
 - **当前功能验收**：Playground 仅连接后端服务；启动时恢复最近活动会话，无可恢复会话时创建新会话。发送仅提交本轮输入、`sessionId` 与稳定 `requestId`；失败重试复用同一 `requestId`，不重复保存输入，已完成回复直接回放（ADR-012）。服务端从完整持久化日志中选取有限上下文窗口送入模型，完整日志不变（ADR-013）。清空对话归档旧会话并切换至新会话。Discord 管理员可在指定频道以 `@Bot /reset` 归档并重置频道会话（ADR-014）。旧版直连设置迁移为后端模式并清除浏览器存储的 Key 字段。
 
@@ -32,6 +33,8 @@ Phase 1–4 已完成并正式结项；Phase 4 Task 15–18全部完成，Task 1
 Phase4已结项，Phase5未启动。Part1前置四项（P1-1、P1-2 + R2、P1-3、P1-7）均已修复、通过Claude复核并部署VPS；本轮部署完成后停止。下一个规划事项为另开一轮审议Task19–22正文审查意见，Task19仍须用户单独指派；其他审计残余 / Part2 / Part3均未授权。
 
 ## 本轮验收与遗留
+
+- **Task 19–22 正文修订（2026-10-12）**：用户确认 Claude 计划，backlog Phase 5 章节补充各 Step 的核实项、裁决项与验收要求（29 条审查意见中 5 条不再需要，另并入 G2 / H3 / F1）；仅修改 backlog / history / status，未修改应用 / 测试 / 配置或现网，全量36/36文件462/462用例、根 / 四包类型检查通过，测试台账不变。Task 19–22 均未授权；既有未跟踪 `.zcodeignore` 保留。
 
 - **P1前置四项VPS部署验收（2026-10-12）**：源码6f81048固定，版本0.0.2，发行物v002-6f81048已切换；本机 / Linux各36/36文件462/462用例、根 / 四包类型检查及三构建通过，生产审计0漏洞。构建期间旧服务运行；切版停Bot再停Express，备份data-20261012T181910Z.tar.gz及本机受保护副本SHA通过，隔离恢复 / 切版后真实验收前5文件SHA完全一致。所有旧消息、创建时间、归档标记逐项保留，Discord绑定未改。
 - **本轮双入口与运维证据**：两服务active / enabled、Bot ready、NRestarts=0且进程cwd为新目录，Express仅127.0.0.1:3001。Web旧6条恢复、新增两条，真实回复“P1部署成功”（193 total tokens），刷新后8条恢复；用户确认Discord正常，input handled=1 / failed=0、活动频道新增user / assistant各1条，归档频道14条 / 2条未改。无sessionId请求400、../x返回固定UNKNOWN存储失败文案的无副作用探针通过；真实429 / 超时未强制触发。详细证据见部署记录第12节。
