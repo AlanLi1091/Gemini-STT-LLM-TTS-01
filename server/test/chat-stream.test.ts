@@ -99,6 +99,33 @@ describe('Task 12 Step 1: 服务端 SSE 流式管道与生命周期管理', () =
     expect(response.text).not.toContain('secret upstream detail');
   });
 
+  it('生成超时 SSE 错误保留固定安全文案', async () => {
+    const { createAdapterStreamSource } = await import('../chat-adapter-stream-source');
+    const timeoutSource = createAdapterStreamSource({
+      id: 'http-timeout', name: 'HTTP timeout', send: async () => ({ content: '' }),
+      stream: async function* () { await new Promise<void>(() => undefined); },
+    }, undefined, { firstChunkTimeoutMs: 5, totalTimeoutMs: 10 });
+    const events: import('@core/index').ChatSseEvent[] = [];
+    vi.useFakeTimers();
+    try {
+      const result = (async () => {
+        for await (const event of timeoutSource(validRequest, { signal: new AbortController().signal })) events.push(event);
+      })();
+      await vi.advanceTimersByTimeAsync(5);
+      await result;
+    } finally { vi.useRealTimers(); }
+    // Serialize the real guard result through HTTP; only model time is virtual.
+    const source: ChatStreamSource = async function* () { yield* events; };
+    const response = await request(createApp({ chatStreamSource: source }))
+      .post('/api/chat/stream')
+      .send(validRequest);
+
+    expect(response.status).toBe(200);
+    expect(response.text).toContain(
+      'event: error\ndata: {"error":{"code":"MODEL_ERROR","message":"模型生成超时，请稍后重试。"}}\n\n',
+    );
+  });
+
   it('客户端断开连接时应中止上游 AbortSignal', async () => {
     let resolveSignal!: (signal: AbortSignal) => void;
     const capturedSignal = new Promise<AbortSignal>((resolve) => {

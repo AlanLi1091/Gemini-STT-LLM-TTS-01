@@ -12,6 +12,13 @@ import { SessionArchivedError, SessionService } from './session-service';
 import { SessionNotFoundError, SessionRequestConflictError, type SessionStorage } from './storage/session-storage';
 import { guardStreamSource, RequestBudget } from './request-budget';
 import { ContextWindow, readContextConfig } from './context-window';
+import {
+  DEFAULT_GENERATION_TIMEOUT_CONFIG,
+  GenerationTimeoutError,
+  readGenerationTimeoutConfig,
+  streamWithGenerationTimeout,
+  type GenerationTimeoutConfig,
+} from './generation-timeout';
 
 export interface ServerChatEnvironment {
   GEMINI_API_KEY?: string;
@@ -21,6 +28,8 @@ export interface ServerChatEnvironment {
   CHAT_CONTEXT_HISTORY_TURNS?: string;
   CHAT_MAX_OUTPUT_TOKENS?: string;
   CHAT_COUNT_TIMEOUT_MS?: string;
+  CHAT_GENERATION_FIRST_CHUNK_TIMEOUT_MS?: string;
+  CHAT_GENERATION_TOTAL_TIMEOUT_MS?: string;
   CHAT_COUNTS_PER_MINUTE?: string;
   GEMINI_SYSTEM_INSTRUCTION?: string;
 }
@@ -34,7 +43,11 @@ export interface ServerChatStreamSourceOptions {
 }
 
 /** 将任意共享 ChatAdapter 映射为服务端 SSE 流源。 */
-export function createAdapterStreamSource(adapter: ChatAdapter, contextWindow = new ContextWindow()): ChatStreamSource {
+export function createAdapterStreamSource(
+  adapter: ChatAdapter,
+  contextWindow = new ContextWindow(),
+  generationTimeoutConfig: GenerationTimeoutConfig = DEFAULT_GENERATION_TIMEOUT_CONFIG,
+): ChatStreamSource {
   return async function* adapterStreamSource(request, { signal }) {
     const messages: Message[] = request.messages.map((message, index) => ({
       id: `request-${index}`,
@@ -48,7 +61,8 @@ export function createAdapterStreamSource(adapter: ChatAdapter, contextWindow = 
       while (lastUser >= 0 && messages[lastUser].role !== 'user') lastUser--;
       const selected = await contextWindow.select(messages.slice(0, Math.max(0, lastUser)),
         messages.slice(Math.max(0, lastUser)), adapter, signal);
-      for await (const chunk of adapter.stream(selected, { signal, maxTokens: contextWindow.config.outputTokens })) {
+      for await (const chunk of streamWithGenerationTimeout(adapter, selected,
+        { signal, maxTokens: contextWindow.config.outputTokens }, generationTimeoutConfig)) {
         if (chunk.done) {
           contextWindow.observe(selected, chunk.usage?.promptTokens);
           yield {
@@ -71,6 +85,11 @@ export function createAdapterStreamSource(adapter: ChatAdapter, contextWindow = 
       }
       if (!signal.aborted) yield { event: 'error', data: { error: { code: 'MODEL_ERROR', message: '模型未返回完整回复。' } } };
     } catch (error) {
+      if (signal.aborted) return;
+      if (error instanceof GenerationTimeoutError) {
+        yield { event: 'error', data: { error: { code: error.code, message: error.message } } };
+        return;
+      }
       const chatError = classifyGeminiError(error, signal);
       yield {
         event: 'error',
@@ -95,6 +114,7 @@ export function createSessionChatStreamSource(
   sessionService: SessionService,
   requestBudget?: RequestBudget,
   contextWindow = new ContextWindow(),
+  generationTimeoutConfig: GenerationTimeoutConfig = DEFAULT_GENERATION_TIMEOUT_CONFIG,
 ): ChatStreamSource {
   return async function* sessionChatStreamSource(request, { signal }) {
     if (signal.aborted) return;
@@ -130,7 +150,8 @@ export function createSessionChatStreamSource(
       }
       if (!state.inputExists) await sessionService.appendTurnInputs(request.sessionId, request.messages, requestId);
       if (signal.aborted) return;
-      for await (const chunk of adapter.stream(selected, { signal, maxTokens: contextWindow.config.outputTokens })) {
+      for await (const chunk of streamWithGenerationTimeout(adapter, selected,
+        { signal, maxTokens: contextWindow.config.outputTokens }, generationTimeoutConfig)) {
         if (signal.aborted) return;
         if (chunk.done) {
           contextWindow.observe(selected, chunk.usage?.promptTokens);
@@ -151,6 +172,10 @@ export function createSessionChatStreamSource(
       if (!signal.aborted) yield { event: 'error', data: { error: { code: 'MODEL_ERROR', message: '模型未返回完整回复。' } } };
     } catch (error) {
       if (signal.aborted) return;
+      if (error instanceof GenerationTimeoutError) {
+        yield { event: 'error', data: { error: { code: error.code, message: error.message } } };
+        return;
+      }
       if (error instanceof SessionRequestConflictError) {
         yield { event: 'error', data: { error: { code: 'REQUEST_CONFLICT', message: error.message } } };
         return;
@@ -192,6 +217,7 @@ export function createChatStreamSourceFromEnv(
   }
   const contextConfig = readContextConfig(environment);
   const contextWindow = new ContextWindow(contextConfig);
+  const generationTimeoutConfig = readGenerationTimeoutConfig(environment, contextConfig.countTimeoutMs);
   const apiKey = sanitizeGeminiApiKey(environment.GEMINI_API_KEY);
   const adapter: ChatAdapter = apiKey
     ? new GeminiChatAdapter({ apiKey, systemInstruction: contextConfig.systemInstruction })
@@ -203,8 +229,8 @@ export function createChatStreamSourceFromEnv(
   }) : undefined;
   if (options.sessionService || options.sessionStorage) {
     const service = options.sessionService ?? new SessionService(options.sessionStorage!);
-    return createSessionChatStreamSource(adapter, service, budget, contextWindow);
+    return createSessionChatStreamSource(adapter, service, budget, contextWindow, generationTimeoutConfig);
   }
-  const source = createAdapterStreamSource(adapter, contextWindow);
+  const source = createAdapterStreamSource(adapter, contextWindow, generationTimeoutConfig);
   return budget ? guardStreamSource(source, budget) : source;
 }

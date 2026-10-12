@@ -1,7 +1,7 @@
 # 测试套件与测试用例台账
 
 > **维护规范**：
-> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（33 个套件）与具体测试用例（394 个断言项）。
+> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（34 个套件）与具体测试用例（405 个断言项）。
 > 2. **铁律联动**：后续开发中，每次有新功能开发、重构或测试内容更新时，**必须同步在此台账中维护新增或修改的测试项**，保持与实际测试套件 100% 同步。
 
 ## 1. 测试套件概览看板
@@ -24,8 +24,8 @@
 | 14 | `server/test/server-skeleton.test.ts` | Task 11 | Express 服务端骨架、双环境运行、根路径与健康检查响应 | 4 | ✅ 通过 |
 | 15 | `core/test/sse-contract.test.ts` | Task 11 | 共享 SSE 事件、错误载荷与 sessionId 演进契约 | 7 | ✅ 通过 |
 | 16 | `server/test/cors.test.ts` | Task 11 | CORS 白名单解析、允许/拒绝策略与预检链路 | 5 | ✅ 通过 |
-| 17 | `server/test/chat-stream.test.ts` | Task 12 | SSE 流式管道、心跳、续传声明与中断级联 | 11 | ✅ 通过 |
-| 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 / Task 17 Step 1 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 27 | ✅ 通过 |
+| 17 | `server/test/chat-stream.test.ts` | Task 12 | SSE 流式管道、心跳、续传声明与中断级联 | 12 | ✅ 通过 |
+| 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 / Task 17 Step 1 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 33 | ✅ 通过 |
 | 19 | `src/test/remote-chat-adapter.test.ts` | Task 13 / Task 14 Step 3 | RemoteChatAdapter 的 SSE 消费、错误映射、AbortSignal 与 sessionId 模式 | 8 | ✅ 通过 |
 | 20 | `src/test/app-remote-integration.test.tsx` | Task 13 Step 3 / Task 14 Step 3 / Phase 3 收尾 | App 的后端 SSE 装配、会话恢复、归档清空与旧配置迁移 | 7 | ✅ 通过 |
 | 21 | `server/test/json-session-storage.test.ts` | Task 14 Step 1 / Task 16 Step 2 | JSON 会话、频道关联、重启恢复与严格追加 | 12 | ✅ 通过 |
@@ -41,7 +41,8 @@
 | 31 | `server/test/deployment.test.ts` | Task 18 Step 1 | 私有 loopback 配置、静态托管、SSE / API 隔离与文件边界 | 7 | ✅ 通过 |
 | 32 | `server/test/deployment-validation.test.ts` | Task 18 Step 2 | 采集故障、重连中断、24 小时 / 新鲜度 / 证据缺口判定 | 11 | ✅ 通过 |
 | 33 | `server/test/context-window.test.ts` | P0-1 第一步 | 轮次窗口、计数降级、超时与内存校准 | 23 | ✅ 通过 |
-| **合计** | **33 个测试文件** | **Phase 1–4 / 审计修复** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **394** | **✅ 100% 通过** |
+| 34 | `server/test/generation-timeout.test.ts` | P1-2 / R2 | 首包 / 总期限、取消、迭代等待与清理边界、启动配置（假时钟 / Mock） | 4 | ✅ 通过 |
+| **合计** | **34 个测试文件** | **Phase 1–4 / 审计修复** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **405** | **✅ 100% 通过** |
 
 ---
 
@@ -336,7 +337,7 @@
 - [x] **白名单外来源应被拒绝并返回 403**
 - [x] **白名单内来源的 OPTIONS 预检应返回 204 与允许的方法和请求头**
 
-### 2.17 `server/test/chat-stream.test.ts` (11 项)
+### 2.17 `server/test/chat-stream.test.ts` (12 项)
 > **任务对应**：Task 12 Step 1 · 服务端 SSE 流式管道与生命周期管理
 
 #### Task 12 Step 1: 服务端 SSE 流式管道与生命周期管理
@@ -360,7 +361,12 @@
 - [x] **显式测试注入允许无状态历史但仍拒绝会话角色注入**
 
 
-### 2.18 `server/test/chat-adapter-stream-source.test.ts` (27 项)
+#### P1-2 / R2 新增回归
+
+- [x] **生成超时 SSE 错误保留固定安全文案**
+
+
+### 2.18 `server/test/chat-adapter-stream-source.test.ts` (33 项)
 > **任务对应**：Task 17 Step 2 / Task 12 Step 2–3 · 服务端 Adapter 承载、自动降级与错误透传
 
 #### Task 12 Step 3: Adapter 自动选择与统一错误透传
@@ -408,6 +414,16 @@
 
 - [x] **直接调用拒绝非法会话输入且不读写存储不耗预算不调用模型**
 - [x] **环境工厂会话模式不再回退到无状态模型流**
+
+
+#### P1-2 / R2 新增回归
+
+- [x] **Mock 降级路径同样受首包期限约束**
+- [x] **SDK 首次调用挂起时也转换为固定首包超时错误**
+- [x] **首个 chunk 后直到总期限仍无完成时返回固定超时错误**
+- [x] **客户端中止挂起流时静默结束而不伪报超时**
+- [x] **生成期限配置在有无 Gemini Key 时均于装配前拒绝**
+- [x] **总超时释放忽略 abort 的真实会话锁，迟到回复不落盘且同标识重试复用输入**
 
 
 ### 2.19 `src/test/remote-chat-adapter.test.ts` (8 项)
@@ -788,3 +804,12 @@
 - 新增23项，33/33文件、387/387用例、根 / 四包类型检查与Web / Express / Bot构建通过。
 - 覆盖管理员 / 精确命令 / 冷却 / FIFO、旧日志及频道关联、重复目标、共享归档锁、失败自然恢复、超时 / 取消 / 迟到响应及本机HTTP重置后新上下文。
 - 模型 / Discord为Mock，数据为隔离临时目录；本轮不部署VPS或访问真实频道 / 凭据。台账与JSON逐文件数量和逐项标题一致，无新增测试文件。
+
+### 2.34 `server/test/generation-timeout.test.ts` (4 项)
+> **任务对应**：P1-2 / R2 · 服务端生成超时与非协作迭代器退出
+
+#### P1-2: 服务端生成超时守卫
+- [x] **默认值保持首包60秒总计90秒，非法环境值在模型装配前被拒绝**
+- [x] **首包期限中止忽略 signal 的上游，同时不等待挂起的 return**
+- [x] **总期限不会被中间 chunk 重置，已完成 done 不留下计时器**
+- [x] **客户端主动中止不是超时，且迟到拒绝被收敛**

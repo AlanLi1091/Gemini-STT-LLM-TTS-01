@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { GoogleGenAI } from '@google/genai';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChatSseEvent } from '@core/contracts/sse';
 import { createChatStreamSourceFromEnv } from '../chat-adapter-stream-source';
 import { RequestBudget } from '../request-budget';
@@ -10,6 +10,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const mockGenerateContentStream = vi.fn();
+
+afterEach(() => vi.useRealTimers());
 
 vi.mock('@google/genai', () => ({
   GoogleGenAI: vi.fn(function () {
@@ -73,6 +75,82 @@ describe('Task 12 Step 3: Adapter 自动选择与统一错误透传', () => {
     const source = createChatStreamSourceFromEnv({}, { requestBudget: budget, mockAdapterOptions: { delayMs: 0, streamChunkDelayMs: 0 } });
     expect((await collectEvents(source)).at(-1)?.event).toBe('done'); expect((await collectEvents(source)).at(-1)?.event).toBe('done');
     expect(mockGenerateContentStream).not.toHaveBeenCalled();
+  });
+  it('Mock 降级路径同样受首包期限约束', async () => {
+    vi.useFakeTimers();
+    const source = createChatStreamSourceFromEnv({
+      CHAT_GENERATION_FIRST_CHUNK_TIMEOUT_MS: '5', CHAT_GENERATION_TOTAL_TIMEOUT_MS: '10',
+    }, { mockAdapterOptions: { delayMs: 100, streamChunkDelayMs: 0 } });
+    const result = collectEvents(source);
+    const expected = expect(result).resolves.toEqual([{ event: 'error', data: {
+      error: { code: 'MODEL_ERROR', message: '模型生成超时，请稍后重试。' },
+    } }]);
+    await vi.advanceTimersByTimeAsync(5);
+    await expected;
+    expect(mockGenerateContentStream).not.toHaveBeenCalled();
+  });
+  it('SDK 首次调用挂起时也转换为固定首包超时错误', async () => {
+    vi.useFakeTimers();
+    mockGenerateContentStream.mockReturnValueOnce(new Promise(() => undefined));
+    const source = createChatStreamSourceFromEnv({
+      GEMINI_API_KEY: 'fake', CHAT_GENERATION_FIRST_CHUNK_TIMEOUT_MS: '5', CHAT_GENERATION_TOTAL_TIMEOUT_MS: '10',
+    });
+    const result = collectEvents(source);
+    const expected = expect(result).resolves.toEqual([{ event: 'error', data: {
+      error: { code: 'MODEL_ERROR', message: '模型生成超时，请稍后重试。' },
+    } }]);
+    await vi.advanceTimersByTimeAsync(5);
+    await expected;
+    expect(mockGenerateContentStream).toHaveBeenCalledOnce();
+  });
+  it('首个 chunk 后直到总期限仍无完成时返回固定超时错误', async () => {
+    vi.useFakeTimers();
+    const { createAdapterStreamSource } = await import('../chat-adapter-stream-source');
+    const adapter: import('@core/index').ChatAdapter = {
+      id: 'total-timeout', name: 'Total timeout', send: async () => ({ content: '' }),
+      stream: async function* () {
+        yield { delta: 'partial', accumulated: 'partial', done: false };
+        await new Promise<void>(() => undefined);
+      },
+    };
+    const source = createAdapterStreamSource(adapter, undefined, { firstChunkTimeoutMs: 5, totalTimeoutMs: 10 });
+    const iterator = source({ messages: [{ role: 'user', content: '问候' }] }, {
+      signal: new AbortController().signal,
+    })[Symbol.asyncIterator]();
+    await expect(iterator.next()).resolves.toMatchObject({ value: { event: 'chunk' } });
+    const result = iterator.next();
+    const expected = expect(result).resolves.toMatchObject({ value: {
+      event: 'error', data: { error: { code: 'MODEL_ERROR', message: '模型生成超时，请稍后重试。' } },
+    } });
+    await vi.advanceTimersByTimeAsync(10);
+    await expected;
+  });
+  it('客户端中止挂起流时静默结束而不伪报超时', async () => {
+    vi.useFakeTimers();
+    const { createAdapterStreamSource } = await import('../chat-adapter-stream-source');
+    let resolveStarted!: () => void;
+    const started = new Promise<void>(resolve => { resolveStarted = resolve; });
+    const source = createAdapterStreamSource({
+      id: 'abort', name: 'Abort', send: async () => ({ content: '' }),
+      stream: async function* () { resolveStarted(); await new Promise<void>(() => undefined); },
+    }, undefined, { firstChunkTimeoutMs: 5, totalTimeoutMs: 10 });
+    const controller = new AbortController();
+    const iterator = source({ messages: [{ role: 'user', content: '问候' }] }, {
+      signal: controller.signal,
+    })[Symbol.asyncIterator]();
+    const result = iterator.next();
+    await started;
+    controller.abort();
+    await expect(result).resolves.toEqual({ done: true, value: undefined });
+    await vi.advanceTimersByTimeAsync(20);
+  });
+  it('生成期限配置在有无 Gemini Key 时均于装配前拒绝', () => {
+    for (const key of [undefined, 'fake-key']) {
+      expect(() => createChatStreamSourceFromEnv({
+        GEMINI_API_KEY: key, CHAT_GENERATION_FIRST_CHUNK_TIMEOUT_MS: '90001',
+        CHAT_GENERATION_TOTAL_TIMEOUT_MS: '90000',
+      })).toThrow('timeout configuration');
+    }
   });
   it('已中止请求不消耗预算或调用 SDK', async () => {
     const budget = new RequestBudget({ requestsPerMinute: 1 }); const controller = new AbortController(); controller.abort();
@@ -289,6 +367,65 @@ describe('P0-2: 幂等重试数据流', () => {
     expect((await c.storage.getSession(c.sessionId))!.messages.map(m => m.role)).toEqual(['user']);
     expect((await collect(c.source, input(c.sessionId, secondId, 'next'))).at(-1)?.event).toBe('done');
     expect((await c.storage.getSession(c.sessionId))!.messages.map(m => m.role)).toEqual(['user', 'user', 'assistant']);
+  }));
+
+  it('总超时释放忽略 abort 的真实会话锁，迟到回复不落盘且同标识重试复用输入', async () => context(async c => {
+    vi.useFakeTimers();
+    let resolveLate!: (result: IteratorResult<import('@core/index').ChatChunk>) => void;
+    let calls = 0;
+    let upstreamSignal: AbortSignal | undefined;
+    c.adapter.stream = vi.fn((_messages, options) => {
+      if (calls++ > 0) return (async function* () {
+        yield { delta: '', accumulated: 'recovered', done: true, usage: { totalTokens: 3 } };
+      })();
+      upstreamSignal = options?.signal;
+      let first = true;
+      return {
+        [Symbol.asyncIterator]() { return this; },
+        next: () => {
+          if (first) { first = false; return Promise.resolve({ done: false as const, value: { delta: 'partial', accumulated: 'partial', done: false } }); }
+          return new Promise<IteratorResult<import('@core/index').ChatChunk>>(resolve => { resolveLate = resolve; });
+        },
+        return: () => new Promise<IteratorResult<import('@core/index').ChatChunk>>(() => undefined),
+      };
+    });
+    const budget = new RequestBudget({ requestsPerMinute: 2 });
+    const pause = vi.spyOn(budget, 'pause');
+    const acquire = vi.spyOn(budget, 'acquire');
+    const { createSessionChatStreamSource } = await import('../chat-adapter-stream-source');
+    const source = createSessionChatStreamSource(c.adapter, c.service, budget, undefined, {
+      firstChunkTimeoutMs: 5, totalTimeoutMs: 10,
+    });
+    const active = source(input(c.sessionId), { signal: new AbortController().signal })[Symbol.asyncIterator]();
+    // Await the first emitted chunk: real storage and model startup have completed.
+    await expect(active.next()).resolves.toMatchObject({ value: { event: 'chunk' } });
+    conflict(await collect(source, input(c.sessionId, secondId, 'next')));
+    const pending = active.next();
+    const timeout = expect(pending).resolves.toMatchObject({ value: {
+      event: 'error', data: { error: { code: 'MODEL_ERROR', message: '模型生成超时，请稍后重试。' } },
+    } });
+    await vi.advanceTimersByTimeAsync(10);
+    await timeout;
+    await active.next();
+    expect(upstreamSignal?.aborted).toBe(true);
+    const afterTimeout = await c.storage.getSession(c.sessionId);
+    expect(afterTimeout!.messages.map(m => [m.role, m.content])).toEqual([['user', 'hi']]);
+    resolveLate({ done: false, value: { delta: '', accumulated: 'late reply', done: true } });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(await c.storage.getSession(c.sessionId)).toEqual(afterTimeout);
+
+    expect((await collect(source, input(c.sessionId))).at(-1)).toEqual({
+      event: 'done', data: { content: 'recovered', usage: { totalTokens: 3 } },
+    });
+    const saved = (await c.storage.getSession(c.sessionId))!.messages;
+    expect(saved.map(m => [m.role, m.content])).toEqual([['user', 'hi'], ['assistant', 'recovered']]);
+    expect(saved.map(m => m.requestId)).toEqual([requestId, requestId]);
+    expect(pause).not.toHaveBeenCalled();
+    expect(acquire).toHaveBeenCalledTimes(2);
+    expect((await collect(source, input(c.sessionId))).at(-1)?.event).toBe('done');
+    expect(c.adapter.stream).toHaveBeenCalledTimes(2);
+    expect(acquire).toHaveBeenCalledTimes(2);
+    expect(vi.getTimerCount()).toBe(0);
   }));
 
   it('进程重建后复用无回复输入并可回放新保存的回复', async () => context(async c => {
