@@ -340,3 +340,10 @@
   - **H1 Discord 触发的计数 429 缩短 Web 记忆**：计数 429 全来源暂停 60 秒，Web 期间使用本地降级窗口；ADR-013 已写明为有意取舍，仅影响上下文长度。
   - **H2 保留额度比例未校验**：未约束「计数保留 ≥ 2 × 生成保留」，配置不当时 Web 频繁降级；属 C4 延伸。
   - **H3 生成额度耗尽前仍先计数**：Discord 生成额度用完后仍先发最多 2 次真实 countTokens 再被拒（P1-7 前即如此，不影响 Web）；Task 20 须在发起搜索前判定搜索预算。
+
+### Task 19 Step 1 审核（2026-10-12，Claude）
+
+- **结论**：Task 19 Step 1 预研审核通过，可作为 Step 2 输入；探针暴露一项现网既有缺陷 K1，登记为独立审计项。审核未修改代码。
+- **范围与证据**：审阅 `4ab1344`（预研）与 `6d5d4aa`（状态收尾）、`research/phase5-search.md` 全文及临时探针脚本；重算 `probe.mjs` / `result.json` SHA256 与报告一致，结果文件无 Key、权限 0600。真实调用仅模型列表1次、countTokens 1次、生成2次，无重试 / 翻页 / 换模型 / 第三方调用，未访问真实会话、VPS 或 Discord，费用经用户事先确认。无工具对照请求在脚本中确认未声明工具。
+- **K1 空回复被静默保存（中低）**：`core/adapters/GeminiChatAdapter.ts` 的 `markTruncated` 仅在 `MAX_TOKENS` 时把空正文视为错误；其他结束原因（如 `MALFORMED_FUNCTION_CALL`、`SAFETY`）的空正文照常产生 done，服务端 `appendAssistantResponse` 保存空 assistant 并进入后续上下文，Web 显示空气泡，Bot 因 `bot/gateway.ts` 仅在正文非空时发送而静默不回复。ADR-013「无正文不存空 assistant」只覆盖 `MAX_TOKENS`。Step 1 无工具对照即出现此情形（单样本，探针 `thinkingLevel=LOW` / 输出上限1024 与生产不同，复现概率未知）。建议统一处理空正文并在 Task 20 前修复。
+- **Step 2 补充输入**：L1–L3 记录于 [预研报告第 9 节](phase5-search.md#9-claude-审核补充2026-10-12)。价格与条款原文依据预研引用，Claude 未独立联网核实。

@@ -152,3 +152,5 @@
 - 真实Key列表62模型、目标3.8 Flash可用，count=55；仅两次生成，无搜索对照MALFORMED_FUNCTION_CALL无正文，grounding STOP / 1条查询 / 3条HTTPS跳转来源、长度187 / 203 / 199，首正文6657ms / 总7399ms，末chunk来源及4600字符建议HTML。工具 / 思考token字段缺失，不推断为0，不做有效对照差值。响应估算约$0.014585（1次查询收费假设），实际账单未知。
 - 真实SDK离线3/3检查、全量36/36文件462/462用例、根 / 四包类型检查通过；沙箱首次HTTP监听EPERM、获准外部重跑通过。只改research / backlog / history / status，应用 / 配置 / 测试台账不变；未访问VPS / Discord / 真实会话，未调用第三方搜索。
 - Step1已勾选；Step2 / 3和Task20–22未授权。既有.zcodeignore保留，按规范提交推送origin/test并在状态收尾后打V0.0.2 annotated tag，最终编号见主会话汇报。
+
+- [x] **Claude Task 19 Step 1 审核登记（2026-10-12）**：Claude 审核 Task 19 Step 1 预研 `4ab1344` / `6d5d4aa` 通过（重算临时探针 / 结果 SHA256 一致，结果无 Key，真实调用与费用边界符合确认计划）。backlog 新增「Claude Task 19 Step 1审核发现」登记 K1（非 MAX_TOKENS 空正文被保存为空 assistant、Web 空气泡、Bot 静默不回复，建议 Task 20 前修复，未授权）；L1（Discord 可见性 / 留存与条款冲突，先裁决是否开放 Discord 搜索）、L2（延迟样本不代表生产）、L3（Interactions API 迁移风险）并入 Task 19 Step 2 裁决输入；审计报告与预研报告追加审核记录。仅文档，未修改应用 / 测试代码，测试台账不变。

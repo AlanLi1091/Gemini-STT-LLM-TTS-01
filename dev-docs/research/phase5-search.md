@@ -111,3 +111,11 @@
 
 - 全量36/36测试文件、462/462用例通过；根 / Web / server / core / bot类型检查通过。首次沙箱HTTP监听EPERM导致失败，获准沙箱外重跑通过；无新增应用测试，tests.md台账不变。
 - 临时脚本SHA256：56bf0406c11a8fcc04034c54c656d403cdc40c3b61e68f5a725940b9daea4677；临时结果SHA256：017ed8862211423bd12cdf7c46e7f260663b9dbbb8ea1d70d44eb6fed9e7e205。临时文件不入Git，报告保留必要观测数字；若临时目录被清理，在线响应不能据此重现，新增真实调用仍需授权。
+
+## 9. Claude 审核补充（2026-10-12）
+
+Step 1 审核通过；以下为 Step 2 裁决输入补充，不改变上文证据。缺陷 K1 见[审计报告](phase4-code-security-audit.md#task-19-step-1-审核2026-10-12claude)。
+
+- **L1 Discord 与展示 / 留存条款的冲突**：除无法渲染搜索建议 HTML 外，Discord 频道回复对其他成员可见（不只是提问者），且由 Discord 永久留存、超出本项目控制。Step 2 应先裁决 Discord 入口是否开放搜索，而不只是展示方式。
+- **L2 延迟样本不代表生产**：7.40 秒在 `thinkingLevel=LOW`、输出上限1024、无系统指令、无历史的条件下测得；生产配置更重，F1（默认90秒生成总期限是否够用）仍留待 Task 22 实测。
+- **L3 API 迁移风险**：官方搜索指南已优先示例 Interactions API；ADR-015 如选 generateContent 方案，须写明迁移风险及触发复核的条件。
