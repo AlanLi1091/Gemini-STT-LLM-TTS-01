@@ -6,6 +6,7 @@ Phase 1–4 已完成并正式结项。Phase 5 Part 1 已启动预研：Task 19 
 
 ## 当前授权
 
+- **本轮授权已完成（2026-10-12）**：用户指派 Claude 复核 K1 并登记 M1；复核通过，审计报告追加「K1 复核」，backlog 登记低优先级残余 M1（提交 `e8bebd4` 已推送 origin/test）。仅文档，未修改应用 / 测试代码；本状态收尾提交后按最终累计提交数创建 annotated tag。M1 修复与 VPS 只读扫描均未授权；用户已决定由 GPT 继续 Part B（Task 19 Step 2 裁决清单）。
 - **Part A K1修复授权已完成（2026-10-12）**：用户指派Part A并确认13文件计划；所有模型结束原因的空正文失败、流源持久化前纵深检查、fixedHints与finishReason白名单日志及回归完成。提交 `f38a2e9`（`fix: reject empty model replies before completion and persistence`）已推送origin/test；本状态收尾提交后按累计184提交创建annotated tag `V0.0.2-build.184`并推送，最终远端核验见主会话汇报。K1待Claude复核、未部署；Part B须用户明确说「继续 Part B」才开始，Step 3 / Task 20–22及其他残余未授权。
 
 - **前轮审核授权已完成（2026-10-12）**：用户指派 Claude 审核 Task 19 Step 1 并记录 K1、L1–L3、推送打 tag；审核通过，K1（非 MAX_TOKENS 空正文被静默保存）登记为未授权审计项，L1–L3 并入 Step 2 裁决输入（提交 `9db37db` 已推送 origin/test）。仅文档，未修改应用 / 测试代码；本状态收尾提交后按最终累计提交数创建 annotated tag。K1、Step 2 / Step 3 与 Task 20–22 均未授权。
@@ -29,7 +30,7 @@ Phase 1–4 已完成并正式结项。Phase 5 Part 1 已启动预研：Task 19 
 - **更早授权已完成（2026-10-09）**：Codex git-ops 当前 tag 版本号已从 0.0.1 修正为 0.0.2；配置 / backlog / history 提交 `3c778a6` 已推送 origin/test，收尾 tag `V0.0.2-build.154`。
 - **授权任务**：2026-10-07 V0.0.2 私有VPS部署、双入口与管理员重置验收完成；四份交付记录87b1617与状态提交8b5731c已推送origin/test，发布PR为[#5](https://github.com/AlanLi1091/Gemini-STT-LLM-TTS-01/pull/5)。本提交补充最终交付信息，随后按已确认计划合并PR并创建annotated tag `V0.0.2-build.149`（test最终提交累计数，非main合并提交计数）；最终远端PR / tag核验见主会话汇报。Phase 5、P1与其余残余仍未授权。
 - **VPS 现状**：Vultr Seattle、1核1G、Ubuntu 26.04.1，内核 7.0.0-38、Node v24.21.0，Auto Backup 已开启；gemini-admin 公钥管理，禁用 root / 密码 SSH，UFW 仅开放 22/tcp。gemini-server / gemini-bot 两个非 root systemd 服务 active / enabled，Express 仅监听 127.0.0.1:3001，数据目录独立持久化。无域名、仅本人使用，通过 SSH 隧道访问 http://127.0.0.1:18080，详见 [运维说明](../deploy/README.md)。服务保持常驻。 当前发行物v002-6f81048，两个服务实际进程cwd均为该目录，NRestarts=0；server.env配置生成10 / Web保留4、计数20 / Web保留8及首包60秒 / 总90秒，bot.env和systemd单元未改。
-- **最近交付 commit**：`f38a2e9` — `fix: reject empty model replies before completion and persistence`（状态收尾及tag见本轮汇报）；前轮审核 `9db37db` — `docs: record Claude Task 19 Step 1 review, K1 and L1-L3`（tag 见收尾）；Task 19 Step 1 预研 `4ab1344`（收尾tag `V0.0.2-build.180`）经 Claude 审核通过；前次正文修订 `2312399` — `docs: refine Phase 5 Part 1 tasks 19-22 from review findings`（tag 见收尾）；此前 P1 部署记录 `7f52533`（收尾tag `V0.0.2-build.176`）；VPS源码固定 `6f810486df9b99f9e32f777c394a4353e2109909`（来源tag `V0.0.2-build.174`），current指向 `/opt/gemini-chat/releases/v002-6f81048`。前置四项已修复、复核并部署；后续任务未授权。
+- **最近交付 commit**：`e8bebd4` — `docs: record Claude K1 review and residual M1`（tag 见收尾）；K1 修复 `f38a2e9`（收尾tag `V0.0.2-build.184`）经 Claude 复核通过；前轮审核 `9db37db` — `docs: record Claude Task 19 Step 1 review, K1 and L1-L3`（tag 见收尾）；Task 19 Step 1 预研 `4ab1344`（收尾tag `V0.0.2-build.180`）经 Claude 审核通过；前次正文修订 `2312399` — `docs: refine Phase 5 Part 1 tasks 19-22 from review findings`（tag 见收尾）；此前 P1 部署记录 `7f52533`（收尾tag `V0.0.2-build.176`）；VPS源码固定 `6f810486df9b99f9e32f777c394a4353e2109909`（来源tag `V0.0.2-build.174`），current指向 `/opt/gemini-chat/releases/v002-6f81048`。前置四项已修复、复核并部署；后续任务未授权。
 - **当前测试基线**：K1本轮本机36/36文件471/471用例（新增9），根 / 四包类型检查及Web / Express / Bot构建通过；定向4/4文件151/151用例，测试台账36文件数量与四个变更测试文件逐项标题一致。只用SDK / 网关Mock及隔离临时JSON，全量在获准沙箱外执行。VPS仍为此前462/462基线，本轮未部署；既有React act警告记录保留。
 - **当前功能验收**：Playground 仅连接后端服务；启动时恢复最近活动会话，无可恢复会话时创建新会话。发送仅提交本轮输入、`sessionId` 与稳定 `requestId`；失败重试复用同一 `requestId`，不重复保存输入，已完成回复直接回放（ADR-012）。服务端从完整持久化日志中选取有限上下文窗口送入模型，完整日志不变（ADR-013）。清空对话归档旧会话并切换至新会话。Discord 管理员可在指定频道以 `@Bot /reset` 归档并重置频道会话（ADR-014）。旧版直连设置迁移为后端模式并清除浏览器存储的 Key 字段。
 
@@ -38,6 +39,8 @@ Phase 1–4 已完成并正式结项。Phase 5 Part 1 已启动预研：Task 19 
 Phase4已结项，Phase5 Part1的Task19 Step1预研已完成，K1代码修复完成、待Claude复核。当前交付后停止；Task19 Step2（Part B）须用户明确说「继续 Part B」才开始。Step3 / Task20–22、其他审计残余 / Part2 / Part3未授权。
 
 ## 本轮验收与遗留
+
+- **Claude K1 复核与 M1 登记（2026-10-12）**：复核 `f38a2e9` / `2a9ea12` 通过，重跑全量36/36文件471/471用例、根 / 四包类型检查通过；残余 M1（修复前历史空 assistant 原样作为空文本发给模型，如上游拒绝则会话在窗口内持续失败）登记为低优先级未授权项，本机 data 只读统计为0，VPS 未检查。仅修改 backlog / history / 审计报告 / status，测试台账不变；下一个待办为 GPT 执行 Part B（Task 19 Step 2）。既有未跟踪 `.zcodeignore` 保留。
 
 - **Part A K1（2026-10-12）**：按确认计划修改13文件，SDK send / stream在任意结束原因下拒绝空 / 纯空白正文，新固定MODEL_ERROR文案经safeStreamError精确白名单下发；MAX_TOKENS原文案与有正文截断保持。会话 / 非会话流源在校准 / appendAssistantResponse前拒绝空done，不保存新空assistant、不发done。模型失败释放锁、保留user、同requestId重试复用输入成功，完成回放不调用模型 / 预算，空正文不pause；Bot既有MODEL_ERROR固定反馈通过。
 - **K1验证**：新增9用例、先复现7失败后实现；定向4/4文件151/151用例、全量36/36文件471/471用例、根 / 四包类型检查与Web / Express / Bot构建通过。台账全36文件数量及四个变更文件标题全部核对一致。finishReason日志只接受枚举值、未知OTHER、缺失省略，不泄露正文 / Key / URL / stack。ADR-013 / 审计证据 / backlog / history / tests已同步，K1已勾选。
