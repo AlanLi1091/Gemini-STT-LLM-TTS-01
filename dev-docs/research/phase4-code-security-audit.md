@@ -310,3 +310,12 @@
 - **语义保持**：上游429仍暂停对应预算，计数429仅暂停计数预算并继续既有降级；保存assistant失败不发送done，输入保留，finally解锁，同requestId重试不重复输入并可完成 / 回放；超时固定文案与锁、取消及窗口策略回归通过。
 - **验证**：新增1文件40项，全量35/35文件445/445用例、根 / 四包类型检查与 Web / Express / Bot 构建通过。覆盖非法ID、损坏会话文件、两阶段ENOSPC、伪造AIza Key的SDK403、固定429与pause、真实fetch失败cause、MODEL_ERROR / UNKNOWN、白名单日志、低层与Mock、HTTP序列化、Web横幅、Bot固定反馈与日志；台账逐文件 / 标题 / 数量核对一致。首次沙箱HTTP监听EPERM后获准重跑通过。
 - **遗留与复核**：模型 / Discord 使用Mock，JSON存储为隔离临时目录，未访问真实Gemini / Discord / VPS / 会话数据；现网应用仍为原版本。既有React act警告与未跟踪.zcodeignore保留；完成后等待Claude复核，P1-7及其余任务继续未授权。
+
+### P1-3 复核（2026-10-12，Claude）
+
+- **结论**：复核通过；P1-3 本机代码修复完成（仅位于 `test` 分支，尚未部署 VPS），作为 Phase 5 Part 1 前置已满足。残余项均为低优先级，不阻塞验收。复核未修改代码。
+- **范围与证据**：审阅 `2826331`（实现）与 `e51f8be`（状态收尾）：`server/chat-errors.ts` 全文，流源、SSE 处理、计数窗口、Gemini 分类器与 Web `RemoteChatAdapter` 改动；重跑全量 35/35 文件、445/445 用例，根 / 四包类型检查通过。
+- **已确认**：会话流源按 storage / count / model 标记阶段，存储环节失败不进入 Gemini 分类器，统一 UNKNOWN +「会话读取或保存失败，请稍后重试。」，审计用例 `'../x'` 与损坏会话文件不再误报网络错误；`safeStreamError` 按码固定文案，不透传任意 ChatError 文本，仅放行精确匹配的本地提示，会话 / 低层 / Mock 流源及 SSE 处理兜底均覆盖。REQUEST_CONFLICT、CONTEXT_LIMIT、P1-2 超时、会话不存在 / 已归档及预算等待文案逐条核对未漂移。日志仅记录阶段、码及枚举白名单内的 name / errno / 合法 HTTP status，不序列化错误对象、不记录 sessionId。仅模型阶段 429 暂停生成预算，计数 429 只暂停计数预算。Web HTTP 非 200 与浏览器网络错误改为固定文案，全部错误码有对应文案；Bot 按码映射不受影响。
+- **残余项（均为低优先级）**：
+  - **G1 部分真实网络故障归为 UNKNOWN**：Node fetch 的 `UND_ERR_*` 与 TLS 证书错误不在网络码集合和日志 errno 白名单内，提示为「服务暂时不可用」，排障只见 TypeError；不涉及安全。
+  - **G2 Web 横幅信任服务端文案**：`ChatErrorBanner` 对 MODEL_ERROR / UNKNOWN 展示服务端 message；Phase 5 新增错误路径（含搜索）须经 `safeStreamError`，建议写入 Task 20 验收或 ADR-015。

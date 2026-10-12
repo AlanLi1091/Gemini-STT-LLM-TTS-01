@@ -122,3 +122,5 @@
 - Web HTTP / 浏览器错误固定文案，横幅布局与Bot业务代码不变；Bot UNKNOWN固定BACKEND反馈与日志已核验。保存assistant失败不发done，锁、幂等、回放、窗口、计数降级、429暂停与超时语义不变；ADR-009补充边界，审计报告、backlog及台账同步。
 - 新增1文件40项，35/35文件445/445用例、根 / 四包类型检查、Web / Express / Bot构建通过；首次沙箱HTTP监听EPERM后获准重跑全量通过，台账逐文件 / 标题 / 数量一致。
 - 未访问真实Gemini / Discord / VPS / 会话数据，未部署；既有React act警告与未跟踪.zcodeignore保留。待Claude复核；P1-7与其余审计项 / Phase 5任务未授权。Git提交 / tag见本轮status收尾与汇报。
+
+- [x] **Claude P1-3 复核与残余登记（2026-10-12）**：Claude 复核 P1-3 修复 `2826331` / `e51f8be` 通过（全量35/35文件445/445用例、根 / 四包类型检查重跑通过），审计报告追加「P1-3 复核」一节；backlog 新增「Claude P1-3复核残余」分组登记 G1（Node fetch `UND_ERR_*` / TLS 网络故障归为 UNKNOWN 且日志缺 errno）、G2（Web 横幅信任服务端文案，Phase 5 新错误路径须经 `safeStreamError`），均为低优先级未授权。仅文档，未修改应用 / 测试代码，测试台账不变；P1-7 与 Task 19–22 仍未授权。
