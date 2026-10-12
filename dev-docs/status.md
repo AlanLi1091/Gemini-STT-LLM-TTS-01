@@ -2,9 +2,11 @@
 
 ## 当前阶段
 
-Phase 1–4 已完成并正式结项；Phase 4 Task 15–18全部完成，Task 18 Step 3退出条件核对与回归通过。Phase 5及后续阶段未启动、未授权。
+Phase 1–4 已完成并正式结项。Phase 5 Part 1 已启动预研：Task 19 Step 1于2026-10-12单独授权并完成；Step 2 / Step 3、Task 20–22及后续阶段仍未授权。
 
 ## 当前授权
+
+- **Task 19 Step 1授权已完成（2026-10-12）**：用户指派网络搜索预研，确认四文件计划及真实探针费用；方案对比、官方模型 / 价格 / 建议展示与留存条款、SDK / ADR-013边界及最小真实探针已落档。提交 `4ab1344`（`docs: research Phase 5 search options and verify grounding probe`）已推送origin/test；本状态收尾提交后，按累计180提交创建annotated tag `V0.0.2-build.180`并推送，最终远端核验见主会话汇报。Step 2 / 3和Task 20–22未授权，下一个待办为用户指派Task 19 Step 2；现网保持原发行物。
 
 - **本轮授权已完成（2026-10-12）**：用户确认 Claude 修订计划，依据对 GLM-5.3 拆解的审查意见及残余 G2 / H3 / F1 补充 Task 19–22 正文（提交 `2312399` 已推送 origin/test）。仅文档，未开工任何 Task；本状态收尾提交后按最终累计提交数创建 annotated tag。Task 19–22 均未授权，下一个待办为用户指派 Task 19 Step 1。
 - **P1 VPS部署授权已完成（2026-10-12）**：用户确认六份文档 / VPS文件计划，固定已复核源码6f81048（来源tag V0.0.2-build.174）部署到v002-6f81048；P1-1 / P1-2 + R2 / P1-3 / P1-7均已上线。本机 / Linux回归、备份 / 隔离恢复 / 旧消息保留、Web真实回复 / 刷新恢复、用户确认Discord正常均通过。交付记录提交 `7f52533`（`docs: record verified P1 VPS deployment`）已推送origin/test。本状态收尾提交并推送后，在最后提交按累计176提交创建annotated tag `V0.0.2-build.176`，最终远端核验见主会话汇报。版本号仍0.0.2，没有合并或推送main；Task19及其余项仍未授权，服务保持常驻。
@@ -24,15 +26,19 @@ Phase 1–4 已完成并正式结项；Phase 4 Task 15–18全部完成，Task 1
 - **更早授权已完成（2026-10-09）**：Codex git-ops 当前 tag 版本号已从 0.0.1 修正为 0.0.2；配置 / backlog / history 提交 `3c778a6` 已推送 origin/test，收尾 tag `V0.0.2-build.154`。
 - **授权任务**：2026-10-07 V0.0.2 私有VPS部署、双入口与管理员重置验收完成；四份交付记录87b1617与状态提交8b5731c已推送origin/test，发布PR为[#5](https://github.com/AlanLi1091/Gemini-STT-LLM-TTS-01/pull/5)。本提交补充最终交付信息，随后按已确认计划合并PR并创建annotated tag `V0.0.2-build.149`（test最终提交累计数，非main合并提交计数）；最终远端PR / tag核验见主会话汇报。Phase 5、P1与其余残余仍未授权。
 - **VPS 现状**：Vultr Seattle、1核1G、Ubuntu 26.04.1，内核 7.0.0-38、Node v24.21.0，Auto Backup 已开启；gemini-admin 公钥管理，禁用 root / 密码 SSH，UFW 仅开放 22/tcp。gemini-server / gemini-bot 两个非 root systemd 服务 active / enabled，Express 仅监听 127.0.0.1:3001，数据目录独立持久化。无域名、仅本人使用，通过 SSH 隧道访问 http://127.0.0.1:18080，详见 [运维说明](../deploy/README.md)。服务保持常驻。 当前发行物v002-6f81048，两个服务实际进程cwd均为该目录，NRestarts=0；server.env配置生成10 / Web保留4、计数20 / Web保留8及首包60秒 / 总90秒，bot.env和systemd单元未改。
-- **最近交付 commit**：`2312399` — `docs: refine Phase 5 Part 1 tasks 19-22 from review findings`（tag 见收尾）；此前 P1 部署记录 `7f52533`（收尾tag `V0.0.2-build.176`）；VPS源码固定 `6f810486df9b99f9e32f777c394a4353e2109909`（来源tag `V0.0.2-build.174`），current指向 `/opt/gemini-chat/releases/v002-6f81048`。前置四项已修复、复核并部署；后续任务未授权。
+- **最近交付 commit**：`4ab1344` — `docs: research Phase 5 search options and verify grounding probe`（状态收尾及tag见本轮汇报）；前次正文修订 `2312399` — `docs: refine Phase 5 Part 1 tasks 19-22 from review findings`（tag 见收尾）；此前 P1 部署记录 `7f52533`（收尾tag `V0.0.2-build.176`）；VPS源码固定 `6f810486df9b99f9e32f777c394a4353e2109909`（来源tag `V0.0.2-build.174`），current指向 `/opt/gemini-chat/releases/v002-6f81048`。前置四项已修复、复核并部署；后续任务未授权。
 - **当前测试基线**：本轮本机 / VPS Linux各36/36文件、462/462用例，根 / 四包类型检查及Web / Express cjs / Bot构建通过；无新增或修改测试代码。Linux复用现网lockfile并校验，生产依赖审计0漏洞；Web真实回复与刷新恢复、Discord用户确认及服务端元数据通过；既有React act警告记录保留，当前为上线冒烟，不宣称新版24小时验收。
 - **当前功能验收**：Playground 仅连接后端服务；启动时恢复最近活动会话，无可恢复会话时创建新会话。发送仅提交本轮输入、`sessionId` 与稳定 `requestId`；失败重试复用同一 `requestId`，不重复保存输入，已完成回复直接回放（ADR-012）。服务端从完整持久化日志中选取有限上下文窗口送入模型，完整日志不变（ADR-013）。清空对话归档旧会话并切换至新会话。Discord 管理员可在指定频道以 `@Bot /reset` 归档并重置频道会话（ADR-014）。旧版直连设置迁移为后端模式并清除浏览器存储的 Key 字段。
 
 ## 下一步计划
 
-Phase4已结项，Phase5未启动。Part1前置四项（P1-1、P1-2 + R2、P1-3、P1-7）均已修复、通过Claude复核并部署VPS；本轮部署完成后停止。下一个规划事项为另开一轮审议Task19–22正文审查意见，Task19仍须用户单独指派；其他审计残余 / Part2 / Part3均未授权。
+Phase4已结项，Phase5 Part1仅Task19 Step1预研已完成。下一个待办为用户指派Task19 Step2关键裁决清单；Step3 / Task20–22、其他审计残余 / Part2 / Part3未授权，本轮交付后停止。
 
 ## 本轮验收与遗留
+
+- **Task 19 Step 1预研（2026-10-12）**：新增[搜索报告](research/phase5-search.md)，同步backlog / history / status。离线真实SDK3/3检查、全量36/36文件462/462用例、根 / 四包类型检查通过；首次沙箱HTTP监听EPERM后获准外部重跑通过，无新增测试，台账不变。
+- **真实探针与边界**：已获费用确认，仅models.list1次（62模型）、countTokens1次（55）、生成2次。当前Key / gemini-3.8-flash grounding成功，1条查询 / 3条HTTPS跳转来源、长度187 / 203 / 199；首正文6657ms / 总7399ms、来源仅末chunk、建议HTML长4600。无搜索对照MALFORMED_FUNCTION_CALL无正文，未重试，不宣称有效对照差值；工具 / 思考token字段缺失，不推断为0。两次输入110 / 输出134，按1次收费查询估算$0.014585，实际账单与免费余额未知。外部API仅官方资料对比，Google展示 / 留存与Discord适配、ADR-013校准须在后续裁决。
+- **范围与临时文件**：只改四份文档，未修改应用 / 配置、未访问VPS / Discord / 真实会话或第三方搜索。探针及脱敏结果位于/private/tmp/gemini-task19-step1，报告记录SHA256，不入Git；既有.zcodeignore保留。Step1已勾选，后续Step未授权。
 
 - **Task 19–22 正文修订（2026-10-12）**：用户确认 Claude 计划，backlog Phase 5 章节补充各 Step 的核实项、裁决项与验收要求（29 条审查意见中 5 条不再需要，另并入 G2 / H3 / F1）；仅修改 backlog / history / status，未修改应用 / 测试 / 配置或现网，全量36/36文件462/462用例、根 / 四包类型检查通过，测试台账不变。Task 19–22 均未授权；既有未跟踪 `.zcodeignore` 保留。
 
