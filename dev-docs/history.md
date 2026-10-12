@@ -145,3 +145,10 @@
 - 部署 / backlog / 台账 / 运维记录同步，交付提交和tag见status收尾。没有合并或推送main；Task19及其余残余仍未授权，既有.zcodeignore保留；服务保持常驻。本次是上线冒烟，不宣称新版本已有24小时在线验收。
 
 - [x] **Task 19–22 正文修订（2026-10-12）**：用户确认 Claude 修订计划，依据此前对 GLM-5.3 拆解的 29 条审查意见（第 6 / 8 / 19 / 23 / 24 条因依赖顺序已登记、P1-1 / P1-2 / P1-3 修复或 status 已补记不再需要）及残余 G2 / H3 / F1，在 backlog Phase 5 章节补充：Task 19 探针费用确认与模型 / 条款 / 用量 / 链接核实、来源持久化与上下文 / 引用形式 / 命令共存 / Discord 额度 / 生成期限等裁决项、ADR-007 / 009 契约与 risks.md 同步；Task 20 来源持久化与回放、Mock 与中止传递、基于 SourceRequestBudget 的搜索预算与先判定、校准与密钥隔离、可选 systemd 私网阻断；Task 21 Web 协议白名单与 XSS 复核、Discord Markdown 转义 / 预览抑制 / 长度限制 / typing；Task 22 注入验收边界、真实耗时与部署配置 / 版本裁决。仅文档，未开工任何 Task，测试台账与应用源码不变。
+
+## 2026-10-12：Phase 5 Task 19 Step 1 网络搜索预研
+
+- 用户单独指派Step1并确认四文件计划及真实探针费用；新增research/phase5-search.md，对比Gemini grounding / Tavily / Brave，核查模型、价格、建议展示与留存条款、SDK / ADR-013边界。
+- 真实Key列表62模型、目标3.8 Flash可用，count=55；仅两次生成，无搜索对照MALFORMED_FUNCTION_CALL无正文，grounding STOP / 1条查询 / 3条HTTPS跳转来源、长度187 / 203 / 199，首正文6657ms / 总7399ms，末chunk来源及4600字符建议HTML。工具 / 思考token字段缺失，不推断为0，不做有效对照差值。响应估算约$0.014585（1次查询收费假设），实际账单未知。
+- 真实SDK离线3/3检查、全量36/36文件462/462用例、根 / 四包类型检查通过；沙箱首次HTTP监听EPERM、获准外部重跑通过。只改research / backlog / history / status，应用 / 配置 / 测试台账不变；未访问VPS / Discord / 真实会话，未调用第三方搜索。
+- Step1已勾选；Step2 / 3和Task20–22未授权。既有.zcodeignore保留，按规范提交推送origin/test并在状态收尾后打V0.0.2 annotated tag，最终编号见主会话汇报。
