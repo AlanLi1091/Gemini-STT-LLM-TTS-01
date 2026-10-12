@@ -161,3 +161,5 @@
 - fixedHints精确白名单及finishReason枚举日志已覆盖；其他adapter空done、锁释放、已存user保留、同requestId重试 / 成功回放、生成预算不pause与Bot固定可读反馈通过。历史空assistant不改写、不额外跳过窗口、已有回放保持；旧空回复回放仍可空气泡 / Bot静默。
 - 新增9项，定向4/4文件151/151用例，全量36/36文件471/471用例、根 / 四包类型检查、Web / Express / Bot构建通过；先复现7失败再实现，台账逐项同步。只用Mock / 隔离临时JSON，未访问真实Gemini / Discord / 会话 / VPS、未部署。
 - 同步ADR-013 / 审计证据 / tests / backlog / history / status，K1已勾选，待Claude复核。origin/test提交及状态收尾后annotated tag V0.0.2-build.<累计数>见主会话汇报；既有.zcodeignore保留。Part B须用户明确说「继续 Part B」，未开始任何后续任务。
+
+- [x] **Claude K1 复核与 M1 登记（2026-10-12）**：Claude 复核 K1 修复 `f38a2e9` / `2a9ea12` 通过（全量36/36文件471/471用例、根 / 四包类型检查重跑通过），审计报告追加「K1 复核」一节；backlog 登记残余 M1（修复前历史空 assistant 原样作为空文本发给模型，如上游拒绝空文本则会话在窗口内持续失败；建议发送前跳过空 assistant，VPS 只读统计须另行授权；本机 data 统计为0），低优先级未授权。仅文档，未修改应用 / 测试代码，测试台账不变；Task 19 Step 2（Part B）待用户指示 GPT 继续。

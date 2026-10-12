@@ -129,11 +129,12 @@
 - [ ] **H2（保留额度比例未校验）**：启动校验未约束「计数保留 ≥ 2 × 生成保留」，例如计数保留 2、生成保留 4 时 Web 频繁退回本地降级；属 C4 延伸，处理 C4 时一并加启动告警。
 - [ ] **H3（生成额度耗尽前仍先计数）**：窗口选择与计数先于生成预算判定，Discord 生成额度用完后仍会先发最多 2 次真实 countTokens 再被拒（消耗 Discord 计数份额，不影响 Web，P1-7 前即如此）。Phase 5 搜索成本更高，Task 20 须在发起搜索前判定搜索预算。
 
-### Claude Task 19 Step 1审核发现（K1于2026-10-12单独授权修复完成，待复核）
+### Claude Task 19 Step 1审核发现（K1于2026-10-12单独授权修复完成，Claude 复核通过）
 
 依据 [Task 19 Step 1 审核](research/phase4-code-security-audit.md#task-19-step-1-审核2026-10-12claude)；登记不构成实施授权。
 
-- [x] **K1（空回复被静默保存；2026-10-12代码修复完成，待Claude复核，未部署）**：`GeminiChatAdapter` 仅在 `MAX_TOKENS` 时把空正文视为错误；`MALFORMED_FUNCTION_CALL`、`SAFETY` 等结束原因返回空正文时，服务端保存空 assistant 消息并进入后续上下文，Web 显示空气泡，Bot 静默不回复（`bot/gateway.ts` 仅在正文非空时发送）。Step 1 无工具对照即返回 `MALFORMED_FUNCTION_CALL` 空正文（单样本、探针配置与生产不同，复现概率未知）。建议对任何结束原因的空正文统一返回固定 MODEL_ERROR、不保存空 assistant，增加回归；Task 20「搜索失败降级为无搜索回复」会走同一路径，建议在 Task 20 前修复。 完成：SDK send / stream和流源纵深检查拒绝空正文，新固定提示经白名单下发，finishReason安全日志、同标识重试 / 锁 / 不暂停及Bot反馈已覆盖；历史日志 / 窗口 / 回放不改写。新增9项，全量36/36文件471/471用例、类型检查及三构建通过，证据见[审计修复记录](research/phase4-code-security-audit.md#k1-修复证据2026-10-12codex未部署)。
+- [x] **K1（空回复被静默保存；2026-10-12代码修复完成，待Claude复核，未部署）**：`GeminiChatAdapter` 仅在 `MAX_TOKENS` 时把空正文视为错误；`MALFORMED_FUNCTION_CALL`、`SAFETY` 等结束原因返回空正文时，服务端保存空 assistant 消息并进入后续上下文，Web 显示空气泡，Bot 静默不回复（`bot/gateway.ts` 仅在正文非空时发送）。Step 1 无工具对照即返回 `MALFORMED_FUNCTION_CALL` 空正文（单样本、探针配置与生产不同，复现概率未知）。建议对任何结束原因的空正文统一返回固定 MODEL_ERROR、不保存空 assistant，增加回归；Task 20「搜索失败降级为无搜索回复」会走同一路径，建议在 Task 20 前修复。 完成：SDK send / stream和流源纵深检查拒绝空正文，新固定提示经白名单下发，finishReason安全日志、同标识重试 / 锁 / 不暂停及Bot反馈已覆盖；历史日志 / 窗口 / 回放不改写。新增9项，全量36/36文件471/471用例、类型检查及三构建通过，证据见[审计修复记录](research/phase4-code-security-audit.md#k1-修复证据2026-10-12codex未部署)。2026-10-12 Claude 复核通过，残余 M1 见下项。
+- [ ] **M1（修复前的历史空 assistant 可能使会话持续失败，低优先级，未授权）**：`formatGeminiContents` 会把历史空 assistant 原样作为 `parts: [{ text: '' }]` 发给模型；如上游以 400 拒绝空文本（基于 API 经验推断，未实测），该空回复留在20轮窗口内期间该会话每次请求都失败，直至滑出窗口或经 `/reset` / 清空对话。建议在发送模型前跳过空 assistant 消息（日志不改写）并补回归；建议先经用户另行授权只读扫描 VPS 会话数据，仅统计空 assistant 数量、不输出内容，数量为0则保持低优先级。本机 `data/` 4 个会话文件只读统计为0。
 
 ## V0.0.2 发布（2026-10-07 本轮明确授权）
 
@@ -192,6 +193,8 @@
 - [x] **Codex git-ops Tag 规则同步（2026-10-06）**：用户确认四文件计划；每步全部提交及状态收尾推送后，在最后提交上自动创建并推送 annotated tag，版本保持 0.0.1、编号取目标提交累计数；核验分支、tag 对象与 peeled 提交，不覆盖已有 tag。配置 / 七项规则检查、32/32 文件、327/327 用例与类型检查通过。
 
 ## 文档维护
+
+- [x] **Claude K1 复核与 M1 登记（2026-10-12）**：复核 `f38a2e9` / `2a9ea12` 通过，审计报告追加复核一节，残余 M1 登记为低优先级未授权项；仅文档，测试台账与应用源码不变。
 
 - [x] **Claude Task 19 Step 1 审核登记（2026-10-12）**：审核 `4ab1344` / `6d5d4aa` 通过；K1 登记为未授权审计项，L1–L3 并入 Task 19 Step 2 裁决输入，审计报告与预研报告追加审核记录；仅文档，测试台账与应用源码不变。
 
