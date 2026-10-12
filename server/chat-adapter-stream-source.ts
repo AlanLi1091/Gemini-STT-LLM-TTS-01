@@ -8,13 +8,13 @@ import {
   type MockChatAdapterOptions,
 } from '@core/index';
 import { isChatStreamRequest, type ChatStreamSource } from './chat-stream';
-import { SessionArchivedError, SessionService } from './session-service';
-import { SessionNotFoundError, SessionRequestConflictError, type SessionStorage } from './storage/session-storage';
+import { SessionService } from './session-service';
+import { SessionRequestConflictError, type SessionStorage } from './storage/session-storage';
 import { guardStreamSource, RequestBudget } from './request-budget';
 import { ContextWindow, readContextConfig } from './context-window';
+import { logChatFailure, safeStreamError, type ErrorStage } from './chat-errors';
 import {
   DEFAULT_GENERATION_TIMEOUT_CONFIG,
-  GenerationTimeoutError,
   readGenerationTimeoutConfig,
   streamWithGenerationTimeout,
   type GenerationTimeoutConfig,
@@ -56,11 +56,13 @@ export function createAdapterStreamSource(
       createdAt: 0,
     }));
 
+    let stage: ErrorStage = 'count';
     try {
       let lastUser = messages.length - 1;
       while (lastUser >= 0 && messages[lastUser].role !== 'user') lastUser--;
       const selected = await contextWindow.select(messages.slice(0, Math.max(0, lastUser)),
         messages.slice(Math.max(0, lastUser)), adapter, signal);
+      stage = 'model';
       for await (const chunk of streamWithGenerationTimeout(adapter, selected,
         { signal, maxTokens: contextWindow.config.outputTokens }, generationTimeoutConfig)) {
         if (chunk.done) {
@@ -86,20 +88,10 @@ export function createAdapterStreamSource(
       if (!signal.aborted) yield { event: 'error', data: { error: { code: 'MODEL_ERROR', message: '模型未返回完整回复。' } } };
     } catch (error) {
       if (signal.aborted) return;
-      if (error instanceof GenerationTimeoutError) {
-        yield { event: 'error', data: { error: { code: error.code, message: error.message } } };
-        return;
-      }
       const chatError = classifyGeminiError(error, signal);
-      yield {
-        event: 'error',
-        data: {
-          error: {
-            code: chatError.code,
-            message: chatError.message,
-          },
-        },
-      };
+      const safeError = safeStreamError(error, stage, chatError.code);
+      logChatFailure(error, stage, safeError.code);
+      yield { event: 'error', data: { error: safeError } };
     }
   };
 }
@@ -128,6 +120,7 @@ export function createSessionChatStreamSource(
       yield { event: 'error', data: { error: { code: 'REQUEST_CONFLICT', message: new SessionRequestConflictError().message } } };
       return;
     }
+    let stage: ErrorStage = 'storage';
     try {
       const requestId = request.requestId?.toLowerCase();
       const state = await sessionService.inspectRequest(request.sessionId, request.messages[0]?.content ?? '', requestId);
@@ -140,6 +133,7 @@ export function createSessionChatStreamSource(
       const inputs: Message[] = state.inputExists ? state.session.messages.slice(-1) :
         request.messages.map((message, index) => ({ ...message, id: requestId ?? `pending-${index}`, createdAt: 0 }));
       const history = state.inputExists ? state.session.messages.slice(0, -1) : state.session.messages;
+      stage = 'count';
       const selected = await contextWindow.select(history, inputs, adapter, signal);
       if (signal.aborted) return;
       // Replay and rejected conflicts do not consume upstream model budget.
@@ -148,13 +142,16 @@ export function createSessionChatStreamSource(
         yield { event: 'error', data: { error: { code: 'RATE_LIMIT', message: `模型请求预算已满或暂时暂停，请等待 ${Math.ceil(wait / 1000)} 秒后再试。` } } };
         return;
       }
+      stage = 'storage';
       if (!state.inputExists) await sessionService.appendTurnInputs(request.sessionId, request.messages, requestId);
       if (signal.aborted) return;
+      stage = 'model';
       for await (const chunk of streamWithGenerationTimeout(adapter, selected,
         { signal, maxTokens: contextWindow.config.outputTokens }, generationTimeoutConfig)) {
         if (signal.aborted) return;
         if (chunk.done) {
           contextWindow.observe(selected, chunk.usage?.promptTokens);
+          stage = 'storage';
           await sessionService.appendAssistantResponse(
             request.sessionId,
             chunk.accumulated,
@@ -172,35 +169,12 @@ export function createSessionChatStreamSource(
       if (!signal.aborted) yield { event: 'error', data: { error: { code: 'MODEL_ERROR', message: '模型未返回完整回复。' } } };
     } catch (error) {
       if (signal.aborted) return;
-      if (error instanceof GenerationTimeoutError) {
-        yield { event: 'error', data: { error: { code: error.code, message: error.message } } };
-        return;
-      }
-      if (error instanceof SessionRequestConflictError) {
-        yield { event: 'error', data: { error: { code: 'REQUEST_CONFLICT', message: error.message } } };
-        return;
-      }
-      if (error instanceof SessionNotFoundError) {
-        yield {
-          event: 'error',
-          data: { error: { code: 'UNKNOWN', message: 'Chat session was not found.' } },
-        };
-        return;
-      }
-      if (error instanceof SessionArchivedError) {
-        yield {
-          event: 'error',
-          data: { error: { code: 'UNKNOWN', message: 'Chat session is archived.' } },
-        };
-        return;
-      }
-
-      const chatError = classifyGeminiError(error, signal);
-      if (chatError.code === 'RATE_LIMIT') requestBudget?.pause();
-      yield {
-        event: 'error',
-        data: { error: { code: chatError.code, message: chatError.message } },
-      };
+      // Session/storage failures never enter the upstream model classifier.
+      const code = stage === 'storage' ? 'UNKNOWN' : classifyGeminiError(error, signal).code;
+      const safeError = safeStreamError(error, stage, code);
+      logChatFailure(error, stage, safeError.code);
+      if (stage === 'model' && safeError.code === 'RATE_LIMIT') requestBudget?.pause();
+      yield { event: 'error', data: { error: safeError } };
     } finally {
       release();
     }

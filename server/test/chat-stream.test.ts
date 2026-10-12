@@ -210,3 +210,28 @@ describe('P0-2: 幂等请求校验', () => {
     expect(source).toHaveBeenCalledOnce();
   });
 });
+
+
+describe('P1-3: HTTP SSE 错误安全', () => {
+  it('真实模型流源的敏感 500 错误只序列化固定文案与安全日志', async () => {
+    const { createAdapterStreamSource } = await import('../chat-adapter-stream-source');
+    const log = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const source = createAdapterStreamSource({ id: 'unsafe', name: 'Fixture', send: async () => ({ content: '' }),
+        stream: async function* () { throw Object.assign(new Error('AIzaFAKE_HTTP_SECRET https://example.test/?key=private /var/lib/private'), { status: 500 }); },
+      });
+      const response = await request(createApp({ chatStreamSource: source })).post('/api/chat/stream').send(validRequest);
+      expect(response.text).toBe('event: error\ndata: {"error":{"code":"MODEL_ERROR","message":"模型生成失败，请稍后重试。"}}\n\n');
+      expect(log.mock.calls).toEqual([[JSON.stringify({ stage: 'model', code: 'MODEL_ERROR', name: 'Error', status: 500 })]]);
+    } finally { log.mockRestore(); }
+  });
+  it('流源意外抛错的兜底日志仅记录白名单且保持现有 UNKNOWN 文案', async () => {
+    const log = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const source: ChatStreamSource = async function* () { throw Object.assign(new Error('ENOSPC /var/lib/private AIzaFAKE_FALLBACK_SECRET'), { code: 'ENOSPC' }); };
+      const response = await request(createApp({ chatStreamSource: source })).post('/api/chat/stream').send(validRequest);
+      expect(response.text).toBe('event: error\ndata: {"error":{"code":"UNKNOWN","message":"Chat stream failed."}}\n\n');
+      expect(log.mock.calls).toEqual([[JSON.stringify({ stage: 'model', code: 'UNKNOWN', name: 'Error', errno: 'ENOSPC' })]]);
+    } finally { log.mockRestore(); }
+  });
+});

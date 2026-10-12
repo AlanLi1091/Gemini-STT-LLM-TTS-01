@@ -530,3 +530,17 @@ describe('P0-1: 计数兼容与长度截断', () => {
     await expect(async () => { for await (const _ of adapter.stream(messages)) {} }).rejects.toMatchObject({ code: 'MODEL_ERROR' });
   });
 });
+
+
+describe('P1-3: 网络错误分类边界', () => {
+  it('普通 TypeError 和无网络 cause 的 fetch failed 不误报网络错误', () => {
+    for (const error of [new TypeError('Invalid session id'), new TypeError('fetch failed')]) {
+      expect(classifyGeminiError(error).code).toBe('UNKNOWN');
+    }
+    expect(classifyGeminiError(null).code).toBe('UNKNOWN');
+  });
+  it.each(['ECONNREFUSED', 'ENOTFOUND', 'ECONNRESET', 'ETIMEDOUT'])('fetch failed 的 %s cause 保留网络分类', code => {
+    const error = new TypeError('fetch failed', { cause: { code } });
+    expect(classifyGeminiError(error).code).toBe('NETWORK_ERROR');
+  });
+});

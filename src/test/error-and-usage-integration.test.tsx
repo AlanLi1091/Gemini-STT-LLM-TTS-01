@@ -1,7 +1,9 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { App } from '../App';
 import { ChatError, ChatAdapter } from '../types';
+import { RemoteChatAdapter } from '../adapters/RemoteChatAdapter';
+import { ChatErrorBanner } from '../components/ChatErrorBanner';
 import * as useChatModule from '../hooks/useChat';
 
 describe('Task 9: 错误提示与用量记录 UI 集成测试', () => {
@@ -101,4 +103,27 @@ describe('Task 9: 错误提示与用量记录 UI 集成测试', () => {
     expect(dismissErrorMock).toHaveBeenCalledTimes(1);
   });
 
+});
+
+
+describe('P1-3: RemoteChatAdapter 与错误横幅', () => {
+  afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+  it.each([
+    ['MODEL_ERROR', '模型生成失败，请稍后重试。'],
+    ['UNKNOWN', '服务暂时不可用，请稍后重试。'],
+    ['UNKNOWN', '会话读取或保存失败，请稍后重试。'],
+  ])('横幅显示服务端 %s 固定文案 %s', async (code, message) => {
+    const frame = `event: error\ndata: ${JSON.stringify({ error: { code, message } })}\n\n`;
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(new ReadableStream({ start(controller) {
+      controller.enqueue(new TextEncoder().encode(frame)); controller.close();
+    } }))));
+    let failure: ChatError | undefined;
+    try { await new RemoteChatAdapter({ sessionId: 'session' }).send([{ id: 'input', role: 'user', content: 'hi', createdAt: 1 }]); }
+    catch (error) { expect(error).toBeInstanceOf(ChatError); failure = error as ChatError; }
+    expect(failure?.message).toBe(message);
+    render(<ChatErrorBanner error={failure!} />);
+    expect(screen.getByRole('alert')).toHaveTextContent(message);
+    expect(screen.getByRole('alert')).not.toHaveTextContent('AIzaFAKE_UPSTREAM_SECRET');
+    expect(screen.getByRole('alert')).not.toHaveTextContent('/var/lib/gemini-chat');
+  });
 });

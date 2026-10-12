@@ -299,3 +299,14 @@
   - **F1 超长回复可能触发总期限**：输出上限 8192 含思考 token，极长回答加思考可能超过90秒；超时丢弃已显示的部分回复（关联 P1-4），重试可能再次超时。建议部署验收时实测真实耗时。
   - **F2 超时后上游可能仍在计费**：本地解锁后可立即重试，被放弃的上游调用可能仍在运行；结果丢弃不落盘，但可能重复计费。修复证据已写明，属可接受取舍，Phase 5 搜索上线后复核。
   - **R3 影响面扩大（既有项）**：Bot 请求无 requestId，超时后再次发送会追加连续 user 消息；超时成为 R3 新触发路径，仍随 P1-4 处理。
+
+
+### P1-3 修复证据（2026-10-12，Codex）
+
+- **授权与范围**：用户确认二十一文件计划并指派执行 P1-3；仅修复错误分类与安全下发内容，未新增错误码或改变 SSE 结构。未扩展 P1-4 / P1-5 / P1-6 / P1-7 / P2-5、E1–E3、F1 / F2 或 Task 19–22；未部署 VPS。
+- **分类**：会话流源标记 storage / count / model 阶段，inspectRequest / appendTurnInputs / appendAssistantResponse 普通失败直接映射 UNKNOWN +「会话读取或保存失败，请稍后重试。」，不调用 Gemini 分类器；非法 ID ../x 与损坏 JSON 不再误报 NETWORK_ERROR。TypeError 仅在既有网络文本特征或 fetch failed 携带已知网络 cause.code 时视为网络失败，普通 TypeError 返回 UNKNOWN。
+- **下发边界**：server/chat-errors.ts 集中按 code 固定文案，会话流源、低层 adapter 流源及 Mock 降级路径均不透传任意 ChatError.message。保留生成超时、REQUEST_CONFLICT、CONTEXT_LIMIT、会话不存在 / 已归档、未返回完整回复、预算模板及精确匹配的既有本地配置 / 长度提示；ADR-009 补充此边界。Web HTTP 非200不读取响应体，固定状态文案；fetch / 响应流异常固定文案，横幅布局和交互未修改。Bot UNKNOWN 已映射固定可读 BACKEND 提示，业务代码无需修改。
+- **日志**：只记录 stage、分类后 code、name、errno、status；name / errno 为枚举白名单，HTTP status 为100–599整数；可从 ChatError.originalError / fetch cause 提取元数据，不序列化错误对象。不记录原始 message / stack、正文、Token、Key 或 URL；省略 sessionId / requestId 避免非法 ID 含路径。计数降级失败也保留白名单日志，日志失败不改变请求语义。
+- **语义保持**：上游429仍暂停对应预算，计数429仅暂停计数预算并继续既有降级；保存assistant失败不发送done，输入保留，finally解锁，同requestId重试不重复输入并可完成 / 回放；超时固定文案与锁、取消及窗口策略回归通过。
+- **验证**：新增1文件40项，全量35/35文件445/445用例、根 / 四包类型检查与 Web / Express / Bot 构建通过。覆盖非法ID、损坏会话文件、两阶段ENOSPC、伪造AIza Key的SDK403、固定429与pause、真实fetch失败cause、MODEL_ERROR / UNKNOWN、白名单日志、低层与Mock、HTTP序列化、Web横幅、Bot固定反馈与日志；台账逐文件 / 标题 / 数量核对一致。首次沙箱HTTP监听EPERM后获准重跑通过。
+- **遗留与复核**：模型 / Discord 使用Mock，JSON存储为隔离临时目录，未访问真实Gemini / Discord / VPS / 会话数据；现网应用仍为原版本。既有React act警告与未跟踪.zcodeignore保留；完成后等待Claude复核，P1-7及其余任务继续未授权。

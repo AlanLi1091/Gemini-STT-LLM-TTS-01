@@ -40,7 +40,13 @@ function createHttpError(response: Response): ChatError {
           ? 'MODEL_ERROR'
           : 'UNKNOWN';
 
-  return new ChatError(`Chat service request failed (${response.status}).`, code, {
+  const messages: Partial<Record<ChatErrorCode, string>> = {
+    AUTH_ERROR: '模型服务鉴权失败，请检查服务端配置。',
+    RATE_LIMIT: '模型请求达到限额，请稍后重试。',
+    MODEL_ERROR: '模型生成失败，请稍后重试。',
+    UNKNOWN: '服务暂时不可用，请稍后重试。',
+  };
+  return new ChatError(messages[code]!, code, {
     status: response.status,
   });
 }
@@ -53,10 +59,10 @@ function createTransportError(error: unknown, signal?: AbortSignal): ChatError {
   }
 
   if (error instanceof TypeError) {
-    return new ChatError(error.message, 'NETWORK_ERROR', { originalError: error });
+    return new ChatError('网络连接失败，请稍后重试。', 'NETWORK_ERROR', { originalError: error });
   }
 
-  return new ChatError(error instanceof Error ? error.message : String(error), 'UNKNOWN', {
+  return new ChatError('服务暂时不可用，请稍后重试。', 'UNKNOWN', {
     originalError: error,
   });
 }

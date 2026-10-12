@@ -175,3 +175,15 @@ describe('P0-1 Step 2: 取消后的迟到响应', () => {
     expect(fetcher).toHaveBeenCalledOnce();
   });
 });
+
+
+describe('P1-3: Bot 存储失败提示', () => {
+  it('存储 UNKNOWN 映射可读 BACKEND 文案且忽略 SSE 原文', async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce(resolved()).mockResolvedValueOnce(sse([
+      'event: error\ndata: {"error":{"code":"UNKNOWN","message":"会话读取或保存失败，请稍后重试。 AIzaFAKE_BOT_SECRET /var/lib/private"}}\n\n',
+    ]));
+    await expect(new BackendClient({ fetch: fetcher }).chat(input)).rejects.toMatchObject({
+      kind: 'BACKEND', message: '后端对话失败，请检查服务状态后再试。',
+    });
+  });
+});

@@ -183,3 +183,21 @@ describe('Claude C2: 降级窗口边界', () => {
     expect(counter).toHaveBeenCalledOnce();
   });
 });
+
+
+describe('P1-3: 计数降级日志', () => {
+  it('计数 429 仅记录白名单字段并保持独立预算暂停和窗口降级', async () => {
+    const { RequestBudget } = await import('../request-budget');
+    const log = vi.fn(); const budget = new RequestBudget(); const pause = vi.spyOn(budget, 'pause');
+    const counter = vi.fn().mockRejectedValueOnce(new ChatError('AIzaFAKE_COUNT_SECRET https://example.test/?key=secret', 'RATE_LIMIT', {
+      status: 429, originalError: Object.assign(new Error('/private/path'), { status: 429 }),
+    }));
+    const policy = new ContextWindow({ inputTokens: 1000 }, { countBudget: budget, log });
+    const current = user('x'.repeat(300));
+    expect(await policy.select([user('h'.repeat(150))], [current], adapter(counter), signal())).toEqual([current]);
+    expect(pause).toHaveBeenCalledOnce();
+    expect(await policy.select([user('h'.repeat(150))], [current], adapter(counter), signal())).toEqual([current]);
+    expect(counter).toHaveBeenCalledOnce();
+    expect(log.mock.calls).toEqual([[JSON.stringify({ stage: 'count', code: 'RATE_LIMIT', name: 'Error', status: 429 })]]);
+  });
+});

@@ -6,6 +6,8 @@ import {
   type ChatStreamRequest,
 } from '@core/index';
 
+import { logChatFailure } from './chat-errors';
+
 const REQUEST_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export interface ChatStreamSourceOptions {
@@ -98,8 +100,9 @@ export function createChatStreamHandler(options: ChatStreamHandlerOptions): Requ
         res.write(serializeSseEvent(event));
         if (event.event === 'done' || event.event === 'error') break;
       }
-    } catch {
+    } catch (error) {
       if (!upstreamController.signal.aborted && !res.destroyed) {
+        logChatFailure(error, 'model', 'UNKNOWN');
         const errorEvent: ChatSseEvent = {
           event: 'error',
           data: {

@@ -223,7 +223,7 @@ describe('Task 12 Step 3: Adapter 自动选择与统一错误透传', () => {
     expect(mockGenerateContentStream).not.toHaveBeenCalled();
   });
 
-  it('Gemini 错误应通过 SSE error 事件透传标准 code 与 message', async () => {
+  it('Gemini 错误应通过 SSE error 事件返回标准 code 与固定 message', async () => {
     mockGenerateContentStream.mockRejectedValueOnce({
       status: 429,
       message: 'Quota exceeded',
@@ -236,7 +236,7 @@ describe('Task 12 Step 3: Adapter 自动选择与统一错误透传', () => {
         data: {
           error: {
             code: 'RATE_LIMIT',
-            message: 'Quota exceeded',
+            message: '模型请求达到限额，请稍后重试。',
           },
         },
       },
@@ -610,5 +610,32 @@ describe('P0-1 Step 2: 共享服务装配', () => {
   it('同时传入服务和存储拒绝避免产生两个不一致实例', async () => {
     const { SessionService } = await import('../session-service'); const storage = new JsonSessionStorage('/unused-fixture');
     expect(() => createChatStreamSourceFromEnv({}, { sessionService: new SessionService(storage), sessionStorage: storage })).toThrow('not both');
+  });
+});
+
+
+describe('P1-3: SDK 与 Mock 流源脱敏', () => {
+  it('SDK 403 包含伪造 Key 时 SSE 与日志均不泄露', async () => {
+    const secret = 'AIzaFAKE_SDK_SECRET_DO_NOT_USE';
+    const log = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      mockGenerateContentStream.mockRejectedValueOnce(Object.assign(new Error(`Consumer api_key:${secret}`), { status: 403 }));
+      expect(await collectEvents(createChatStreamSourceFromEnv({ GEMINI_API_KEY: 'fake' }))).toEqual([
+        { event: 'error', data: { error: { code: 'AUTH_ERROR', message: '模型服务鉴权失败，请检查服务端配置。' } } },
+      ]);
+      expect(log.mock.calls).toEqual([[JSON.stringify({ stage: 'model', code: 'AUTH_ERROR', name: 'Error', status: 403 })]]);
+      expect(JSON.stringify(log.mock.calls)).not.toContain(secret);
+    } finally { log.mockRestore(); }
+  });
+  it('Mock 降级流源的原始错误同样转换为固定 UNKNOWN', async () => {
+    const { MockChatAdapter } = await import('@core/index');
+    const log = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const stream = vi.spyOn(MockChatAdapter.prototype, 'stream').mockImplementationOnce(async function* () { throw new Error('AIzaFAKE_MOCK_SECRET /private/path'); });
+    try {
+      expect(await collectEvents(createChatStreamSourceFromEnv({}))).toEqual([
+        { event: 'error', data: { error: { code: 'UNKNOWN', message: '服务暂时不可用，请稍后重试。' } } },
+      ]);
+      expect(log.mock.calls).toEqual([[JSON.stringify({ stage: 'model', code: 'UNKNOWN', name: 'Error' })]]);
+    } finally { stream.mockRestore(); log.mockRestore(); }
   });
 });

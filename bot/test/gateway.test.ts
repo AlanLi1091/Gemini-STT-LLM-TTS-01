@@ -371,3 +371,17 @@ describe('P0-1 Step 2: 管理员重置入口', () => {
     expect(backend.reset).toHaveBeenCalledOnce(); expect(next.reply).toHaveBeenCalledWith(expect.objectContaining({ content: 'reply' }));
   });
 });
+
+
+describe('P1-3: Bot 存储失败日志', () => {
+  it('BACKEND 错误回复和日志均不包含原始存储文本', async () => {
+    const { client, handleInput, log } = await setup();
+    handleInput.mockRejectedValueOnce(new BackendError('ENOSPC /var/lib/private AIzaFAKE_STORAGE_SECRET', 'BACKEND'));
+    const msg = message(); emit(client, msg); await flush();
+    expect(msg.reply).toHaveBeenCalledWith(expect.objectContaining({ content: '后端对话失败，请检查服务状态后再试。' }));
+    expect(log.mock.calls.map(([entry]) => entry)).toContain('[bot] failure kind=BACKEND');
+    expect(JSON.stringify(log.mock.calls)).not.toContain('ENOSPC');
+    expect(JSON.stringify(log.mock.calls)).not.toContain('AIzaFAKE_STORAGE_SECRET');
+    expect(JSON.stringify(msg.reply.mock.calls)).not.toContain('/var/lib/private');
+  });
+});

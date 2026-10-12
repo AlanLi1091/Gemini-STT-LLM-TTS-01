@@ -111,7 +111,7 @@ describe('Task 13 Step 1: RemoteChatAdapter', () => {
     await expect(new RemoteChatAdapter().send(messages)).rejects.toMatchObject({
       name: 'ChatError',
       code: 'NETWORK_ERROR',
-      message: 'Failed to fetch',
+      message: '网络连接失败，请稍后重试。',
     });
   });
 
@@ -156,5 +156,30 @@ describe('P0-2: 远端重试标识', () => {
     await expect(adapter.send(inputs)).rejects.toMatchObject({ code: 'REQUEST_CONFLICT' });
     expect(await adapter.send(inputs)).toEqual({ content: 'ok', usage: { totalTokens: 3 } });
     expect(fetchMock.mock.calls.map(call => JSON.parse(call[1].body).requestId)).toEqual([requestId, requestId]);
+  });
+});
+
+
+describe('P1-3: 浏览器错误固定文案', () => {
+  it.each([
+    [403, 'AUTH_ERROR', '模型服务鉴权失败，请检查服务端配置。'],
+    [429, 'RATE_LIMIT', '模型请求达到限额，请稍后重试。'],
+    [500, 'MODEL_ERROR', '模型生成失败，请稍后重试。'],
+    [400, 'UNKNOWN', '服务暂时不可用，请稍后重试。'],
+  ])('HTTP %s 响应体和 statusText 均不进入错误文案', async (status, code, message) => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('AIzaFAKE_HTTP_BODY https://example.test/?token=private', { status: status as number, statusText: 'private-status-text' })));
+    await expect(new RemoteChatAdapter().send(messages)).rejects.toMatchObject({ code, message });
+  });
+  it.each([
+    [new TypeError('failed to fetch https://example.test/?key=AIzaFAKE_FETCH_SECRET'), 'NETWORK_ERROR', '网络连接失败，请稍后重试。'],
+    [new Error('https://example.test/?token=private /private/path'), 'UNKNOWN', '服务暂时不可用，请稍后重试。'],
+  ])('fetch 拒绝使用固定 %s 文案', async (error, code, message) => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(error));
+    await expect(new RemoteChatAdapter().send(messages)).rejects.toMatchObject({ code, message });
+  });
+  it('读取响应流失败不泄露浏览器异常原文', async () => {
+    const stream = new ReadableStream<Uint8Array>({ start(controller) { controller.error(new Error('AIzaFAKE_READ_SECRET /private/path')); } });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(stream)));
+    await expect(new RemoteChatAdapter().send(messages)).rejects.toMatchObject({ code: 'UNKNOWN', message: '服务暂时不可用，请稍后重试。' });
   });
 });

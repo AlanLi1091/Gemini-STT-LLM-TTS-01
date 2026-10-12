@@ -1,5 +1,6 @@
-import { ChatError, type ChatAdapter, type Message } from '@core/index';
+import { classifyGeminiError, ChatError, type ChatAdapter, type Message } from '@core/index';
 import { RequestBudget } from './request-budget';
+import { logChatFailure } from './chat-errors';
 
 export interface ContextWindowConfig {
   inputTokens: number;
@@ -119,6 +120,8 @@ export class ContextWindow {
     } catch (error) {
       if (signal.aborted) throw new ChatError('The operation was aborted.', 'ABORTED');
       if (error instanceof ChatError && error.code === 'AUTH_ERROR') throw error;
+      // Propagated auth failures are logged by the stream source; fallbacks here.
+      logChatFailure(error, 'count', classifyGeminiError(error).code, this.log);
       if (error instanceof ChatError && error.code === 'RATE_LIMIT') this.countBudget.pause();
       return undefined;
     } finally {

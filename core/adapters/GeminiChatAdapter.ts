@@ -53,18 +53,19 @@ function markTruncated(content: string, truncated: boolean): string {
 export function classifyGeminiError(error: unknown, signal?: AbortSignal): ChatError {
   if (error instanceof ChatError) return error;
 
-  const errObj = error as {
+  const errObj = (error && typeof error === 'object' ? error : {}) as {
     status?: number;
     statusCode?: number;
     code?: string | number;
     message?: string;
     name?: string;
+    cause?: { code?: unknown };
   };
 
   if (
     signal?.aborted ||
     errObj.name === 'AbortError' ||
-    errObj.message?.toLowerCase().includes('aborted')
+    (typeof errObj.message === 'string' && errObj.message.toLowerCase().includes('aborted'))
   ) {
     return new ChatError('Request was aborted by user.', 'ABORTED', {
       originalError: error,
@@ -72,7 +73,7 @@ export function classifyGeminiError(error: unknown, signal?: AbortSignal): ChatE
   }
 
   const status = errObj.status || errObj.statusCode;
-  const message = errObj.message || String(error);
+  const message = typeof errObj.message === 'string' ? errObj.message : String(error);
   const lowerMessage = message.toLowerCase();
 
   if (
@@ -105,9 +106,9 @@ export function classifyGeminiError(error: unknown, signal?: AbortSignal): ChatE
   }
 
   if (
-    error instanceof TypeError ||
-    errObj.code === 'ENOTFOUND' ||
-    errObj.code === 'ECONNREFUSED' ||
+    ['ENOTFOUND', 'ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'EAI_AGAIN', 'EHOSTUNREACH', 'ENETUNREACH', 'EPIPE'].includes(String(errObj.code)) ||
+    (error instanceof TypeError && lowerMessage === 'fetch failed' &&
+      ['ENOTFOUND', 'ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'EAI_AGAIN', 'EHOSTUNREACH', 'ENETUNREACH', 'EPIPE'].includes(String(errObj.cause?.code))) ||
     lowerMessage.includes('failed to fetch') ||
     lowerMessage.includes('network error') ||
     lowerMessage.includes('networkerror')
