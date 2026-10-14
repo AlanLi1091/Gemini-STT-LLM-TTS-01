@@ -2,9 +2,11 @@
 
 ## 当前阶段
 
-Phase 1–4 已完成并正式结项。Phase 5 Part 1 Task 19 Step 1–3已完成，ADR-015及关联文档已落档；搜索功能尚未实现。供应商用途许可 / 性能证据仍待补。K1已通过Claude复核、未部署；Task 20–22及后续阶段仍未授权。
+Phase 1–4 已完成并正式结项。Phase 5 Part 1 Task 19 Step 1–3已完成，ADR-015及关联文档已落档；搜索功能尚未实现；Claude已复核Step 3通过，Q1–Q4登记为Task 20前置。供应商用途许可 / 性能证据仍待补。K1已通过Claude复核、未部署；Task 20–22及后续阶段仍未授权。
 
 ## 当前授权
+
+- **本轮授权已完成（2026-10-13）**：用户指派 Claude 复核 GPT Task 19 Step 3（`3c07804` / `9a2ca66`）并确认记录；复核通过，Q1（准入顺序与ADR-012 / 013冲突，中）、Q2（日志阶段漏count）、Q3（Discord缺可信身份处理）、Q4（AGENTS.md / Task20 Step3文字过时）写入history，backlog Task 20登记前置（提交 `44fd3d4`）。仅文档，未改ADR / 源码 / 测试 / 配置；本状态收尾提交后按累计194提交创建annotated tag `V0.0.2-build.194`。Task 20–22均未授权。
 
 - **本轮授权已完成（2026-10-13）**：用户指派 Task 19 Step 3并批准八文件计划；ADR-015、ADR-007 / ADR-009目标流式契约、roadmap / risks / backlog / history / status同步。仅文档，Tavily用途许可 / 性能待补，N1–N4及D12实施授权边界保留；不修改应用 / 测试 / 配置，不调用真实API，不部署。Task 20–22、P1-4 / R3实施、M1 / VPS扫描及其他残余未授权。交付提交 `3c07804`（`docs: finalize Task 19 Step 3 external search architecture`）已推送origin/test；本状态收尾提交后，按最终累计192提交创建annotated tag `V0.0.2-build.192`并推送，最终远端核验见主会话汇报。
 
@@ -35,15 +37,17 @@ Phase 1–4 已完成并正式结项。Phase 5 Part 1 Task 19 Step 1–3已完�
 - **更早授权已完成（2026-10-09）**：Codex git-ops 当前 tag 版本号已从 0.0.1 修正为 0.0.2；配置 / backlog / history 提交 `3c778a6` 已推送 origin/test，收尾 tag `V0.0.2-build.154`。
 - **授权任务**：2026-10-07 V0.0.2 私有VPS部署、双入口与管理员重置验收完成；四份交付记录87b1617与状态提交8b5731c已推送origin/test，发布PR为[#5](https://github.com/AlanLi1091/Gemini-STT-LLM-TTS-01/pull/5)。本提交补充最终交付信息，随后按已确认计划合并PR并创建annotated tag `V0.0.2-build.149`（test最终提交累计数，非main合并提交计数）；最终远端PR / tag核验见主会话汇报。Phase 5、P1与其余残余仍未授权。
 - **VPS 现状**：Vultr Seattle、1核1G、Ubuntu 26.04.1，内核 7.0.0-38、Node v24.21.0，Auto Backup 已开启；gemini-admin 公钥管理，禁用 root / 密码 SSH，UFW 仅开放 22/tcp。gemini-server / gemini-bot 两个非 root systemd 服务 active / enabled，Express 仅监听 127.0.0.1:3001，数据目录独立持久化。无域名、仅本人使用，通过 SSH 隧道访问 http://127.0.0.1:18080，详见 [运维说明](../deploy/README.md)。服务保持常驻。 当前发行物v002-6f81048，两个服务实际进程cwd均为该目录，NRestarts=0；server.env配置生成10 / Web保留4、计数20 / Web保留8及首包60秒 / 总90秒，bot.env和systemd单元未改。
-- **最近交付 commit**：`3c07804` — `docs: finalize Task 19 Step 3 external search architecture`已推送origin/test；本状态收尾提交后累计192，最终tag `V0.0.2-build.192`远端核验见主会话汇报。Task19 Step1–3文档交付完成；Step2复核 `628320c` / tag `V0.0.2-build.190`，K1修复 `f38a2e9`已复核、未部署。现网仍源码 `6f810486df9b99f9e32f777c394a4353e2109909` / 发行物v002-6f81048，本轮无部署。
+- **最近交付 commit**：`44fd3d4` — `docs: record Claude Task 19 Step 3 review and Task 20 preconditions`（tag `V0.0.2-build.194`见收尾）；Step 3交付 `3c07804` / tag `V0.0.2-build.192`经Claude复核通过。Task19 Step1–3文档交付完成；Step2复核 `628320c` / tag `V0.0.2-build.190`，K1修复 `f38a2e9`已复核、未部署。现网仍源码 `6f810486df9b99f9e32f777c394a4353e2109909` / 发行物v002-6f81048，本轮无部署。
 - **当前测试基线**：Task19 Step3本机全量36/36文件471/471用例及根 / 四包类型检查通过；首轮沙箱listen EPERM、获准外部重跑通过。文档本地链接60/60、裁决 / 关键边界29/29、八文件范围及diff检查通过。仅文档，无新增测试，应用 / 测试 / 台账与K1复核版本相同，不重复构建；JSON结果/private/tmp/task19-step3-test-results.json不入Git。VPS仍为此前462/462基线，未部署；既有React act警告记录保留。
 - **当前功能验收**：Playground 仅连接后端服务；启动时恢复最近活动会话，无可恢复会话时创建新会话。发送仅提交本轮输入、`sessionId` 与稳定 `requestId`；失败重试复用同一 `requestId`，不重复保存输入，已完成回复直接回放（ADR-012）。服务端从完整持久化日志中选取有限上下文窗口送入模型，完整日志不变（ADR-013）。清空对话归档旧会话并切换至新会话。Discord 管理员可在指定频道以 `@Bot /reset` 归档并重置频道会话（ADR-014）。旧版直连设置迁移为后端模式并清除浏览器存储的 Key 字段。
 
 ## 下一步计划
 
-Task 19 Step 3架构落档验证已通过，本轮Git闭环后停止；下一个待办为用户单独指派 Task 20 Step 1（按 ADR-015用Mock实现搜索接入 / 触发及来源共享契约）。P1-4 / R3语义已由D12裁决，但UI与持久化实施须另行授权，并在相关验收前明确依赖。Tavily共享 / 长期留存 / 数据用途许可与中文质量 / 生产延迟仍待补；N3门槛未解除，Task 22真实验收与VPS上线不得进行。M1 / VPS扫描、其余残余、Part 2 / Part 3均未授权。
+Claude已复核Task 19 Step 3通过（2026-10-13）；下一个待办仍为用户单独指派 Task 20 Step 1，但开工前须先定案Q1准入顺序并同步修订ADR-012 / 013，修正Q2 / Q3，见backlog Task 20前置。原记录：Task 19 Step 3架构落档验证已通过，本轮Git闭环后停止；下一个待办为用户单独指派 Task 20 Step 1（按 ADR-015用Mock实现搜索接入 / 触发及来源共享契约）。P1-4 / R3语义已由D12裁决，但UI与持久化实施须另行授权，并在相关验收前明确依赖。Tavily共享 / 长期留存 / 数据用途许可与中文质量 / 生产延迟仍待补；N3门槛未解除，Task 22真实验收与VPS上线不得进行。M1 / VPS扫描、其余残余、Part 2 / Part 3均未授权。
 
 ## 本轮验收与遗留
+
+- **Claude Task 19 Step 3 复核（2026-10-13）**：复核 `3c07804` / `9a2ca66` 通过，确认仅八份文档变更、diff空白及ADR-015本地链接有效，ADR引用的现有代码基线一致；Q1–Q4写入history、backlog Task 20前置同步。仅修改backlog / history / status，测试台账不变、未运行测试（无代码变更）；既有未跟踪 `.zcodeignore` 保留。
 
 - **Task19 Step3（2026-10-13）**：批准的八文档交付：新增ADR-015，同步ADR-007 / ADR-009、roadmap / risks / backlog / history / status。U1 / U2、D01–D14、N1–N4及SSRF / 提示注入威胁模型、最终事件来源 / 搜索状态、safeStreamError、D12中断实施边界均覆盖。Step3已勾选，全量36/36文件471/471用例、根 / 四包类型检查、本地链接 / 范围 / diff检查通过；首轮沙箱监听EPERM后获准外部重跑，无新增测试 / 构建 / 真实调用 / 部署。
 - **Step3遗留**：Tavily用途许可与中文质量 / 生产延迟仍待补，N3真实验收 / 上线门槛保留。Task20–22、P1-4 / R3实施、M1 / VPS扫描、其他残余未授权；根AGENTS.md旧摘要未纳入本计划，既有.zcodeignore保留，现网仍v002-6f81048、K1未部署。交付提交3c07804已推送origin/test；本状态收尾提交后按累计192打V0.0.2-build.192 annotated tag并推送，最终远端核验见主会话汇报。
