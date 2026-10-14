@@ -57,3 +57,12 @@ Phase 5 结构于 2026-10-09 经用户确认（方案 A）：Part 1 网络搜索
   - **适配层**：ChatAdapter（Phase 2 起）；后续 Transcriber / Synthesizer（Phase 6）。
 - **版本控制**：细粒度语义化 commit；`git status` 同时作为越权审计手段。
 - **开发与执行环境**：当前分工见 `dev-docs/status.md` 职责交接记录——编码与测试由 GPT（Codex 侧子代理）执行，安全审计、代码复核与 Claude 侧 Git 操作由 Claude 执行（早期 Google AI Studio / Gemini agent 阶段见 `dev-docs/risks.md` 风险 7、11）；跨会话不保留对话记忆，状态恢复完全依赖项目文档；计划审批与结果验收由用户负责。
+
+
+## Phase 5 Part 1 架构定案（2026-10-13）
+
+Task 19 Step 1–3 已完成：[ADR-015](adr/0015-external-search-architecture.md)采用 Tavily basic + 原生 HTTP 的模型无关搜索层，Web 逐轮开关 / Discord 直接 @Bot 后 `/search 问题`显式触发；只用最多 3 条 100 字摘要，本轮模型注入编号 / 标题 / 域名 / 摘要，来源 URL 由元数据展示。ADR-007 / ADR-009 已记录最终事件携来源与搜索状态的目标契约，运行时代码尚未实施。
+
+Part 1 退出验收须覆盖 SSRF 边界（固定端点、无结果抓取及跳转 / 预览）、间接提示注入 Mock 防线、安全展示、独立分钟 / 每日预算与坏账本关闭搜索、8192 输入 / 2048 资料估算预算及独立搜索校准、成功来源持久化 / 刷新 / 回放、取消与固定错误。8秒搜索 + 90秒生成 + 两次3秒计数≤115秒，Bot120秒的端到端余量仍待真实证据，算术不是性能验收。
+
+N3 为真实验收与部署门槛：Tavily 共享 / 长期留存 / 数据用途未澄清前，Task 20 / 21 仅可在另行授权下用 Mock 实施，Task 22 真实验收与 VPS 上线不得进行。中文质量、生产延迟及评测许可待补；P1-4 / R3 中断语义已经裁决，实施须单独授权。本步没有启动 Task 20–22、部署、修改版本或合入 main，Part 2 / Part 3 及其他残余仍未授权。

@@ -27,3 +27,17 @@
 - REQUEST_CONFLICT、CONTEXT_LIMIT、会话不存在 / 已归档、生成超时、未返回完整回复与既有固定配置 / 长度提示保留；后者仅允许精确匹配本地固定字面量。预算拒绝保留既有模板，等待秒数只来自本地预算计算，任意适配器 ChatError 的 message 不能直接透传。
 - 错误日志仅包含 stage（storage / count / model）、分类后 code、受枚举约束的 name / errno，以及整数 HTTP status（100–599）；从 ChatError.originalError / 网络 cause 提取白名单元数据，不序列化错误对象。省略 sessionId / requestId，避免非法会话 ID 带入路径；不记录 message、stack、用户输入、模型输出、Token、SDK 原始错误或完整 URL。日志写入失败不得改变流源或锁语义。
 - Web 的 HTTP 错误与浏览器传输异常使用固定文案；横幅继续展示服务端安全消息，布局及交互不变。Bot 保持按 code 映射固定反馈，UNKNOWN 对应可读 BACKEND 提示。
+
+
+## Phase 5 外部搜索与 SSE 扩展目标（2026-10-13）
+
+依据 [ADR-015](0015-external-search-architecture.md)，以下在 Task 20–21 经单独授权后实现；当前共享 TypeScript 契约与源码保持原样。
+
+- Express 编排模型无关 SearchAdapter、独立预算和每日账本；共享契约增加逐轮显式 search 意图，旧请求默认 false。Discord 用户身份由受信 Bot loopback 请求传入，频道 / 来源取持久化 origin，不能由浏览器请求或问题文本伪造。
+- ADR-012 请求指纹同时核对正文与 search 模式；完成回放 / 冲突先于搜索与计数预算。扩展不自动授予 Bot 全链路幂等、自动重发或公网来源访问控制。
+- done.data 保留 content / usage，扩展可选搜索状态及最多 3 条来源（provider、检索时间、编号、纯文本标题、URL、实际展示的最多 100 码点摘要）；持久化 assistant 使用同一元数据，刷新 / 完成回放还原同一展示。chunk 仍为 delta / accumulated，error 结构、约 15 秒心跳及无断点续传保持。
+- 搜索状态区分未请求、成功、降级；失败原因限本地枚举，失败降级成功时来源为空。旧会话缺元数据正常读取且不补写历史，客户端缺字段按无来源展示；具体字段与映射由 Task 20 在共享契约中验证。
+- 仅最终成功非空 assistant 一次保存后发送 done；存储失败不发送成功事件。来源摘要 / URL 不拼入后续模型历史；模型本轮只注入编号 / 标题 / 域名 / 摘要，完整 URL 不注入，原始响应 / 外发 query 不额外落盘。
+- G2：搜索、解析、账本、来源存储、模型等全部新增错误路径（含 Mock）均经 safeStreamError 固定文案，不向横幅 / Bot 透传供应商原文。搜索降级提示独立于模型正文，K1 空回复不能被提示掩盖；搜索 429 只暂停搜索 60 秒。
+- 日志只接受 storage / search / model 的受约束阶段和名称 / 原因、合法 HTTP 状态、耗时 / 数量等白名单元数据，不记录 Key、query、正文、stack、错误对象或完整 URL；正常来源链接经 URL 校验后作为元数据展示，不作为错误文本透传。
+- 用户取消贯通搜索 / 计数 / 模型，本地等待与锁不受忽略 abort 的上游拖延，迟到结果不发事件、不保存。D12 中断产品语义已定，P1-4 / R3 实施仍另授权；不扩展当前单 Express / 单 JSON 写者拓扑。

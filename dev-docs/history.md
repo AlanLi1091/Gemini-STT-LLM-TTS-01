@@ -173,3 +173,12 @@
 - 四文档按规范commit / push origin test、status收尾及annotated tag见主会话汇报；Step3 / Task20–22、M1 / VPS扫描等未授权，交付后停止，等待Claude复核。既有.zcodeignore保留。
 
 - [x] **Claude Task 19 Step 2 复核（2026-10-12）**：Claude 复核 Part B 裁决清单 `0466511` / `be28dfe` 通过（无擅自定案，残余均有落点，仅文档变更）。用户委托 Claude 决定 N1（搜索轮次只更新独立搜索系数、估算取较大者，普通对话不受影响）与 N2（模型资料块只含编号 / 标题 / 域名 / 摘要，URL 仅存元数据）；连同 N3（Tavily 用途澄清前不得真实验收 / 上线）、N4（每日账本损坏时关闭搜索、不阻止启动、不清零额度）写入预研第 11 节，并同步 backlog Task 19 Step 3、Task 20 Step 2、Task 22。仅文档，测试台账与应用源码不变；Task 19 Step 3 待用户指派。
+
+
+## 2026-10-13：Task 19 Step 3 ADR-015架构落档
+
+- 用户指派Step3并批准八文件计划；新增ADR-015，按U1 / U2、D01–D14及N1–N4定案Tavily basic + 原生HTTP、双入口显式触发、摘要 / 来源目标契约、完整输入预算 / 搜索独立校准、准入 / 日账本 / 期限、取消 / 降级 / 最终成功落盘与固定错误。
+- ADR-007 / ADR-009补充最终事件携来源 / 搜索状态、共享请求意图及指纹、旧文件兼容、刷新 / 回放和取消的目标契约；roadmap关联架构与退出门槛，risks新增风险14–16（间接提示注入 / 来源与SSRF边界、费用账本 / 延迟、第三方外发与用途许可），backlog勾选Step3并将Task20对齐已定外部搜索方案。
+- 全量36/36文件471/471用例、根 / 四包类型检查通过。首次沙箱HTTP监听listen EPERM，获准外部重跑通过；本地文档链接、裁决覆盖、变更范围及diff空白检查通过。仅文档，无新增测试，tests台账与应用代码不变，不重复构建。测试JSON在/private/tmp/task19-step3-test-results.json，不入Git。
+- Tavily共享 / 长期留存 / 数据用途和中文质量 / 生产延迟继续待补；N3不解除，Task20 / 21只可在另行授权下用Mock，Task22真实验收 / VPS上线不得进行。P1-4 / R3只定语义、实施仍另授权；Task20–22、M1 / VPS扫描、其他残余与Part2 / Part3未启动。
+- 未调用真实模型 / 搜索API，未访问真实会话 / Discord / VPS或联系供应商；现网仍v002-6f81048、K1未部署。根AGENTS.md旧摘要与既有.zcodeignore未改动。按规范推送origin/test、状态收尾并在最终提交打V0.0.2-build.<累计数> annotated tag后停止，提交与最终tag见status及主会话汇报。

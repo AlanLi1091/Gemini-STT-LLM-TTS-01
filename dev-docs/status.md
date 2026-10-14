@@ -2,9 +2,11 @@
 
 ## 当前阶段
 
-Phase 1–4 已完成并正式结项。Phase 5 Part 1 Task 19 Step 1–2已完成；Step2（Part B）设计裁决已记录并交付，供应商用途许可 / 性能证据仍待补。K1已通过Claude复核、未部署；Step 3、Task 20–22及后续阶段仍未授权。
+Phase 1–4 已完成并正式结项。Phase 5 Part 1 Task 19 Step 1–3已完成，ADR-015及关联文档已落档；搜索功能尚未实现。供应商用途许可 / 性能证据仍待补。K1已通过Claude复核、未部署；Task 20–22及后续阶段仍未授权。
 
 ## 当前授权
+
+- **本轮授权已完成（2026-10-13，待Git闭环）**：用户指派 Task 19 Step 3并批准八文件计划；ADR-015、ADR-007 / ADR-009目标流式契约、roadmap / risks / backlog / history / status同步。仅文档，Tavily用途许可 / 性能待补，N1–N4及D12实施授权边界保留；不修改应用 / 测试 / 配置，不调用真实API，不部署。Task 20–22、P1-4 / R3实施、M1 / VPS扫描及其他残余未授权。
 
 - **本轮授权已完成（2026-10-12）**：用户指派 Claude 复核 Task 19 Step 2 裁决清单并委托决定 N1 / N2；复核通过，N1（搜索独立校准系数）、N2（不向模型注入 URL）、N3（Tavily 用途澄清前不得真实验收 / 上线）、N4（每日账本损坏时关闭搜索）写入预研第 11 节并同步 backlog（提交 `628320c` 已推送 origin/test）。仅文档；本状态收尾提交后按最终累计提交数创建 annotated tag。Task 19 Step 3 与 Task 20–22 均未授权。
 - **Part B Task 19 Step 2授权已完成（2026-10-12）**：用户确认四文件计划并逐项裁决U1 / U2和D01–D14；Tavily basic + 原生HTTP、显式双入口、最多3条100字摘要+链接、总8192 / 搜索资料最多2048估算tokens并参与完整输入校准、成功回复保存摘要 / 来源及回放、预算 / 期限 / 降级 / 中断 / 隐私 / 固定错误均已定。用户明确确认将展示 / 长期留存许可、中文质量 / 生产延迟保留为待补证据后收尾。提交 `0466511`（`docs: record Task 19 Step 2 search provider and design decisions`）已推送origin/test；本状态收尾提交后按累计188提交创建annotated tag `V0.0.2-build.188`并推送，最终远端核验见主会话汇报。仅四文档、真实API调用0次，Step2已勾选；待Claude复核，Step3 / Task20–22、P1-4 / R3实施、M1 / VPS扫描及其他残余未授权。
@@ -34,14 +36,17 @@ Phase 1–4 已完成并正式结项。Phase 5 Part 1 Task 19 Step 1–2已完�
 - **授权任务**：2026-10-07 V0.0.2 私有VPS部署、双入口与管理员重置验收完成；四份交付记录87b1617与状态提交8b5731c已推送origin/test，发布PR为[#5](https://github.com/AlanLi1091/Gemini-STT-LLM-TTS-01/pull/5)。本提交补充最终交付信息，随后按已确认计划合并PR并创建annotated tag `V0.0.2-build.149`（test最终提交累计数，非main合并提交计数）；最终远端PR / tag核验见主会话汇报。Phase 5、P1与其余残余仍未授权。
 - **VPS 现状**：Vultr Seattle、1核1G、Ubuntu 26.04.1，内核 7.0.0-38、Node v24.21.0，Auto Backup 已开启；gemini-admin 公钥管理，禁用 root / 密码 SSH，UFW 仅开放 22/tcp。gemini-server / gemini-bot 两个非 root systemd 服务 active / enabled，Express 仅监听 127.0.0.1:3001，数据目录独立持久化。无域名、仅本人使用，通过 SSH 隧道访问 http://127.0.0.1:18080，详见 [运维说明](../deploy/README.md)。服务保持常驻。 当前发行物v002-6f81048，两个服务实际进程cwd均为该目录，NRestarts=0；server.env配置生成10 / Web保留4、计数20 / Web保留8及首包60秒 / 总90秒，bot.env和systemd单元未改。
 - **最近交付 commit**：`628320c` — `docs: record Claude Task 19 Step 2 review and decisions N1-N4`（tag 见收尾）；Step 2 裁决 `0466511`（收尾tag `V0.0.2-build.188`）经 Claude 复核通过；此前K1复核 `e8bebd4`，K1修复 `f38a2e9` / tag `V0.0.2-build.184`。现网源码仍 `6f810486df9b99f9e32f777c394a4353e2109909`，current仍为 `/opt/gemini-chat/releases/v002-6f81048`，本轮无部署。
-- **当前测试基线**：Part B本轮本机36/36文件471/471用例、根 / 四包类型检查通过；代码 / 测试 / 台账与K1复核版本相同，仅四份文档变化。测试JSON结果位于/private/tmp/task19-step2-test-results.json，提交前核对成功状态及36文件471用例。K1此前Web / Express / Bot构建已通过，本步无源码修改，不重复构建；VPS仍为此前462/462基线，未部署。既有React act警告记录保留。
+- **当前测试基线**：Task19 Step3本机全量36/36文件471/471用例及根 / 四包类型检查通过；首轮沙箱listen EPERM、获准外部重跑通过，仅文档无新增测试，台账不变、不重复构建。JSON结果/private/tmp/task19-step3-test-results.json不入Git。以下为此前Part B证据：Part B本轮本机36/36文件471/471用例、根 / 四包类型检查通过；代码 / 测试 / 台账与K1复核版本相同，仅四份文档变化。测试JSON结果位于/private/tmp/task19-step2-test-results.json，提交前核对成功状态及36文件471用例。K1此前Web / Express / Bot构建已通过，本步无源码修改，不重复构建；VPS仍为此前462/462基线，未部署。既有React act警告记录保留。
 - **当前功能验收**：Playground 仅连接后端服务；启动时恢复最近活动会话，无可恢复会话时创建新会话。发送仅提交本轮输入、`sessionId` 与稳定 `requestId`；失败重试复用同一 `requestId`，不重复保存输入，已完成回复直接回放（ADR-012）。服务端从完整持久化日志中选取有限上下文窗口送入模型，完整日志不变（ADR-013）。清空对话归档旧会话并切换至新会话。Discord 管理员可在指定频道以 `@Bot /reset` 归档并重置频道会话（ADR-014）。旧版直连设置迁移为后端模式并清除浏览器存储的 Key 字段。
 
 ## 下一步计划
 
-Part B 已经 Claude 复核通过并补充 N1–N4（2026-10-12）；下一个待办为用户指派 Task19 Step3（ADR-015落档，须纳入 N1–N4）。原记录：本轮Part B交付后停止，等待Claude复核；Task19 Step3（ADR-015落档）须用户单独指派。供应商展示 / 长期留存和数据用途证据继续待补，中文质量与生产延迟待另行授权验证；产品裁决不能代替供应商许可。P1-4 / R3本轮只定语义，实施未授权；M1 / VPS扫描、Task20–22及其他残余未授权。
+Task 19 Step 3架构落档验证已通过，本轮Git闭环后停止；下一个待办为用户单独指派 Task 20 Step 1（按 ADR-015用Mock实现搜索接入 / 触发及来源共享契约）。P1-4 / R3语义已由D12裁决，但UI与持久化实施须另行授权，并在相关验收前明确依赖。Tavily共享 / 长期留存 / 数据用途许可与中文质量 / 生产延迟仍待补；N3门槛未解除，Task 22真实验收与VPS上线不得进行。M1 / VPS扫描、其余残余、Part 2 / Part 3均未授权。
 
 ## 本轮验收与遗留
+
+- **Task19 Step3（2026-10-13）**：批准的八文档交付：新增ADR-015，同步ADR-007 / ADR-009、roadmap / risks / backlog / history / status。U1 / U2、D01–D14、N1–N4及SSRF / 提示注入威胁模型、最终事件来源 / 搜索状态、safeStreamError、D12中断实施边界均覆盖。Step3已勾选，全量36/36文件471/471用例、根 / 四包类型检查、本地链接 / 范围 / diff检查通过；首轮沙箱监听EPERM后获准外部重跑，无新增测试 / 构建 / 真实调用 / 部署。
+- **Step3遗留**：Tavily用途许可与中文质量 / 生产延迟仍待补，N3真实验收 / 上线门槛保留。Task20–22、P1-4 / R3实施、M1 / VPS扫描、其他残余未授权；根AGENTS.md旧摘要未纳入本计划，既有.zcodeignore保留，现网仍v002-6f81048、K1未部署。本轮交付提交 / 状态收尾 / 最终tag待Git闭环记录。
 
 - **Claude Task 19 Step 2 复核（2026-10-12）**：复核 `0466511` / `be28dfe` 通过，确认仅文档变更、全量36/36文件471/471用例、根 / 四包类型检查通过；N1–N4 写入预研第 11 节，backlog Task 19 Step 3 / Task 20 Step 2 / Task 22 同步。仅修改 backlog / history / 预研报告 / status，测试台账不变；既有未跟踪 `.zcodeignore` 保留。
 
