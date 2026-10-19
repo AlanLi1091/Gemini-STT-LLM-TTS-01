@@ -2,9 +2,11 @@
 
 ## 当前阶段
 
-Phase 1–4已结项；Phase 5 Part 1 Task 19与Task 20已完成并复核通过。Task 21 Step 1（含V1）已交付，待Claude复核；Web逐轮搜索意图、最终来源 / 独立降级提示、安全链接、刷新与回放已接通。Task 21 Step 2（Discord，含S2 / S3）及Task 22仍未授权。生产未装配搜索网络，Tavily用途许可 / 性能证据待补，N3真实验收与上线门槛未解除；K1及搜索代码未部署，现网保持v002-6f81048。
+Phase 1–4已结项；Phase 5 Part 1 Task 19与Task 20已完成并复核通过。Task 21 Step 1（含V1）已交付并经Claude复核通过（W1 / W2低风险登记为Step 2首个子步骤）；Web逐轮搜索意图、最终来源 / 独立降级提示、安全链接、刷新与回放已接通。Task 21 Step 2（Discord，含S2 / S3）及Task 22仍未授权。生产未装配搜索网络，Tavily用途许可 / 性能证据待补，N3真实验收与上线门槛未解除；K1及搜索代码未部署，现网保持v002-6f81048。
 
 ## 当前授权
+
+- **本轮授权已完成（2026-10-19）**：用户指派 Claude 复核 GPT Task 21 Step 1（`30fbfa3` / `a02bb98`）并记录；复核通过，本机连续3次全量43/43文件742/742用例、类型检查及构建通过，危险渲染API扫描0匹配。W1（低，降级提示在正文后与“以下回复”不符）、W2（低，无状态分支发送search:true致请求无效）登记于backlog Task 21 Step 2首个子步骤；既有D12差异（停止保留片段、末条assistant无法重试）属P1-4 / R3，须在Task 21收尾人工验收前由用户决定是否授权。仅文档；本状态收尾提交后按累计提交数创建annotated tag。Task 21 Step 2、Task 22未授权。
 
 - **本轮授权已完成（2026-10-19）**：用户确认22文件计划并指派“请开工”，完成Task 21 Step 1与首个子步骤V1。CONTROL只补U+2028 / U+2029，回归先红后绿；Web默认关闭逐轮开关、Tavily外发 / 保存告知、500 Unicode码点校验、已接受发送后复位、原模式与UUID重试复用落地。SSE done.search经可选ChatChunk→Hook→assistant，客户端结构校验覆盖SSE / 会话恢复 / 渲染；最终来源编号、纯文本标题摘要、new URL解析真实域名与HTTP(S) / 凭据 / 控制空白 / 长度校验、安全新窗口属性、无效URL仅标题域名，固定降级文案独立于正文。单done回放与旧会话兼容，来源最终加入遵守滚动守卫，停止后迟到done不展示来源。新增91项，最终第5–7轮连续3次43/43文件742/742用例、根及四包类型检查和三构建通过，台账逐文件计数一致；首轮沙箱37/43文件662/742用例，listen EPERM及关联超时80项完整登记tests.md，获准沙箱外后第2–7轮均通过；未修改部署测试或放宽断言。渲染API rg扫描0匹配，安全结论限定为本步应用渲染边界。交付提交`30fbfa3`（`feat: add per-turn web search and safe source display`）已推送origin/test；本状态收尾后按累计226创建并推送annotated tag `V0.0.2-build.226`，最终远端核验见主会话汇报。D12既有保留片段及末条assistant无法重试差异仅记录，P1-4 / R3未实施；全部上游Mock、无真实Key / 会话 / Tavily / Gemini / Discord / VPS访问、无新依赖或部署，生产无搜索网络。22文件范围完成，既有.zcodeignore保留不提交；完成后停止等待Claude复核，Step 2（含S2 / S3）、Task 22、Q4及其余项未授权，N3保留。
 
@@ -75,9 +77,11 @@ Phase 1–4已结项；Phase 5 Part 1 Task 19与Task 20已完成并复核通过�
 
 ## 下一步计划
 
-停止，等待Claude复核Task 21 Step 1（交付30fbfa3及本状态收尾）；后续开发为用户单独指派Task 21 Step 2，包含Discord命令 / 来源展示与S2 / S3。D12既有UI片段和重试差异归P1-4 / R3，未顺带修改；deployment-validation第96行偶发失败根因未确认、另行立项，本轮沙箱EPERM失败与其不同。Task 22真实网络 / 延迟验收与上线受N3用途许可门槛约束；不真实验收、不部署，P1-4 / R3、M1 / VPS扫描、Q4及其他残余待另行授权。
+Task 21 Step 1已经Claude复核通过（2026-10-19）；下一个待办为用户单独指派 Task 21 Step 2（首个子步骤修复W1 / W2）。原记录：停止，等待Claude复核Task 21 Step 1（交付30fbfa3及本状态收尾）；后续开发为用户单独指派Task 21 Step 2，包含Discord命令 / 来源展示与S2 / S3。D12既有UI片段和重试差异归P1-4 / R3，未顺带修改；deployment-validation第96行偶发失败根因未确认、另行立项，本轮沙箱EPERM失败与其不同。Task 22真实网络 / 延迟验收与上线受N3用途许可门槛约束；不真实验收、不部署，P1-4 / R3、M1 / VPS扫描、Q4及其他残余待另行授权。
 
 ## 本轮验收与遗留
+
+- **Claude Task 21 Step 1 复核（2026-10-19）**：复核通过，W1 / W2登记于backlog，D12既有差异待用户决定。仅修改backlog / history / status，测试台账不变；既有未跟踪 `.zcodeignore` 保留。
 
 - **Task 21 Step 1 / V1（2026-10-19，待Claude复核）**：22文件，新增91项，43/43文件742/742用例最终连续3轮通过，类型 / 三构建 / 台账 / 安全扫描通过；V1与无效URL仅标题域名回退均有先红后绿证据。完整实现、安全与TDD映射、沙箱80项环境失败明细见tests.md；backlog已勾选并修订Step 1，history已追加。生产无搜索网络，D12差异、S2 / S3、N3 / Task 22及既有偶发失败保留，未跟踪.zcodeignore不提交。
 
