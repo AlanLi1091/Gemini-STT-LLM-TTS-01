@@ -394,3 +394,38 @@ describe('Task 20 Step 1: 搜索来源HTTP生命周期', () => {
     expect(next.text).toContain('succeeded'); expect(call).toHaveBeenCalledOnce();
   });
 });
+
+
+describe('S1: 截断边界来源保存与回放', () => {
+  it.each(['title', 'summary'] as const)('%s截断点为空白仍保存成功且重启回放不重搜', async field => {
+    const c = await createTestContext();
+    // An injected adapter may return unbounded provider text; orchestration must normalize it.
+    const search: import('../search-adapter').SearchAdapter = { search: vi.fn(async () => [{
+      provider: 'tavily' as const, retrievedAt: 123, index: 1, domain: 'example.com',
+      url: 'https://example.com/boundary',
+      title: field === 'title' ? '😀'.repeat(119) + ' 标题余文' : '标题',
+      summary: field === 'summary' ? '中'.repeat(99) + ' 摘要余文' : '摘要',
+    }]) };
+    const { RequestBudget } = await import('../request-budget'); const budget = new RequestBudget();
+    const acquire = vi.spyOn(budget, 'acquire');
+    const make = (service: SessionService) => createApp({ sessionService: service,
+      chatStreamSource: createSessionChatStreamSource(c.adapter, service, budget, undefined, undefined, { adapter: search }) });
+    const session = await c.sessionService.createSession(); const app = make(c.sessionService);
+    const body = { sessionId: session.id, requestId: '33333333-3333-4333-8333-333333333333', search: true,
+      messages: [{ role: 'user', content: '问题' }] };
+    const first = await request(app).post('/api/chat/stream').send(body).expect(200);
+    expect(first.text).toContain('event: done'); expect(first.text).not.toContain('event: error');
+    const loaded = await request(app).get(`/api/sessions/${session.id}`).expect(200);
+    expect(loaded.body.messages).toHaveLength(2);
+    const metadata = loaded.body.messages[1].search;
+    expect(metadata.status).toBe('succeeded');
+    expect(metadata.sources[0][field]).toBe(field === 'title' ? '😀'.repeat(119) : '中'.repeat(99));
+    const restarted = make(new SessionService(new JsonSessionStorage(c.dataDirectory)));
+    const replay = await request(restarted).post('/api/chat/stream').send(body).expect(200);
+    expect(replay.text).toContain('event: done'); expect(replay.text).not.toContain('event: chunk');
+    expect(replay.text).toContain(JSON.stringify(metadata));
+    expect(search.search).toHaveBeenCalledOnce(); expect(c.adapter.histories).toHaveLength(1);
+    expect(acquire).toHaveBeenCalledOnce();
+    expect((await c.storage.getSession(session.id))?.messages).toHaveLength(2);
+  });
+});

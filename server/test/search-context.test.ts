@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { normalizeSearchSources, buildSearchContext, SEARCH_SYSTEM_RULE } from '../search-context';
+import { normalizeSearchSources, buildSearchContext, isSearchMetadata, SEARCH_SYSTEM_RULE } from '../search-context';
 
 describe('Task 20 Step 1: 搜索资料隔离', () => {
   it('只保留最多三条安全来源并按Unicode码点限制标题与摘要', () => {
@@ -27,5 +27,24 @@ describe('Task 20 Step 1: 搜索资料隔离', () => {
   });
   it('坏结果和超长URL不进入来源且不读取任何结果网页', () => {
     expect(normalizeSearchSources([null, {}, { url: 'https://example.com/' + 'a'.repeat(2048), content: 'a', title: 'a' }, { url: 'https://example.com', title: 'a', content: '   ' }], 123)).toEqual([]);
+  });
+});
+
+
+describe('S1: 规范化来源的持久化不变量', () => {
+  it.each([
+    ['普通空格', ' '], ['制表符', '\t'], ['不换行空格', '\u00a0'],
+    ['全角空格', '\u3000'], ['零宽控制字符', '\u200b'], ['空控制字符', '\u0000'],
+  ])('截断点为%s时来源仍通过校验且再次规范化不变', (_name, separator) => {
+    const sources = normalizeSearchSources([{
+      url: 'https://example.com/boundary',
+      title: '\u00a0' + '😀'.repeat(119) + separator + '标题余文',
+      content: '\t' + '中'.repeat(99) + separator + '摘要余文',
+    }], 123);
+    expect(sources).toHaveLength(1);
+    expect(sources[0].title).toBe('😀'.repeat(119));
+    expect(sources[0].summary).toBe('中'.repeat(99));
+    expect(isSearchMetadata({ status: 'succeeded', sources })).toBe(true);
+    expect(normalizeSearchSources(sources, 123)).toEqual(sources);
   });
 });

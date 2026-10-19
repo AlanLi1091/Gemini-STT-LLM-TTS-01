@@ -1,7 +1,7 @@
 # 测试套件与测试用例台账
 
 > **维护规范**：
-> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（38 个套件）与具体测试用例（503 个断言项）。
+> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（38 个套件）与具体测试用例（511 个断言项）。
 > 2. **铁律联动**：后续开发中，每次有新功能开发、重构或测试内容更新时，**必须同步在此台账中维护新增或修改的测试项**，保持与实际测试套件 100% 同步。
 
 ## 1. 测试套件概览看板
@@ -29,7 +29,7 @@
 | 19 | `src/test/remote-chat-adapter.test.ts` | Task 13 / Task 14 Step 3 | RemoteChatAdapter 的 SSE 消费、错误映射、AbortSignal 与 sessionId 模式 | 15 | ✅ 通过 |
 | 20 | `src/test/app-remote-integration.test.tsx` | Task 13 Step 3 / Task 14 Step 3 / Phase 3 收尾 | App 的后端 SSE 装配、会话恢复、归档清空与旧配置迁移 | 7 | ✅ 通过 |
 | 21 | `server/test/json-session-storage.test.ts` | Task 14 Step 1 / Task 16 Step 2 | JSON 会话、频道关联、重启恢复与严格追加 | 15 | ✅ 通过 |
-| 22 | `server/test/session-api.test.ts` | Task 14 Step 2 / Task 16 Step 2 | 会话 API、频道上下文、归档与来源隔离 | 22 | ✅ 通过 |
+| 22 | `server/test/session-api.test.ts` | Task 14 Step 2 / Task 16 Step 2 | 会话 API、频道上下文、归档与来源隔离 | 24 | ✅ 通过 |
 | 23 | `server/test/discord-demo.test.ts` | Task 15 Step 2 | 配置、测试频道回显、连接事件、日志脱敏与退出清理（网络 Mock） | 14 | ✅ 通过 |
 | 24 | `bot/test/gateway.test.ts` | Task 16 / Task 17 Step 1–3 | 正式网关、typing、错误、重连、长时模拟与资源清理（网络 Mock） | 50 | ✅ 通过 |
 | 25 | `bot/test/message-entry.test.ts` | Task 16 Step 1 | 指定频道直接 @Bot、提及清理与消息过滤 | 14 | ✅ 通过 |
@@ -45,8 +45,8 @@
 | 35 | `server/test/chat-error-safety.test.ts` | P1-3 | 存储错误分类、上游脱敏、固定提示与白名单日志 | 23 | ✅ 通过 |
 | 36 | `server/test/source-budget.test.ts` | P1-7 | 持久化来源防伪、Web保留额度、总守卫与计数 / 生成暂停 | 8 | ✅ 通过 |
 | 37 | `server/test/search-adapter.test.ts` | Task 20 Step 1 | 固定端点、原生HTTP、限读、取消与离线Mock | 6 | ✅ 通过 |
-| 38 | `server/test/search-context.test.ts` | Task 20 Step 1 | 来源过滤、Unicode上限、资料隔离与URL不入模型 | 3 | ✅ 通过 |
-| **合计** | **38 个测试文件** | **Phase 1–5 / 审计修复** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **503** | **✅ 100% 通过** |
+| 38 | `server/test/search-context.test.ts` | Task 20 Step 1 | 来源过滤、Unicode上限、资料隔离与URL不入模型 | 9 | ✅ 通过 |
+| **合计** | **38 个测试文件** | **Phase 1–5 / 审计修复** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **511** | **✅ 100% 通过** |
 
 ---
 
@@ -574,7 +574,7 @@
 - [x] **来源元数据重启恢复且返回对象与内部来源深拷贝隔离**
 - [x] **拒绝不合法来源状态角色与不安全URL且日志不变**
 
-### 2.22 `server/test/session-api.test.ts` (22 项)
+### 2.22 `server/test/session-api.test.ts` (24 项)
 > **任务对应**：Task 17 Step 2 / Task 16 Step 2 / Task 14 Step 2 · 会话 API、多轮全量上下文与归档语义
 
 #### Task 14 Step 2: 会话 API 与多轮上下文
@@ -621,6 +621,11 @@
 #### Task 20 Step 1（2026-10-18，Mock）
 - [x] **SSE与刷新及重新装配后的回放保留相同来源且不重新搜索**
 - [x] **持久化Discord来源不接受浏览器伪造身份绕过降级**
+
+
+#### S1 截断后空白修复（2026-10-18，Mock）
+- [x] **title截断点为空白仍保存成功且重启回放不重搜**
+- [x] **summary截断点为空白仍保存成功且重启回放不重搜**
 
 ### 2.23 `server/test/discord-demo.test.ts` (14 项)
 > **任务对应**：Task 15 Step 2 · 最小网关 Demo（Task 16 Step 1 实现移至 bot/demo.ts，测试路径保留）；所有 Discord 网络调用均 Mock，不能替代真实网关验收。
@@ -1036,10 +1041,19 @@
 - [x] **取消挂起的响应读取可结束本地等待**
 - [x] **Mock适配器可离线提供受限来源且已取消不工作**
 
-### 2.38 `server/test/search-context.test.ts` (3 项)
+### 2.38 `server/test/search-context.test.ts` (9 项)
 
 > **任务对应**：Task 20 Step 1 · 全Mock，不调用真实供应商。
 
 - [x] **只保留最多三条安全来源并按Unicode码点限制标题与摘要**
 - [x] **模型资料不包含URL路径参数并转义越界标记与控制字符**
 - [x] **坏结果和超长URL不进入来源且不读取任何结果网页**
+
+
+#### S1 截断后空白修复（2026-10-18，Mock）
+- [x] **截断点为普通空格时来源仍通过校验且再次规范化不变**
+- [x] **截断点为制表符时来源仍通过校验且再次规范化不变**
+- [x] **截断点为不换行空格时来源仍通过校验且再次规范化不变**
+- [x] **截断点为全角空格时来源仍通过校验且再次规范化不变**
+- [x] **截断点为零宽控制字符时来源仍通过校验且再次规范化不变**
+- [x] **截断点为空控制字符时来源仍通过校验且再次规范化不变**
