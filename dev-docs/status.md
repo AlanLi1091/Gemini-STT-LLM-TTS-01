@@ -6,6 +6,8 @@ Phase 1–4已结项；Phase 5 Part 1 Task 19 Step 1–3、Task 20 Step 1–2已
 
 ## 当前授权
 
+- **本轮授权已完成（2026-10-19）**：用户指派 Claude 起草并留档 Task 21 Step 1（含 V1 子步骤）GPT 提示词，新增 `dev-docs/prompts/task21-step1-gpt.md` 并记录 history。仅文档，不构成开工授权；Task 21 Step 1 以用户对GPT的实际指派为准，Step 2与Task 22未授权。
+
 - **本轮授权已完成（2026-10-19）**：用户指派 Claude 复核 GPT Task 20 Step 3（`ba0ac12` / `0f4be63`）；复核通过，本机连续5次全量41/41文件651/651用例与类型检查通过。发现 V1（低，`CONTROL` 未含 U+2028 / U+2029，原样进入资料块并随来源持久化），已登记为 Task 21 前置；既有偶发失败定位为 `server/test/deployment-validation.test.ts:96`，Claude 单独循环40次未复现、根因未确认，另行立项。复核记录与登记见提交 `6e4bb48`（tag `V0.0.2-build.221`），本提交补同步status并按累计提交数创建annotated tag。仅文档；Task 21–22未授权。
 
 - **本轮授权已完成（2026-10-19）**：用户确认Task 20 Step 3的威胁映射及13文件计划后开工；新增夹具复现NBSP / 全角空白URL被接受，用户补充确认server/search-context.ts后，仅将safeUrl拒绝字符集加入\s，规范化与持久化验证共用修复。最终14文件（含本状态）交付，8个既有测试文件新增83项，全量41/41文件651/651用例、根 / 四包类型检查及三构建通过。全量8轮中第3轮既有deployment-validation.test.ts的reevaluates old samples only with matching measured journal evidence without rewriting them在第96行eligible_24h断言预期true实际false，根因未确认；第4–8轮连续5次651/651通过，失败名 / 错误 / 临时完整输出位置与开发期夹具校正均记tests.md，未放宽断言或改部署脚本。修复与验证提交`ba0ac12`（`fix: reject whitespace source URLs and verify search security boundaries`）已推送origin/test；本状态收尾提交后按累计220创建并推送annotated tag `V0.0.2-build.220`，最终远端核验见主会话汇报。全部上游Mock / 临时存储，无真实Tavily / Gemini / Discord / VPS / Key或会话访问、不新增依赖或部署；生产装配仍无搜索网络。Step 3已勾选待Claude复核；Task 21（含S2 / S3）、Task 22、P1-4 / R3、Q4及其他范围未授权，N3保留；既有未跟踪.zcodeignore不提交。完成后停止等待Claude复核。
