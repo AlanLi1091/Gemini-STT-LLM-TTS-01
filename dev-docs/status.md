@@ -2,9 +2,11 @@
 
 ## 当前阶段
 
-Phase 1–4已结项；Phase 5 Part 1 Task 19 Step 1–3、Task 20 Step 1–2已完成并复核通过，Task 20 Step 3已交付待Claude复核。Step 3以Mock补齐ADR-015 §6七行威胁的服务端验证，并最小修复Unicode空白URL过滤；backlog已勾选。Task 21–22仍未授权。生产未装配搜索网络，Tavily用途许可 / 性能证据待补，N3真实验收与上线门槛未解除；K1及搜索代码未部署，现网保持v002-6f81048。
+Phase 1–4已结项；Phase 5 Part 1 Task 19 Step 1–3、Task 20 Step 1–2已完成并复核通过，Task 20 Step 3已交付并经Claude复核通过，Task 20闭环。Step 3以Mock补齐ADR-015 §6七行威胁的服务端验证，并最小修复Unicode空白URL过滤；backlog已勾选。Task 21–22仍未授权。生产未装配搜索网络，Tavily用途许可 / 性能证据待补，N3真实验收与上线门槛未解除；K1及搜索代码未部署，现网保持v002-6f81048。
 
 ## 当前授权
+
+- **本轮授权已完成（2026-10-19）**：用户指派 Claude 复核 GPT Task 20 Step 3（`ba0ac12` / `0f4be63`）；复核通过，本机连续5次全量41/41文件651/651用例与类型检查通过。发现 V1（低，`CONTROL` 未含 U+2028 / U+2029，原样进入资料块并随来源持久化），已登记为 Task 21 前置；既有偶发失败定位为 `server/test/deployment-validation.test.ts:96`，Claude 单独循环40次未复现、根因未确认，另行立项。复核记录与登记见提交 `6e4bb48`（tag `V0.0.2-build.221`），本提交补同步status并按累计提交数创建annotated tag。仅文档；Task 21–22未授权。
 
 - **本轮授权已完成（2026-10-19）**：用户确认Task 20 Step 3的威胁映射及13文件计划后开工；新增夹具复现NBSP / 全角空白URL被接受，用户补充确认server/search-context.ts后，仅将safeUrl拒绝字符集加入\s，规范化与持久化验证共用修复。最终14文件（含本状态）交付，8个既有测试文件新增83项，全量41/41文件651/651用例、根 / 四包类型检查及三构建通过。全量8轮中第3轮既有deployment-validation.test.ts的reevaluates old samples only with matching measured journal evidence without rewriting them在第96行eligible_24h断言预期true实际false，根因未确认；第4–8轮连续5次651/651通过，失败名 / 错误 / 临时完整输出位置与开发期夹具校正均记tests.md，未放宽断言或改部署脚本。修复与验证提交`ba0ac12`（`fix: reject whitespace source URLs and verify search security boundaries`）已推送origin/test；本状态收尾提交后按累计220创建并推送annotated tag `V0.0.2-build.220`，最终远端核验见主会话汇报。全部上游Mock / 临时存储，无真实Tavily / Gemini / Discord / VPS / Key或会话访问、不新增依赖或部署；生产装配仍无搜索网络。Step 3已勾选待Claude复核；Task 21（含S2 / S3）、Task 22、P1-4 / R3、Q4及其他范围未授权，N3保留；既有未跟踪.zcodeignore不提交。完成后停止等待Claude复核。
 
@@ -69,9 +71,11 @@ Phase 1–4已结项；Phase 5 Part 1 Task 19 Step 1–3、Task 20 Step 1–2已
 
 ## 下一步计划
 
-停止等待Claude复核Task 20 Step 3（交付ba0ac12及本状态收尾）。本轮完整记录了一次既有部署证据用例偶发失败，随后连续5轮全量通过，根因未确认，不宣称Claude此前未定位的失败已解决。下一开发待办为Task 21，仍须用户单独指派；其负责S2 / S3、Web开关、Discord命令及安全来源展示。Task 22真实网络 / 延迟与用途许可验证仍受N3约束，不真实验收、不部署。P1-4 / R3、M1 / VPS扫描、Q4和其他残余继续待另行授权。
+Task 20 Step 3已经Claude复核通过（2026-10-19）；下一个待办为用户单独指派 Task 21，其开工前（或首个子步骤）须先修复V1。deployment-validation第96行偶发失败另行立项。原记录：停止等待Claude复核Task 20 Step 3（交付ba0ac12及本状态收尾）。本轮完整记录了一次既有部署证据用例偶发失败，随后连续5轮全量通过，根因未确认，不宣称Claude此前未定位的失败已解决。下一开发待办为Task 21，仍须用户单独指派；其负责S2 / S3、Web开关、Discord命令及安全来源展示。Task 22真实网络 / 延迟与用途许可验证仍受N3约束，不真实验收、不部署。P1-4 / R3、M1 / VPS扫描、Q4和其他残余继续待另行授权。
 
 ## 本轮验收与遗留
+
+- **Claude Task 20 Step 3 复核（2026-10-19）**：复核通过，连续5次全量651/651用例通过；V1登记于backlog Task 21前置，偶发失败用例已定位、根因未确认。仅修改backlog / history / status，测试台账不变；既有未跟踪 `.zcodeignore` 保留。
 
 - **Task 20 Step 3（2026-10-19）**：最终威胁→测试映射见tests.md的Step 3节；固定端点、不跟随跳转、不读取结果地址、资料角色 / 标记隔离、来源URL / 域名 / IDN / 元数据严格读取、取消 / 慢流 / 超量 / 迟到 / 不合作清理与锁、身份 / 回放 / 预算、上下文及固定错误白名单均有Mock证据。应用源码仅safeUrl空白过滤一行，新增两例先红后绿；其余改动为8测试文件与5文档。成功sources允许经校验的展示URL，错误诊断与日志不含供应商原文 / query / Key / stack。Mock不证明模型语义免疫、来源事实正确或OS文件权限隔离；Web / Discord渲染、真实端到端网络与期限仍待Task 21 / 22。全量第3轮既有部署用例失败已记账，未修改其断言或脚本。既有.zcodeignore保留未跟踪、不提交。
 
