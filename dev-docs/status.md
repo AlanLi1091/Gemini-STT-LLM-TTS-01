@@ -6,6 +6,8 @@ Phase 1–4已结项；Phase 5 Part 1 Task 19 Step 1–3与Task 20 Step 1–2已
 
 ## 当前授权
 
+- **本轮授权已完成（2026-10-18）**：用户确认留档 Claude 起草的 T1–T3 修复 GPT 提示词，新增 `dev-docs/prompts/task20-step2-t1-t3-fix-gpt.md` 并记录 history。仅文档，不构成开工授权；T1–T3 修复待用户指派，Task 20 Step 3、Task 21–22均未授权。
+
 - **本轮授权已完成（2026-10-18）**：用户指派 Claude 复核 GPT Task 20 Step 2（`8878af6` / `2bb7c81`）并要求结论写入status；本机全量41/41文件559/559用例与根 / 四包类型检查复跑通过，但复核**不通过**：**T1（高）** 编排第三轮 `fitSearchSources` 以“全部可选历史+资料≤80%”为目标且保留至少一条来源，资料先被缩到最小而旧历史不删——默认20轮历史、每轮回复100字时即只剩1条来源 / 1字摘要并被持久化展示；ADR-015 §3“先限资料……再删最旧完整历史”字面有歧义，应理解为资料先受2048上限，再由 select 删最旧历史，仅“本轮问题+资料”无历史仍放不下时才继续缩短资料；须删去第三轮缩短、澄清ADR并补长历史+搜索回归。**T2（中）** `SearchBudget.acquire` 在账本IO进行中被取消即设 `disabled=true`，单个用户停止便关闭全进程搜索直到重启，无日志且降级原因与额度不足同为 admission_denied；账本已串行、后续acquire会重读，无需永久关闭，须改为不关闭或IO结束后恢复并补回归。**T3（低）** 账本单次写入失败即关闭至重启（符合N4、可接受），但降级原因同为 admission_denied，建议增加独立本地枚举便于排查。T1 / T2以tsx脚本复现（scratchpad，不入Git）。仅修改status，未改ADR / 源码 / 测试 / 配置；本提交后按累计提交数创建annotated tag。Task 20 Step 3、Task 21–22均未授权。
 
 - **本轮授权已完成（2026-10-18）**：用户指派Task 20 Step 2，依据已留档prompts确认22文件计划后开工；独立多守卫预算、先持久化扣额的UTC日账本 / N4关闭与人工恢复、8秒搜索 / 单调115秒阶段协调、2048资料预算和N1独立搜索校准已实现。新增48项，全量41/41文件559/559用例、根 / 四包类型检查、三构建、台账 / ADR链接 / diff与范围检查通过。交付提交`8878af6`（`feat: enforce search budgets deadlines and calibrated context`）已推送origin/test；本状态收尾后按累计208提交创建并推送annotated tag `V0.0.2-build.208`，最终远端核验见主会话汇报。仅Mock / 隔离临时账本，无真实Tavily / Gemini / Discord / VPS调用、不读取真实Key或会话、不改部署文件、不新增依赖或部署；生产装配不接搜索网络。Step 2待复核；Step 3、Task 21（含S2 / S3）及其余项未授权。
