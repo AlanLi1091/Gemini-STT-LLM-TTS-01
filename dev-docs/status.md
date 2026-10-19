@@ -2,9 +2,11 @@
 
 ## 当前阶段
 
-Phase 1–4已结项；Phase 5 Part 1 Task 19 Step 1–3与Task 20 Step 1–2已完成。Step 1及S1 / S4修复已经Claude复核通过；Step 2独立搜索预算 / 日账本 / 期限 / 资料预算与N1校准完成Mock验证；Claude复核不通过，T1（高）/ T2（中）须在Step 3前修复。Task 20 Step 3与Task 21–22仍未授权。生产未装配搜索网络，Tavily用途许可 / 性能证据待补，N3真实验收与上线门槛未解除；K1及搜索代码未部署，现网保持v002-6f81048。
+Phase 1–4已结项；Phase 5 Part 1 Task 19 Step 1–3与Task 20 Step 1–2已交付。Step 1及S1 / S4已复核通过；Step 2原复核不通过的T1–T3已修复并完成Mock回归，等待Claude复核。Task 20 Step 3与Task 21–22仍未授权，Step 3未勾选 / 未开工。生产未装配搜索网络，Tavily用途许可 / 性能证据待补，N3真实验收与上线门槛未解除；K1及搜索代码未部署，现网保持v002-6f81048。
 
 ## 当前授权
+
+- **本轮授权已完成（2026-10-18）**：用户指派T1–T3修复并确认15文件计划后修改；T1删除为完整历史挤压资料的第三轮fit，第二轮按无历史最小输入与select共用0.8安全阈值；T2取消只结束本地等待，tail保持串行并在IO结束后让后续请求重读准入，不永久关闭；T3新增ledger_unavailable，真实账本故障仍按N4关闭，额度拒绝保留admission_denied。新增9项，全量41/41文件568/568用例、根 / 四包类型检查、三构建、台账 / diff及15文件范围验证通过。修复提交`324b02e`（`fix: preserve search sources and recover admission after cancellation`）已推送origin/test；本状态收尾后按累计214提交创建并推送annotated tag `V0.0.2-build.214`，最终远端核验见主会话汇报。全部Mock / 临时存储，无真实搜索 / 模型 / Discord / VPS / 会话访问、不读取真实Key、不改部署文件、不新增依赖或部署。完成后等待Claude复核，Step 3仍未勾选 / 未开工，Task 21及其他范围未授权。
 
 - **本轮授权已完成（2026-10-18）**：用户确认留档 Claude 起草的 T1–T3 修复 GPT 提示词，新增 `dev-docs/prompts/task20-step2-t1-t3-fix-gpt.md` 并记录 history。仅文档，不构成开工授权；T1–T3 修复待用户指派，Task 20 Step 3、Task 21–22均未授权。
 
@@ -55,15 +57,17 @@ Phase 1–4已结项；Phase 5 Part 1 Task 19 Step 1–3与Task 20 Step 1–2已
 - **更早授权已完成（2026-10-09）**：Codex git-ops 当前 tag 版本号已从 0.0.1 修正为 0.0.2；配置 / backlog / history 提交 `3c778a6` 已推送 origin/test，收尾 tag `V0.0.2-build.154`。
 - **授权任务**：2026-10-07 V0.0.2 私有VPS部署、双入口与管理员重置验收完成；四份交付记录87b1617与状态提交8b5731c已推送origin/test，发布PR为[#5](https://github.com/AlanLi1091/Gemini-STT-LLM-TTS-01/pull/5)。本提交补充最终交付信息，随后按已确认计划合并PR并创建annotated tag `V0.0.2-build.149`（test最终提交累计数，非main合并提交计数）；最终远端PR / tag核验见主会话汇报。Phase 5、P1与其余残余仍未授权。
 - **VPS 现状**：Vultr Seattle、1核1G、Ubuntu 26.04.1，内核 7.0.0-38、Node v24.21.0，Auto Backup 已开启；gemini-admin 公钥管理，禁用 root / 密码 SSH，UFW 仅开放 22/tcp。gemini-server / gemini-bot 两个非 root systemd 服务 active / enabled，Express 仅监听 127.0.0.1:3001，数据目录独立持久化。无域名、仅本人使用，通过 SSH 隧道访问 http://127.0.0.1:18080，详见 [运维说明](../deploy/README.md)。服务保持常驻。 当前发行物v002-6f81048，两个服务实际进程cwd均为该目录，NRestarts=0；server.env配置生成10 / Web保留4、计数20 / Web保留8及首包60秒 / 总90秒，bot.env和systemd单元未改。
-- **最近交付 commit**：`8878af6` — `feat: enforce search budgets deadlines and calibrated context`，已推送origin/test；本状态收尾后tag `V0.0.2-build.208`。Step 2待复核；Step 1 / S1 / S4已复核通过。现网仍v002-6f81048，本轮无部署。
-- **当前测试基线**：Task 20 Step 2全量41/41文件559/559用例（新增48）、根 / 四包类型检查及Web / Express / Bot三构建通过。初始模块 / N1 / 资料预算测试先红后绿；既有511项保留通过，生成配置边界断言按搜索预留关系更新。台账41/41文件 / 用例数一致，ADR本地链接、新节引用、diff及批准22文件范围通过。HTTP回归按既有listen EPERM限制获准在沙箱外运行；报告`/private/tmp/task20-step2-final-tests.json`不入Git。全部上游Mock，无真实API / 生产数据 / VPS访问；现网仍462/462基线。既有React act警告记录保留，服务端1.8mb为大小标记，无编译诊断错误。
+- **最近交付 commit**：`324b02e` — `fix: preserve search sources and recover admission after cancellation`，已推送origin/test；本状态收尾后tag `V0.0.2-build.214`。T1–T3修复待Claude复核；Step 3未启动，现网仍v002-6f81048，本轮无部署。
+- **当前测试基线**：T1–T3修复全量41/41文件568/568用例（新增9），根 / 四包类型检查及Web / Express / Bot三构建通过。新增长历史100 / 200 / 400字、无历史阈值、取消后恢复准入、故障原因持久化 / 重启回放回归；旧错误行为断言及准入返回类型按复核修订，其余回归保留。台账41/41文件及用例数映射一致，diff和批准15文件范围验证通过；报告`/private/tmp/t1-t3-tests.json`不入Git。HTTP测试按既有listen EPERM限制获准外部运行；全部上游Mock，未访问真实API / Key / 生产数据或VPS。现网仍462/462基线；既有React act警告记录保留，服务端1.8mb为大小标记，无编译诊断错误。
 - **当前功能验收**：Playground 仅连接后端服务；启动时恢复最近活动会话，无可恢复会话时创建新会话。发送仅提交本轮输入、`sessionId` 与稳定 `requestId`；失败重试复用同一 `requestId`，不重复保存输入，已完成回复直接回放（ADR-012）。服务端从完整持久化日志中选取有限上下文窗口送入模型，完整日志不变（ADR-013）。清空对话归档旧会话并切换至新会话。Discord 管理员可在指定频道以 `@Bot /reset` 归档并重置频道会话（ADR-014）。旧版直连设置迁移为后端模式并清除浏览器存储的 Key 字段。
 
 ## 下一步计划
 
-Task 20 Step 2经Claude复核不通过（2026-10-18）；下一个待办为用户指派修复T1 / T2（T3可一并），修复复核通过后再指派Step 3。原记录：Task 20 Step 2已交付，等待用户指派独立复核；Task 20 Step 3与Task 21–22未授权，不自动启动。Step 3负责专项SSRF与提示注入攻击夹具；Task 21仍负责Web开关、Discord命令 / 来源展示及S2 / S3。N3许可门槛保留，不真实验收、不部署；P1-4 / R3、M1 / VPS扫描、Q4过时文档及其他残余均待另行授权。账本人工恢复流程与阶段期限边界见ADR-015 §8，本步不执行任何生产恢复。
+T1–T3已修复交付，等待用户指派Claude复核；复核通过前不进入Task 20 Step 3。Step 3与Task 21–22仍未授权。Task 21负责S2 / S3、Web开关、Discord命令及来源展示；N3未解除，不真实验收、不部署。P1-4 / R3、M1 / VPS扫描、Q4和其他残余继续待另行授权。
 
 ## 本轮验收与遗留
+
+- **T1–T3修复（2026-10-18）**：15文件交付；T1默认20轮回复100 / 200 / 400字保留3×100字摘要、删除最旧历史，保存的来源与实际注入一致。无历史最小输入只按与select一致的安全阈值裁资料，不再为完整历史缩成一字；ADR-015 §3 / §8已澄清。T2read / write期间取消仍ABORTED且不搜索，后续请求等待原tail任务完成后重读；读取消不扣、写取消保留已落账预留，保持单写者 / 先落账。T3准入结果区分允许、admission_denied和ledger_unavailable；坏账本 / 写失败使用新原因，刷新 / 重启回放一致，额度不足保持原原因，实际IO故障仍关闭至重启。新增9项，全量568/568、类型 / 三构建 / 台账映射通过。全部Mock，不真实调用 / 部署；修复待复核，Step 3不勾选不开工，既有`.zcodeignore`未跟踪文件保留不提交。
 
 - **Task 20 Step 2（2026-10-18）**：批准22文件范围交付。搜索全局 / Web保留 / Discord总额 / 用户 / 频道守卫原子检查、日attempts与credits分开持久化，先落账再请求；回放 / 冲突 / 非法问题 / 缺身份不扣搜索额度，降级不重复扣生成。搜索429只暂停搜索60秒，N4坏账本或读写失败关闭搜索、不清零且普通聊天可继续；已知账本消失 / 改写也关闭，人工恢复须保留额度证据。默认搜索8秒、生成90秒、两次计数各3秒合104秒≤115，搜索准入后用单调115秒协调上限贯穿阶段，首包60秒 / 总90秒从生成开始语义不变，存储副作用与端到端IO不作本步保证。资料2048估算tokens，先缩摘要 / 减来源后裁历史，实际展示摘要与注入一致；N1取共享 / 搜索系数较大值，只更新独立搜索系数（1.25→最多4），完整输入基数含系统规则 / 历史 / 问题 / 资料。新增48用例，全量559/559、类型 / 三构建 / 台账映射通过。配置10项及校验、人工恢复、提示词§2–5→测试映射见ADR-015 §8与tests。生产未装配搜索网络、不读取真实Key或改部署文件；本地Mock / 临时账本，无真实模型 / 搜索 / Discord / VPS调用。保守预留不等同实际账单；单Express / 单写者，分钟额 / 429暂停仅内存。Step 2待复核、Step 3与Task 21–22未启动；既有`.zcodeignore`保留不提交。
 
