@@ -6,6 +6,8 @@ Phase 1–4已结项；Phase 5 Part 1 Task 19 Step 1–3与Task 20 Step 1已完�
 
 ## 当前授权
 
+- **本轮授权已完成（2026-10-18）**：用户确认留档 Claude 起草的 Task 20 Step 2 GPT 提示词，新增 `dev-docs/prompts/task20-step2-gpt.md` 并记录 history。仅文档，不构成开工授权；Task 20 Step 2–3、Task 21–22均未授权。
+
 - **本轮授权已完成（2026-10-18）**：用户指派 Claude 复核 S1 / S4 修复（`d5282ed` / `c13acce`）并确认记录；复核通过，本机全量38/38文件511/511用例与类型检查复跑通过，原复现脚本转为通过，无新发现。写入history。仅文档；本状态收尾提交后按累计提交数创建annotated tag。Task 20 Step 2–3、Task 21–22均未授权。
 
 - **本轮授权已完成（2026-10-18）**：用户指派按Claude建议修复并确认9文件计划；S1在来源码点截断后再次trim，6项空白 / Unicode / 控制字符边界与2项HTTP保存 / 重启回放测试先红后绿；S4将ADR-012 / 013重复裁决正文替换为ADR-015链接。全量38/38文件511/511用例、根 / 四包类型检查及三构建通过，台账38/38映射、引用目标 / 去重及diff检查通过。交付`d5282ed`（`fix: trim truncated search sources before persistence validation`）已推送origin/test；本状态收尾提交后按最终累计202提交创建并推送annotated tag `V0.0.2-build.202`，最终核验见主会话汇报。全部上游Mock / 隔离临时存储，无真实搜索 / 模型 / Discord / VPS / 会话访问，未部署。S1修复待复核；S2 / S3留Task 21，Task 20 Step 2–3及后续未授权。
