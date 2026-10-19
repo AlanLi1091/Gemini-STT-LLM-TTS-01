@@ -34,6 +34,9 @@ export interface ChatStreamRequest {
   messages: ChatStreamMessage[];
   /** Explicit per-turn intent; absent means false. */
   search?: boolean;
+  /** Trusted only for Origin-free loopback requests with a 17–20 digit value.
+   * Browsers cannot use this field to declare a trusted Discord identity. */
+  discordUserId?: string;
   /** 省略时使用无状态模式；提供时由服务端寻址持久化会话。 */
   sessionId?: string;
   /** ADR-012: stable UUID for a single user input; reused for failed retries. */

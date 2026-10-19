@@ -363,3 +363,27 @@ describe('Task 21: 最终来源滚动', () => {
     else expect(scrollTo).not.toHaveBeenCalled();
   });
 });
+
+describe('Task 21 Step 2 W1: 降级提示顺序', () => {
+  it('固定降级提示位于正文之前且只出现一次，成功来源仍在正文之后', async () => {
+    const { SEARCH_DEGRADED_NOTICE } = await import('@core/index');
+    const message: Message = { id: 'w1', role: 'assistant', content: '降级正文', createdAt: 1, search: { status: 'degraded', sources: [], reason: 'unavailable', notice: SEARCH_DEGRADED_NOTICE } };
+    const view = render(<MessageList messages={[message]} />);
+    const notice = screen.getByText(SEARCH_DEGRADED_NOTICE), body = screen.getByText('降级正文');
+    expect(notice.compareDocumentPosition(body) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getAllByText(SEARCH_DEGRADED_NOTICE)).toHaveLength(1);
+    view.rerender(<MessageList messages={[{ ...message, search: { status: 'succeeded', sources: [{ provider: 'tavily', index: 1, retrievedAt: 1, title: '标题', domain: 'example.com', url: 'https://example.com', summary: '摘要' }] } }]} />);
+    expect(screen.queryByText(SEARCH_DEGRADED_NOTICE)).not.toBeInTheDocument();
+    expect(screen.getByText('降级正文').compareDocumentPosition(screen.getByText('本轮检索来源')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+});
+
+describe('Task 21 Step 2 W1: 坏元数据兼容', () => {
+  it('未经校验的degraded字段不触发降级提示', async () => {
+    const { SEARCH_DEGRADED_NOTICE } = await import('@core/index');
+    const message = { id: 'bad-w1', role: 'assistant', content: '正文', createdAt: 1, search: { status: 'degraded', sources: [], reason: 'SECRET', notice: 'SECRET' } } as unknown as Message;
+    render(<MessageList messages={[message]} />);
+    expect(screen.getByText('正文')).toBeInTheDocument();
+    expect(screen.queryByText(SEARCH_DEGRADED_NOTICE)).not.toBeInTheDocument();
+  });
+});

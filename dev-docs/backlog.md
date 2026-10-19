@@ -192,7 +192,9 @@ Claude Task 20 Step 3 复核前置（2026-10-19，详见 history）：Task 21 St
 - [x] **Step 1（Web Playground；2026-10-19完成，待Claude复核）**：首个子步骤修复V1；逐轮联网开关默认关闭，已接受发送后复位，告知当前问题外发Tavily且来源随回复保存、不承诺零留存，超过500 Unicode码点提示缩短。原输入保留search模式及requestId，重试不受当前开关影响；done.search经客户端结构校验及可选ChatChunk传到对应assistant，仅最终done展示来源，普通chunk仍只含正文。回复末尾按编号展示纯文本标题 / 摘要、解析真实域名及独立校验的HTTP(S)链接，拒绝凭据 / 控制字符 / 空白 / 超长URL，使用noopener noreferrer；无效URL只显示标题与域名。固定降级提示与正文分离，刷新、单done回放及旧消息兼容，篡改done / 持久化数据与恶意文本夹具有回归；审计第7节危险渲染API扫描0匹配。新增91项，最终连续3轮43/43文件742/742用例、根 / 四包类型检查与三构建通过；首轮沙箱端口EPERM记录于tests.md。D12既有残留片段 / 重试差异仅记录，P1-4 / R3未实施；全部Mock，生产搜索网络未装配，Step 2（含S2 / S3）与Task 22未授权。
 Claude Task 21 Step 1 复核前置（2026-10-19，详见 history）：Step 2 首个子步骤须修复 **W1（低）**——Web 降级提示 `SEARCH_DEGRADED_NOTICE`（“本轮未完成联网检索，以下回复未使用实时搜索。”）现由 `SearchSources` 渲染在正文之后，与“以下”不符；ADR-015 固定文案不改，须将降级提示移至 `MessageList` 正文之前并补渲染顺序回归；**W2（低）**——`src/adapters/RemoteChatAdapter.ts` 无状态分支亦发送 `search: true`，而服务端要求 `search: true` 必须带 sessionId，致整个请求被判无效；须仅在会话模式发送并补回归。另：Step 1 如实记录既有 D12 差异（停止后 Web 保留已生成片段、末条 assistant 无法重试），属 P1-4 / R3 实施范围，未授权；须在 Task 21 收尾人工验收前由用户决定是否单独授权。
 
-- [ ] **Step 2（Discord）**：来源展示不触发用户 / 角色提及、抑制链接预览、限制条数防刷屏；与既有长消息分段规则（Task 16 Step 3）协调；标题 Markdown 转义、禁止伪装链接；以 `SuppressEmbeds` 或 `<>` 抑制预览，显示标题 / 域名并限制长度；输入中提示持续至开始回复。
+**W1 / W2完成（2026-10-19）**：固定降级文案不变，校验后在MessageList正文之前显示，成功来源仍后置；无状态RemoteChatAdapter不发送search:true，仅会话模式携带。顺序 / 坏元数据与请求字段回归先红后绿，Web兼容通过。
+
+- [x] **Step 2（Discord；2026-10-19完成，待Claude复核）**：首个子步骤修复W1 / W2；保留精确/reset优先及管理员规则，/search加空白和非空问题显式搜索，空命令本地说明用法、Tavily外发及频道 / Discord留存，超过500 Unicode码点本地固定提示且不请求后端。共享契约加入可选discordUserId，Bot只在搜索请求发送作者身份，服务端沿用无Origin / loopback校验；共用core展示结构校验，handleInput返回正文及可选最终搜索元数据，坏字段按无来源处理。降级固定提示单独作为正文前第一条消息；正文沿用原分段规则，完成后最多三条独立来源消息，每条含编号、转义标题（80码点）/ 摘要（100码点）、解析真实域名与尖括号原URL，独立HTTP(S) / 凭据 / 控制空白 / 长度校验，转义后每条<=1900 UTF-16单位，无效或过长链接只显示域名与固定说明；来源均带SuppressEmbeds和空allowedMentions，不用Embed或隐藏目标。typing持续到开始回复，来源等待不延长；来源发送失败仅固定反馈一次、不重发正文。新增65项，最终连续3轮44/44文件807/807用例、根 / 四包类型检查和三构建通过；既有/reset、120秒、分段、K1、P1、Task20及Step1回归通过，全部Mock无真实调用 / 部署。D12差异 / P1-4 / R3仍待用户在Task21收尾人工验收前单独决定，Task22及N3门槛保留。
 
 ### Task 22：Part 1 验收与结项（以 ADR-015 裁决为准）
 

@@ -212,3 +212,12 @@ describe('Task 21: 搜索请求与最终元数据', () => {
     expect(chunks[0].search).toBeUndefined();
   });
 });
+
+describe('Task 21 Step 2 W2: 无状态搜索意图', () => {
+  it('无状态请求不发送search:true，仍保留普通消息', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(sseResponse('event: done\ndata: {"content":"回复"}\n\n'));
+    vi.stubGlobal('fetch', fetchMock);
+    await new RemoteChatAdapter().send([{ ...messages[0], searchRequested: true }]);
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ messages: [{ role: 'user', content: '你好' }] });
+  });
+});

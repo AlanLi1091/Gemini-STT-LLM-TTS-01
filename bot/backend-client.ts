@@ -1,8 +1,15 @@
-import type { ResolveDiscordSessionRequest, ResolveDiscordSessionResponse, ResetDiscordSessionRequest, ResetDiscordSessionResponse } from '@gemini-chat/core';
+import { parseSearchMetadata } from '../core/search-metadata';
+import type { SearchMetadata } from '../core/contracts/search';
+import type { ChatStreamRequest, ResolveDiscordSessionRequest, ResolveDiscordSessionResponse, ResetDiscordSessionRequest, ResetDiscordSessionResponse } from '@gemini-chat/core';
 import type { BotInput } from './message-entry';
 
 import { BackendError, describeFailure, type FailureKind } from './errors';
 export { BackendError } from './errors';
+
+export interface BotReply {
+  content: string;
+  search?: SearchMetadata;
+}
 
 export function validateBackendUrl(value = 'http://127.0.0.1:3001'): string {
   const url = new URL(value);
@@ -90,7 +97,7 @@ export class BackendClient {
     }
   }
 
-  async chat(input: BotInput, signal?: AbortSignal): Promise<string> {
+  async chat(input: BotInput, signal?: AbortSignal, options: { search?: boolean } = {}): Promise<BotReply> {
     if (signal?.aborted) throw new BackendError('本次请求已取消。', 'ABORTED');
     const controller = new AbortController();
     const abort = () => controller.abort();
@@ -120,9 +127,11 @@ export class BackendClient {
       if (!value || typeof value.sessionId !== 'string' || !/^[0-9a-f-]{36}$/i.test(value.sessionId)) {
         throw new BackendError('后端会话解析响应无效。', 'PROTOCOL');
       }
-      const response = await post('/api/chat/stream', {
+      const chatRequest: ChatStreamRequest = {
         sessionId: value.sessionId, messages: [{ role: 'user', content: input.content }],
-      }, 'text/event-stream');
+        ...(options.search === true ? { search: true, discordUserId: input.userId } : {}),
+      };
+      const response = await post('/api/chat/stream', chatRequest, 'text/event-stream');
       if (!response.body) throw new BackendError('后端返回了空的对话流。', 'PROTOCOL');
       reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -144,14 +153,15 @@ export class BackendClient {
           try { parsed = JSON.parse(data); }
           catch { throw new BackendError('后端对话格式无效。', 'PROTOCOL'); }
           if (!parsed || typeof parsed !== 'object') throw new BackendError('后端对话格式无效。', 'PROTOCOL');
-          const frame = parsed as { content?: unknown; error?: { code?: unknown }; delta?: unknown; accumulated?: unknown };
+          const frame = parsed as { content?: unknown; error?: { code?: unknown }; delta?: unknown; accumulated?: unknown; search?: unknown };
           if (event === 'error') throw new BackendError(errorMessage(frame.error?.code), errorKind(frame.error?.code));
           if (event === 'chunk') {
             if (typeof frame.delta !== 'string' || typeof frame.accumulated !== 'string') throw new BackendError('后端对话格式无效。', 'PROTOCOL');
             continue;
           }
           if (typeof frame.content !== 'string' || !frame.content.trim()) throw new BackendError('后端未返回有效的最终回复。', 'PROTOCOL');
-          return frame.content;
+          const search = parseSearchMetadata(frame.search);
+          return { content: frame.content, ...(search ? { search } : {}) };
         }
         if (done) throw new BackendError('对话连接提前结束，未收到完整回复；本次请求未自动重发。', 'PROTOCOL');
       }

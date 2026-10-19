@@ -134,7 +134,6 @@ export class RemoteChatAdapter implements ChatAdapter {
             }
           : {
               messages: messages.map(({ role, content }) => ({ role, content })),
-              ...(messages.at(-1)?.searchRequested === true ? { search: true } : {}),
             }),
         signal,
       });

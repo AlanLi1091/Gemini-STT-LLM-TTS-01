@@ -4,7 +4,7 @@ import { Client, Events, type ClientEvents } from 'discord.js';
 import { startGateway } from '../gateway';
 import { readBotConfig, createBotInputHandler } from '../index';
 import { normalizeMessage } from '../message-entry';
-import { BackendError } from '../backend-client';
+import { BackendError, type BotReply } from '../backend-client';
 
 const input = { id: 'm1', guildId: 'g1', channelId: 'c1', userId: 'u1', content: 'hello' };
 const stops: Array<() => void> = [];
@@ -15,7 +15,7 @@ async function setup(options: Partial<Parameters<typeof startGateway>[0]> = {}) 
   const destroy = vi.spyOn(client, 'destroy');
   const log = vi.fn();
   const resolveInput = vi.fn(() => input);
-  const handleInput = vi.fn().mockResolvedValue('已收到；模型对话将在下一步接入。');
+  const handleInput = vi.fn().mockResolvedValue({ content: '已收到；模型对话将在下一步接入。' });
   const listenerBaseline = () => Object.fromEntries(client.eventNames().map(event => [event, client.listenerCount(event)]));
   const originalListeners = listenerBaseline();
   const gateway = await startGateway({ token: 'fake-secret', schedulerOptions: { cooldownMs: 0 }, client, log, resolveInput, handleInput, ...options });
@@ -54,7 +54,7 @@ describe('Task 16 Step 1: Bot 网关骨架', () => {
     expect(JSON.stringify(log.mock.calls)).not.toContain('fake-secret'); const next = message(); emit(client, next); await flush(); expect(next.reply).toHaveBeenCalledOnce();
   });
   it('部分段落发送失败只提示中断，不重发已发送段落', async () => {
-    const { client } = await setup({ handleInput: async () => '长'.repeat(6001) }); const msg = message();
+    const { client } = await setup({ handleInput: async () => ({ content: '长'.repeat(6001) }) }); const msg = message();
     msg.channel.send.mockResolvedValueOnce({}).mockRejectedValueOnce({ code: 50013 }); emit(client, msg); await flush();
     expect(msg.reply).toHaveBeenCalledOnce(); expect(msg.channel.send).toHaveBeenCalledTimes(3); expect(msg.channel.send.mock.calls[2][0].content).toContain('已发送 2 段');
   });
@@ -73,19 +73,19 @@ describe('Task 16 Step 1: Bot 网关骨架', () => {
     expect(next.reply).toHaveBeenCalledWith({ content: expect.stringContaining('冷却'), allowedMentions: { parse: [], repliedUser: false } });
   });
   it('频道队满给出提示且不调用后端', async () => {
-    let finish!: (content: string) => void;
-    const handler = vi.fn(() => new Promise<string>(resolve => { finish = resolve; }));
+    let finish!: (content: BotReply) => void;
+    const handler = vi.fn(() => new Promise<BotReply>(resolve => { finish = resolve; }));
     const { client } = await setup({ schedulerOptions: { maxPending: 0, cooldownMs: 0 }, handleInput: handler });
     emit(client, message()); await flush(); const next = message(); emit(client, next); await flush();
     expect(next.reply).toHaveBeenCalledWith(expect.objectContaining({ content: expect.stringContaining('队列已满') }));
     expect(handler).toHaveBeenCalledOnce();
-    expect(next.channel.sendTyping).not.toHaveBeenCalled(); finish('完成'); await flush();
+    expect(next.channel.sendTyping).not.toHaveBeenCalled(); finish({ content: '完成' }); await flush();
   });
   it('退出时排队消息不开始处理或发送停止提示', async () => {
-    let finish!: (content: string) => void; const handler = vi.fn(() => new Promise<string>(resolve => { finish = resolve; }));
+    let finish!: (content: BotReply) => void; const handler = vi.fn(() => new Promise<BotReply>(resolve => { finish = resolve; }));
     const { client, stop } = await setup({ handleInput: handler });
     emit(client, message()); const next = message(); emit(client, next); await flush();
-    stop(); finish('完成'); await flush(); expect(handler).toHaveBeenCalledOnce(); expect(next.reply).not.toHaveBeenCalled();
+    stop(); finish({ content: '完成' }); await flush(); expect(handler).toHaveBeenCalledOnce(); expect(next.reply).not.toHaveBeenCalled();
   });
   it('拒绝无效环境限流配置', () => {
     expect(() => readBotConfig({ DISCORD_BOT_TOKEN: 'fake', DISCORD_TEST_CHANNEL_ID: '123456789012345678', DISCORD_MAX_PENDING: '-1' })).toThrow('调度配置');
@@ -99,13 +99,13 @@ describe('Task 16 Step 1: Bot 网关骨架', () => {
     expect(next.reply).toHaveBeenCalledOnce();
   });
   it('长回复首段回复原消息，后续段发送到频道且全部抑制提及', async () => {
-    const { client } = await setup({ handleInput: async () => '长'.repeat(2001) });
+    const { client } = await setup({ handleInput: async () => ({ content: '长'.repeat(2001) }) });
     const msg = message(); emit(client, msg); await flush();
     expect(msg.reply).toHaveBeenCalledWith({ content: '长'.repeat(2000), allowedMentions: { parse: [], repliedUser: false } });
     expect(msg.channel.send).toHaveBeenCalledWith({ content: '长', allowedMentions: { parse: [], repliedUser: false } });
   });
   it('等待前一段发送成功后才发送下一段', async () => {
-    const { client } = await setup({ handleInput: async () => '长'.repeat(4001) });
+    const { client } = await setup({ handleInput: async () => ({ content: '长'.repeat(4001) }) });
     const msg = message();
     let finish!: () => void;
     msg.reply.mockImplementationOnce(() => new Promise(resolve => { finish = () => resolve({}); }));
@@ -116,7 +116,7 @@ describe('Task 16 Step 1: Bot 网关骨架', () => {
   });
   it('中途发送失败不重发或继续剩余段，并清理 typing', async () => {
     vi.useFakeTimers();
-    const { client, log } = await setup({ handleInput: async () => '长'.repeat(6001) });
+    const { client, log } = await setup({ handleInput: async () => ({ content: '长'.repeat(6001) }) });
     const msg = message(); msg.channel.send.mockRejectedValueOnce(new Error('fake-secret'));
     emit(client, msg); await flush();
     expect(msg.reply).toHaveBeenCalledOnce(); expect(msg.channel.send).toHaveBeenCalledTimes(2);
@@ -127,14 +127,14 @@ describe('Task 16 Step 1: Bot 网关骨架', () => {
     expect(msg.channel.sendTyping).toHaveBeenCalledOnce();
   });
   it('分段发送期间退出不再发送剩余段', async () => {
-    const { client, stop } = await setup({ handleInput: async () => '长'.repeat(4001) });
+    const { client, stop } = await setup({ handleInput: async () => ({ content: '长'.repeat(4001) }) });
     const msg = message(); let finish!: () => void;
     msg.reply.mockImplementationOnce(() => new Promise(resolve => { finish = () => resolve({}); }));
     emit(client, msg); await flush(); stop(); finish(); await flush();
     expect(msg.channel.send).not.toHaveBeenCalled();
   });
   it('空白最终回复不发送消息', async () => {
-    const { client } = await setup({ handleInput: async () => ' \n ' });
+    const { client } = await setup({ handleInput: async () => ({ content: ' \n ' }) });
     const msg = message(); emit(client, msg); await flush();
     expect(msg.reply).not.toHaveBeenCalled(); expect(msg.channel.send).not.toHaveBeenCalled();
   });
@@ -161,12 +161,12 @@ describe('Task 16 Step 1: Bot 网关骨架', () => {
   });
   it('处理期间刷新 typing，完成后停止刷新', async () => {
     vi.useFakeTimers();
-    let finish!: (value: string) => void;
+    let finish!: (value: BotReply) => void;
     const { client } = await setup({ handleInput: () => new Promise(resolve => { finish = resolve; }) });
     const msg = message(); emit(client, msg); await flush();
     vi.advanceTimersByTime(7000); await flush();
     expect(msg.channel.sendTyping).toHaveBeenCalledTimes(2);
-    finish('完成'); await flush();
+    finish({ content: '完成' }); await flush();
     vi.advanceTimersByTime(14000); await flush();
     expect(msg.channel.sendTyping).toHaveBeenCalledTimes(2);
   });
@@ -189,11 +189,11 @@ describe('Task 16 Step 1: Bot 网关骨架', () => {
   });
   it('停止时中止处理中请求且不再回复，清理 typing 与监听器', async () => {
     vi.useFakeTimers();
-    let finish!: (value: string) => void;
+    let finish!: (value: BotReply) => void;
     let signal!: AbortSignal;
     const { client, stop, destroy } = await setup({ handleInput: (_input, value) => { signal = value; return new Promise(resolve => { finish = resolve; }); } });
     const msg = message(); emit(client, msg); await flush();
-    stop(); stop(); finish('完成'); await flush();
+    stop(); stop(); finish({ content: '完成' }); await flush();
     expect(signal.aborted).toBe(true); expect(msg.reply).not.toHaveBeenCalled();
     expect(destroy).toHaveBeenCalledOnce(); expect(client.listenerCount(Events.MessageCreate)).toBe(0);
     expect(vi.getTimerCount()).toBe(0);
@@ -204,7 +204,7 @@ describe('Task 16 Step 1: Bot 网关骨架', () => {
     let rejectLogin!: (error: Error) => void;
     vi.spyOn(client, 'login').mockImplementation(() => new Promise((_resolve, reject) => { rejectLogin = reject; }));
     const controller = new AbortController();
-    const pending = startGateway({ token: 'fake-secret', client, signal: controller.signal, log: vi.fn(), resolveInput: () => undefined, handleInput: async () => '' });
+    const pending = startGateway({ token: 'fake-secret', client, signal: controller.signal, log: vi.fn(), resolveInput: () => undefined, handleInput: async () => ({ content: '' }) });
     controller.abort(); rejectLogin(new Error('fake-secret')); await pending;
     expect(destroy).toHaveBeenCalledOnce();
   });
@@ -212,7 +212,7 @@ describe('Task 16 Step 1: Bot 网关骨架', () => {
     const client = new Client({ intents: [] });
     vi.spyOn(client, 'login').mockRejectedValue(new Error('fake-secret'));
     const destroy = vi.spyOn(client, 'destroy');
-    await expect(startGateway({ token: 'fake-secret', client, log: vi.fn(), resolveInput: () => undefined, handleInput: async () => '' })).rejects.toThrow('登录失败');
+    await expect(startGateway({ token: 'fake-secret', client, log: vi.fn(), resolveInput: () => undefined, handleInput: async () => ({ content: '' }) })).rejects.toThrow('登录失败');
     expect(destroy).toHaveBeenCalledOnce();
   });
   it('记录恢复事件并在致命配置错误时停止', async () => {
@@ -238,15 +238,15 @@ describe('Task 17 Step 3: 网关稳定性', () => {
     expect(JSON.stringify(log.mock.calls)).not.toContain('fake-secret');
   });
   it.each([4004, 4010, 4011, 4012, 4013, 4014])('不可恢复关闭 %i 清理活动与排队请求', async code => {
-    vi.useFakeTimers(); let finish!: (text: string) => void; let signal!: AbortSignal;
+    vi.useFakeTimers(); let finish!: (text: BotReply) => void; let signal!: AbortSignal;
     const onFatal = vi.fn(); const handler = vi.fn((_input, value: AbortSignal) => {
-      signal = value; return new Promise<string>(resolve => { finish = resolve; });
+      signal = value; return new Promise<BotReply>(resolve => { finish = resolve; });
     });
     const { client, destroy, listenerBaseline, originalListeners } = await setup({ onFatal, handleInput: handler });
     const active = message(), queued = message(); emit(client, active); emit(client, queued); await flush();
     const disconnect = client.listeners(Events.ShardDisconnect).at(-1)!;
     disconnect({ code, reason: 'fake-secret' }, 0); disconnect({ code }, 0);
-    finish('完成'); await flush();
+    finish({ content: '完成' }); await flush();
     expect(signal.aborted).toBe(true); expect(handler).toHaveBeenCalledOnce();
     expect(active.reply).not.toHaveBeenCalled(); expect(queued.reply).not.toHaveBeenCalled();
     expect(destroy).toHaveBeenCalledOnce(); expect(onFatal).toHaveBeenCalledOnce();
@@ -298,12 +298,12 @@ describe('Task 17 Step 3: 网关稳定性', () => {
 
 describe('Task 17 Step 3: 活动请求跨重连', () => {
   it('非致命断线不中止或重发已提交请求，恢复后仅回复一次', async () => {
-    let finish!: (text: string) => void; let signal!: AbortSignal;
-    const handler = vi.fn((_input, value: AbortSignal) => { signal = value; return new Promise<string>(resolve => { finish = resolve; }); });
+    let finish!: (text: BotReply) => void; let signal!: AbortSignal;
+    const handler = vi.fn((_input, value: AbortSignal) => { signal = value; return new Promise<BotReply>(resolve => { finish = resolve; }); });
     const { client } = await setup({ handleInput: handler }); const msg = message(); emit(client, msg); await flush();
     client.emit(Events.ShardDisconnect, { code: 1006 } as ClientEvents[Events.ShardDisconnect][0], 0);
     client.emit(Events.ShardReconnecting, 0); client.emit(Events.ShardResume, 0, 0);
-    expect(signal.aborted).toBe(false); finish('完成'); await flush();
+    expect(signal.aborted).toBe(false); finish({ content: '完成' }); await flush();
     expect(handler).toHaveBeenCalledOnce(); expect(msg.reply).toHaveBeenCalledOnce();
     expect(client.login).toHaveBeenCalledOnce();
   });
@@ -320,12 +320,12 @@ describe('P0-1 Step 2: 管理员重置入口', () => {
     }
   });
   it('精确命令才重置大小写参数和普通提问仍走聊天', async () => {
-    const backend = { chat: vi.fn().mockResolvedValue('chat'), reset: vi.fn().mockResolvedValue('reset') };
+    const backend = { chat: vi.fn().mockResolvedValue({ content: 'chat' }), reset: vi.fn().mockResolvedValue('reset') };
     const handler = createBotInputHandler(backend, [adminId]); const signal = new AbortController().signal;
     const botId = '444444444444444444', channelId = '222222222222222222';
     const normalized = normalizeMessage({ id: 'm', guildId: '333333333333333333', channelId, author: { id: adminId, bot: false }, webhookId: null,
       content: `<@${botId}>  /reset \n`, mentions: { users: { has: id => id === botId } } }, { botId, channelId })!;
-    expect(await handler(normalized, signal)).toBe('reset');
+    expect(await handler(normalized, signal)).toEqual({ content: 'reset' });
     for (const content of ['/Reset', '/reset extra', '/resetting', 'hello']) await handler({ ...normalized, content }, signal);
     expect(backend.reset).toHaveBeenCalledOnce(); expect(backend.chat).toHaveBeenCalledTimes(4);
     expect(backend.chat.mock.calls.every(call => call[0].content !== '/reset')).toBe(true);
@@ -333,8 +333,8 @@ describe('P0-1 Step 2: 管理员重置入口', () => {
   it('无管理员或非管理员命令只回复拒绝且不调用后端', async () => {
     const backend = { chat: vi.fn(), reset: vi.fn() }; const signal = new AbortController().signal;
     const command = { ...input, userId: adminId, content: '/reset' };
-    expect(await createBotInputHandler(backend, [])(command, signal)).toContain('未启用');
-    expect(await createBotInputHandler(backend, ['333333333333333333'])(command, signal)).toContain('没有');
+    expect(await createBotInputHandler(backend, [])(command, signal)).toEqual({ content: expect.stringContaining('未启用') });
+    expect(await createBotInputHandler(backend, ['333333333333333333'])(command, signal)).toEqual({ content: expect.stringContaining('没有') });
     expect(backend.chat).not.toHaveBeenCalled(); expect(backend.reset).not.toHaveBeenCalled();
   });
   it('拒绝重置仍计算用户冷却且反馈抑制提及', async () => {
@@ -347,7 +347,7 @@ describe('P0-1 Step 2: 管理员重置入口', () => {
     expect(backend.chat).not.toHaveBeenCalled(); expect(backend.reset).not.toHaveBeenCalled();
   });
   it('重置排在上一轮完整回复发送之后且随后聊天使用正常入口', async () => {
-    const backend = { chat: vi.fn().mockResolvedValue('reply'), reset: vi.fn().mockResolvedValue('reset-complete') };
+    const backend = { chat: vi.fn().mockResolvedValue({ content: 'reply' }), reset: vi.fn().mockResolvedValue('reset-complete') };
     let current = { ...input, userId: adminId };
     const { client } = await setup({ resolveInput: () => current, handleInput: createBotInputHandler(backend, [adminId]) });
     const first = message(); let finish!: () => void;
@@ -361,7 +361,7 @@ describe('P0-1 Step 2: 管理员重置入口', () => {
     expect(backend.chat).toHaveBeenCalledTimes(2);
   });
   it('重置失败不反馈成功且后续队列请求继续', async () => {
-    const backend = { chat: vi.fn().mockResolvedValue('reply'), reset: vi.fn().mockRejectedValue(new BackendError('internal-secret', 'REQUEST_CONFLICT')) };
+    const backend = { chat: vi.fn().mockResolvedValue({ content: 'reply' }), reset: vi.fn().mockRejectedValue(new BackendError('internal-secret', 'REQUEST_CONFLICT')) };
     let current = { ...input, userId: adminId, content: '/reset' };
     const { client } = await setup({ resolveInput: () => current, handleInput: createBotInputHandler(backend, [adminId]) });
     const command = message(); emit(client, command); await flush();
@@ -397,5 +397,105 @@ describe('K1: Bot 空正文错误反馈', () => {
     expect(JSON.stringify([first.reply.mock.calls, log.mock.calls])).not.toContain('private-secret');
     const next = message(); emit(client, next); await flush();
     expect(next.reply).toHaveBeenCalledOnce(); expect(handleInput).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('Task 21 Step 2: 命令解析', () => {
+  const userId = '333333333333333333';
+  it.each(['/reset xxx', '/searchxyz', '普通文本提到搜索'])('普通文本原样聊天 %s', async content => {
+    const backend = { chat: vi.fn().mockResolvedValue({ content: '正文' }), reset: vi.fn() };
+    const signal = new AbortController().signal;
+    expect(await createBotInputHandler(backend, [])({ ...input, userId, content }, signal)).toEqual({ content: '正文' });
+    expect(backend.chat).toHaveBeenCalledWith({ ...input, userId, content }, signal);
+    expect(backend.reset).not.toHaveBeenCalled();
+  });
+  it.each(['/search', '/search   ', '/search\n\t'])('空搜索仅固定用法和外发告知、无后端调用 %s', async content => {
+    const backend = { chat: vi.fn(), reset: vi.fn() };
+    const reply = await createBotInputHandler(backend, [])({ ...input, content }, new AbortController().signal);
+    expect(reply.content).toContain('/search 问题'); expect(reply.content).toContain('Tavily');
+    expect(reply.content).toContain('频道成员'); expect(reply.content).toContain('Discord 保存');
+    expect(backend.chat).not.toHaveBeenCalled(); expect(backend.reset).not.toHaveBeenCalled();
+  });
+  it.each(['/search /reset', '/search  \t问题'])('搜索只传命令后问题且不触发重置 %s', async content => {
+    const backend = { chat: vi.fn().mockResolvedValue({ content: '正文' }), reset: vi.fn() };
+    const signal = new AbortController().signal;
+    await createBotInputHandler(backend, [userId])({ ...input, userId, content }, signal);
+    expect(backend.chat).toHaveBeenCalledWith({ ...input, userId, content: content.replace(/^\/search\s+/, '') }, signal, { search: true });
+    expect(backend.reset).not.toHaveBeenCalled();
+  });
+  it('501个码点被本地拒绝，500个emoji完整送出，精确reset仍优先', async () => {
+    const backend = { chat: vi.fn().mockResolvedValue({ content: '正文' }), reset: vi.fn().mockResolvedValue('已重置') };
+    const signal = new AbortController().signal, handler = createBotInputHandler(backend, [userId]);
+    expect(await handler({ ...input, userId, content: '/search ' + '😀'.repeat(501) }, signal)).toEqual({ content: '联网搜索问题最多 500 个字符，请缩短后重试。' });
+    expect(backend.chat).not.toHaveBeenCalled(); expect(backend.reset).not.toHaveBeenCalled();
+    await handler({ ...input, userId, content: '/search ' + '😀'.repeat(500) }, signal);
+    expect(backend.chat.mock.calls[0][0].content).toBe('😀'.repeat(500));
+    expect(await handler({ ...input, userId, content: ' /reset ' }, signal)).toEqual({ content: '已重置' });
+    expect(backend.reset).toHaveBeenCalledOnce();
+  });
+});
+
+describe('Task 21 Step 2: 最终来源发送', () => {
+  const source = { provider: 'tavily' as const, retrievedAt: 1, index: 1, title: '*标题* @everyone', summary: '[摘要](https://evil.example)', url: 'https://real.example/path', domain: 'forged.example' };
+  const search = { status: 'succeeded' as const, sources: [source] };
+  it('先完整发送正文再来源，来源禁用提及和预览且不超过1900', async () => {
+    const { MessageFlags } = await import('discord.js');
+    const { client } = await setup({ handleInput: async () => ({ content: '长'.repeat(2001), search }) });
+    const msg = message(); emit(client, msg); await flush();
+    expect(msg.reply).toHaveBeenCalledWith({ content: '长'.repeat(2000), allowedMentions: { parse: [], repliedUser: false } });
+    expect(msg.channel.send.mock.calls[0][0].content).toBe('长');
+    const payload = msg.channel.send.mock.calls[1][0];
+    expect(payload.content).toContain('本轮检索来源'); expect(payload.content).toContain('\\*标题\\*');
+    expect(payload.content).toContain('real.example'); expect(payload.content).not.toContain('forged.example');
+    expect(payload).toMatchObject({ flags: MessageFlags.SuppressEmbeds, allowedMentions: { parse: [], repliedUser: false } });
+    expect(payload.content.length).toBeLessThanOrEqual(1900);
+  });
+  it('降级固定文案单独先发，正文仍按原分段规则发送且不显示原因', async () => {
+    const { SEARCH_DEGRADED_NOTICE } = await import('@gemini-chat/core');
+    const { client } = await setup({ handleInput: async () => ({ content: '长'.repeat(2001), search: { status: 'degraded', sources: [], reason: 'unavailable', notice: SEARCH_DEGRADED_NOTICE } }) });
+    const msg = message(); emit(client, msg); await flush();
+    expect(msg.reply.mock.calls[0][0].content).toBe(SEARCH_DEGRADED_NOTICE);
+    expect(msg.channel.send.mock.calls.map(call => call[0].content)).toEqual(['长'.repeat(2000), '长']);
+    expect(JSON.stringify([msg.reply.mock.calls, msg.channel.send.mock.calls])).not.toContain('unavailable');
+  });
+  it.each([undefined, { status: 'not_requested', sources: [] }, { status: 'succeeded', sources: [] }, { status: 'degraded', reason: 'SECRET', notice: 'SECRET', sources: [] }])('缺失或非法搜索字段只发送正文 %j', async value => {
+    const { client } = await setup({ handleInput: async () => ({ content: '正文', search: value as BotReply['search'] }) });
+    const msg = message(); emit(client, msg); await flush();
+    expect(msg.reply).toHaveBeenCalledWith({ content: '正文', allowedMentions: { parse: [], repliedUser: false } });
+    expect(msg.channel.send).not.toHaveBeenCalled();
+  });
+  it('来源段发送失败只反馈一次、不重发正文、不继续后续来源', async () => {
+    const { client } = await setup({ handleInput: async () => ({ content: '正文', search: { status: 'succeeded', sources: [source, { ...source, index: 2 }] } }) });
+    const msg = message(); msg.channel.send.mockRejectedValueOnce({ code: 50013, message: 'PRIVATE' });
+    emit(client, msg); await flush();
+    expect(msg.reply).toHaveBeenCalledOnce(); expect(msg.channel.send).toHaveBeenCalledTimes(2);
+    expect(msg.channel.send.mock.calls[1][0].content).toContain('已发送 1 段');
+    expect(msg.channel.send.mock.calls[1][0].content).toContain('权限不足');
+    expect(JSON.stringify(msg.channel.send.mock.calls)).not.toContain('PRIVATE');
+    expect(msg.reply.mock.calls[0][0].content).toBe('正文');
+  });
+  it('开始回复即停止typing，等待正文或来源发送时均不刷新', async () => {
+    vi.useFakeTimers();
+    let finish!: () => void;
+    const { client } = await setup({ handleInput: async () => ({ content: '正文', search }) });
+    const msg = message(); msg.reply.mockImplementationOnce(() => new Promise(resolve => { finish = () => resolve({}); }));
+    emit(client, msg); await flush();
+    await vi.advanceTimersByTimeAsync(14000); expect(msg.channel.sendTyping).toHaveBeenCalledOnce();
+    let sourceFinish!: () => void;
+    msg.channel.send.mockImplementationOnce(() => new Promise(resolve => { sourceFinish = () => resolve({}); }));
+    finish(); await flush(); await vi.advanceTimersByTimeAsync(14000);
+    expect(msg.channel.sendTyping).toHaveBeenCalledOnce(); sourceFinish(); await flush();
+  });
+  it('正文发送期间退出后不继续来源', async () => {
+    const { client, stop } = await setup({ handleInput: async () => ({ content: '正文', search }) });
+    const msg = message(); let finish!: () => void;
+    msg.reply.mockImplementationOnce(() => new Promise(resolve => { finish = () => resolve({}); }));
+    emit(client, msg); await flush(); stop(); finish(); await flush();
+    expect(msg.channel.send).not.toHaveBeenCalled();
+  });
+  it('空正文不能靠来源或降级提示成为有效回复', async () => {
+    const { client } = await setup({ handleInput: async () => ({ content: ' ', search }) });
+    const msg = message(); emit(client, msg); await flush();
+    expect(msg.reply).not.toHaveBeenCalled(); expect(msg.channel.send).not.toHaveBeenCalled();
   });
 });

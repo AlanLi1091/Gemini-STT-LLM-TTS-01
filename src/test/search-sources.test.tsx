@@ -29,9 +29,9 @@ describe('Task 21: 来源纯文本与安全链接', () => {
     expect(container.querySelector('script, img')).toBeNull();
     expect(container.querySelectorAll('a')).toHaveLength(1);
   });
-  it('降级固定提示独立展示，不显示枚举或原文', () => {
+  it('降级提示交由MessageList展示，来源组件不重复显示', () => {
     render(<SearchSources search={{ status: 'degraded', reason: 'unavailable', sources: [], notice: SEARCH_DEGRADED_NOTICE }} />);
-    expect(screen.getByText(SEARCH_DEGRADED_NOTICE)).toBeInTheDocument();
+    expect(screen.queryByText(SEARCH_DEGRADED_NOTICE)).not.toBeInTheDocument();
     expect(screen.queryByText('unavailable')).not.toBeInTheDocument();
     expect(screen.queryByText('本轮检索来源')).not.toBeInTheDocument();
   });

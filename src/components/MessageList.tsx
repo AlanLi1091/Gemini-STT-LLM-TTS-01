@@ -1,3 +1,4 @@
+import { SEARCH_DEGRADED_NOTICE, parseSearchMetadata } from '@core/index';
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { MessageSquare, Bot, User, ArrowDown } from 'lucide-react';
 import { Message } from '../types';
@@ -152,6 +153,7 @@ export const MessageList: React.FC<MessageListProps> = ({
             <div id="chat-messages-stream" className="space-y-4">
               {messages.map((msg, idx) => {
                 const isUser = msg.role === 'user';
+                const search = msg.role === 'assistant' ? parseSearchMetadata(msg.search) : undefined;
                 const isLast = idx === messages.length - 1;
                 const showCursor = isGenerating && !isUser && isLast;
                 return (
@@ -178,6 +180,9 @@ export const MessageList: React.FC<MessageListProps> = ({
                           : 'bg-white border border-zinc-200 text-zinc-800 rounded-tl-sm'
                       }`}
                     >
+                      {search?.status === 'degraded' && (
+                        <p className="mb-3 border-b border-zinc-200 pb-2 text-xs text-amber-800">{SEARCH_DEGRADED_NOTICE}</p>
+                      )}
                       <p className="whitespace-pre-wrap break-words">
                         {msg.content}
                         {showCursor && (
@@ -189,7 +194,7 @@ export const MessageList: React.FC<MessageListProps> = ({
                           />
                         )}
                       </p>
-                      {msg.role === 'assistant' && <SearchSources search={msg.search} />}
+                      {msg.role === 'assistant' && <SearchSources search={search} />}
                       {!isUser && msg.usage && (
                         <div>
                           <TokenUsageBadge usage={msg.usage} />

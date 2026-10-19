@@ -99,8 +99,8 @@ describe('Task 14 Step 2: 会话 API 与多轮上下文', () => {
     const baseUrl = `http://127.0.0.1:${address.port}`;
     const input = { id: 'm1', userId: 'u1', guildId: '111111111111111111', channelId: '222222222222222222', content: '第一轮' };
     try {
-      expect(await new BackendClient({ baseUrl }).chat(input)).toBe('回复');
-      expect(await new BackendClient({ baseUrl }).chat({ ...input, id: 'm2', content: '第二轮' })).toBe('回复');
+      expect(await new BackendClient({ baseUrl }).chat(input)).toEqual({ content: '回复' });
+      expect(await new BackendClient({ baseUrl }).chat({ ...input, id: 'm2', content: '第二轮' })).toEqual({ content: '回复' });
       expect(adapter.histories.map(history => history.map(value => value.content))).toEqual([
         ['第一轮'], ['第一轮', '回复', '第二轮'],
       ]);
@@ -510,5 +510,40 @@ describe('T3: 账本故障原因持久化与回放', () => {
     const replay = await request(reloaded).post('/api/chat/stream').send(body).expect(200);
     expect(replay.text).toContain(JSON.stringify(loaded.body.messages[1].search)); expect(replay.text).not.toContain('event: chunk');
     expect(acquire).toHaveBeenCalledOnce(); expect(call).not.toHaveBeenCalled(); expect(c.adapter.histories).toHaveLength(1);
+  });
+});
+
+describe('Task 21 Step 2: Bot搜索本机HTTP贯通', () => {
+  it('真实本机HTTP传作者身份并返回来源，普通轮次无搜索字段且不重搜', async () => {
+    const c = await createTestContext(); const { MockSearchAdapter } = await import('../search-adapter');
+    const search = new MockSearchAdapter(), searchCall = vi.spyOn(search, 'search');
+    const app = createApp({ sessionService: c.sessionService, chatStreamSource: createSessionChatStreamSource(c.adapter, c.sessionService, undefined, undefined, undefined, {
+      adapter: search, config: readSearchConfig({ SEARCH_LEDGER_PATH: join(c.dataDirectory, 'search-ledger.json') }),
+    }) });
+    const server = app.listen(0, '127.0.0.1');
+    await new Promise<void>(resolve => server.once('listening', resolve));
+    const address = server.address() as { port: number };
+    const requests: { path: string; body: Record<string, unknown>; headers?: RequestInit['headers'] }[] = [];
+    const fetcher: typeof fetch = async (url, init) => {
+      requests.push({ path: String(url), body: JSON.parse(String(init?.body)), headers: init?.headers });
+      return fetch(url, init);
+    };
+    const client = new BackendClient({ baseUrl: `http://127.0.0.1:${address.port}`, fetch: fetcher });
+    const input = { id: 'm', userId: '333333333333333333', guildId: '111111111111111111', channelId: '222222222222222222', content: '搜索问题' };
+    try {
+      const reply = await client.chat(input, undefined, { search: true });
+      expect(reply.content).toBe('回复'); expect(reply.search).toMatchObject({ status: 'succeeded', sources: [{ domain: 'example.com' }] });
+      const channel = await c.sessionService.resolveDiscordSession(input.guildId, input.channelId);
+      expect((await c.sessionService.getSession(channel.id))?.messages.at(-1)?.search).toEqual(reply.search);
+      expect(searchCall).toHaveBeenCalledOnce();
+      await client.chat({ ...input, id: 'm2', content: '普通问题' });
+      expect(searchCall).toHaveBeenCalledOnce();
+      const chats = requests.filter(value => value.path.endsWith('/api/chat/stream'));
+      expect(chats[0].body).toMatchObject({ search: true, discordUserId: input.userId, messages: [{ role: 'user', content: '搜索问题' }] });
+      expect(new Headers(chats[0].headers).has('Origin')).toBe(false);
+      expect(chats[0].body).not.toHaveProperty('channelId'); expect(chats[0].body).not.toHaveProperty('requestId');
+      expect(chats[1].body).not.toHaveProperty('search'); expect(chats[1].body).not.toHaveProperty('discordUserId');
+      expect(c.adapter.histories).toHaveLength(2);
+    } finally { await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve())); }
   });
 });

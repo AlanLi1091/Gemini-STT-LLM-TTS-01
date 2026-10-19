@@ -50,3 +50,5 @@ export {
 } from './adapters/MockChatAdapter';
 
 export { SEARCH_DEGRADED_NOTICE, SEARCH_DEGRADATION_REASONS, type SearchSource, type SearchMetadata, type SearchDegradationReason } from './contracts/search';
+
+export { parseSearchMetadata } from './search-metadata';

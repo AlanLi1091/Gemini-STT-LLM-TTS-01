@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { startGateway } from './gateway';
 import { normalizeMessage, type BotInput } from './message-entry';
-import { BackendClient, validateBackendUrl } from './backend-client';
+import { BackendClient, validateBackendUrl, type BotReply } from './backend-client';
 import { RequestScheduler } from './request-scheduler';
 import { startupFailureMessage } from './errors';
 
@@ -30,11 +30,20 @@ export function readBotConfig(env: NodeJS.ProcessEnv) {
 /** Runs inside the gateway's existing channel queue and user cooldown. */
 export function createBotInputHandler(backend: Pick<BackendClient, 'chat' | 'reset'>, sessionAdminIds: readonly string[]) {
   const admins = new Set(sessionAdminIds);
-  return async (input: BotInput, signal: AbortSignal): Promise<string> => {
-    if (input.content.trim() !== '/reset') return backend.chat(input, signal);
-    if (!admins.size) return '频道会话重置未启用，请先配置管理员名单。';
-    if (!admins.has(input.userId)) return '你没有重置频道会话的权限。';
-    return backend.reset(input, signal);
+  return async (input: BotInput, signal: AbortSignal): Promise<BotReply> => {
+    const content = input.content.trim();
+    if (content === '/reset') {
+      if (!admins.size) return { content: '频道会话重置未启用，请先配置管理员名单。' };
+      if (!admins.has(input.userId)) return { content: '你没有重置频道会话的权限。' };
+      return { content: await backend.reset(input, signal) };
+    }
+    if (content === '/search' || /^\/search\s/.test(content)) {
+      const question = content.slice('/search'.length).trimStart();
+      if (!question.trim()) return { content: '请补充问题，用法：/search 问题。问题会发送给 Tavily 检索；回答和来源对频道成员可见，并由 Discord 保存。' };
+      if (Array.from(question).length > 500) return { content: '联网搜索问题最多 500 个字符，请缩短后重试。' };
+      return backend.chat({ ...input, content: question }, signal, { search: true });
+    }
+    return backend.chat(input, signal);
   };
 }
 

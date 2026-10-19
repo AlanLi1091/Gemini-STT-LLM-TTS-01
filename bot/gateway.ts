@@ -1,4 +1,8 @@
-import { Client, Events, GatewayIntentBits, type ClientEvents } from 'discord.js';
+import { SEARCH_DEGRADED_NOTICE } from '../core/contracts/search';
+import { parseSearchMetadata } from '../core/search-metadata';
+import type { BotReply } from './backend-client';
+import { formatSearchSources } from './search-sources';
+import { Client, Events, GatewayIntentBits, MessageFlags, type ClientEvents } from 'discord.js';
 import type { BotInput } from './message-entry';
 import { describeFailure } from './errors';
 import { splitMessage } from './split-message';
@@ -7,7 +11,7 @@ import { RequestScheduler, SchedulerError, type SchedulerOptions } from './reque
 export interface GatewayOptions {
   token: string;
   resolveInput: (message: ClientEvents[Events.MessageCreate][0], botId: string) => BotInput | undefined;
-  handleInput: (input: BotInput, signal: AbortSignal) => Promise<string>;
+  handleInput: (input: BotInput, signal: AbortSignal) => Promise<BotReply>;
   client?: Client;
   signal?: AbortSignal;
   log?: (message: string) => void;
@@ -109,10 +113,16 @@ export async function startGateway(options: GatewayOptions) {
           timer.unref(); requests.set(controller, timer);
           // Typing is best effort; it must not delay the actual input handler.
           void typing();
-          const content = await options.handleInput(input, controller.signal);
+          const reply = await options.handleInput(input, controller.signal);
+          const content = reply.content;
+          const search = parseSearchMetadata(reply.search);
           if (!stopped && !controller.signal.aborted && content.trim()) {
             sending = true;
-            const parts = splitMessage(content);
+            clearInterval(timer);
+            const parts = [
+              ...(search?.status === 'degraded' ? [SEARCH_DEGRADED_NOTICE] : []),
+              ...splitMessage(content),
+            ];
             let first = true;
             for (const part of parts) {
               if (stopped || controller.signal.aborted) return;
@@ -123,6 +133,12 @@ export async function startGateway(options: GatewayOptions) {
               else if (message.channel.isSendable()) await message.channel.send(payload);
               else throw new Error('Channel cannot send messages');
               first = false;
+              sent++;
+            }
+            for (const source of formatSearchSources(search)) {
+              if (stopped || controller.signal.aborted) return;
+              if (!message.channel.isSendable()) throw new Error('Channel cannot send messages');
+              await message.channel.send({ content: source, allowedMentions: { parse: [], repliedUser: false }, flags: MessageFlags.SuppressEmbeds });
               sent++;
             }
             log('[bot] input handled');

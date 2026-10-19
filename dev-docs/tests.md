@@ -1,7 +1,7 @@
 # 测试套件与测试用例台账
 
 > **维护规范**：
-> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（43 个套件）与具体测试用例（742 个断言项）。
+> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（44 个套件）与具体测试用例（807 个断言项）。
 > 2. **铁律联动**：后续开发中，每次有新功能开发、重构或测试内容更新时，**必须同步在此台账中维护新增或修改的测试项**，保持与实际测试套件 100% 同步。
 
 ## 1. 测试套件概览看板
@@ -20,20 +20,20 @@
 | 10 | `src/hooks/useChat.test.ts` | Task 3 / 9 / 10 | useChat Hook 领域逻辑状态机（流式驱动/中断/重试/生命周期） | 21 | ✅ 通过 |
 | 11 | `src/test/error-and-usage-components.test.tsx` | Task 9 / Phase 3 收尾 Step 2B | TokenUsageBadge 与服务端错误指引组件测试 | 16 | ✅ 通过 |
 | 12 | `src/test/error-and-usage-integration.test.tsx` | Task 9 / Phase 3 收尾 Step 2B | 错误横幅展示/重试及 Token 徽章集成测试 | 5 | ✅ 通过 |
-| 13 | `src/test/streaming-ui.test.tsx` | Task 10 | 流式打字机光标动效、停止生成按钮、顶栏联动禁用与 Smart Sticky Bottom 触底滚动守卫 | 10 | ✅ 通过 |
+| 13 | `src/test/streaming-ui.test.tsx` | Task 10 | 流式打字机光标动效、停止生成按钮、顶栏联动禁用与 Smart Sticky Bottom 触底滚动守卫 | 12 | ✅ 通过 |
 | 14 | `server/test/server-skeleton.test.ts` | Task 11 | Express 服务端骨架、双环境运行、根路径与健康检查响应 | 4 | ✅ 通过 |
-| 15 | `core/test/sse-contract.test.ts` | Task 11 | 共享 SSE 事件、错误载荷与 sessionId 演进契约 | 8 | ✅ 通过 |
+| 15 | `core/test/sse-contract.test.ts` | Task 11 | 共享 SSE 事件、错误载荷与 sessionId 演进契约 | 9 | ✅ 通过 |
 | 16 | `server/test/cors.test.ts` | Task 11 | CORS 白名单解析、允许/拒绝策略与预检链路 | 5 | ✅ 通过 |
 | 17 | `server/test/chat-stream.test.ts` | Task 12 | SSE 流式管道、心跳、续传声明与中断级联 | 28 | ✅ 通过 |
 | 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 / Task 17 Step 1 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 65 | ✅ 通过 |
-| 19 | `src/test/remote-chat-adapter.test.ts` | Task 13 / Task 14 Step 3 | RemoteChatAdapter 的 SSE 消费、错误映射、AbortSignal 与 sessionId 模式 | 21 | ✅ 通过 |
+| 19 | `src/test/remote-chat-adapter.test.ts` | Task 13 / Task 14 Step 3 | RemoteChatAdapter 的 SSE 消费、错误映射、AbortSignal 与 sessionId 模式 | 22 | ✅ 通过 |
 | 20 | `src/test/app-remote-integration.test.tsx` | Task 13 Step 3 / Task 14 Step 3 / Phase 3 收尾 | App 的后端 SSE 装配、会话恢复、归档清空与旧配置迁移 | 19 | ✅ 通过 |
 | 21 | `server/test/json-session-storage.test.ts` | Task 14 Step 1 / Task 16 Step 2 | JSON 会话、频道关联、重启恢复与严格追加 | 22 | ✅ 通过 |
-| 22 | `server/test/session-api.test.ts` | Task 14 Step 2 / Task 16 Step 2 | 会话 API、频道上下文、归档与来源隔离 | 31 | ✅ 通过 |
+| 22 | `server/test/session-api.test.ts` | Task 14 Step 2 / Task 16 Step 2 | 会话 API、频道上下文、归档与来源隔离 | 32 | ✅ 通过 |
 | 23 | `server/test/discord-demo.test.ts` | Task 15 Step 2 | 配置、测试频道回显、连接事件、日志脱敏与退出清理（网络 Mock） | 14 | ✅ 通过 |
-| 24 | `bot/test/gateway.test.ts` | Task 16 / Task 17 Step 1–3 | 正式网关、typing、错误、重连、长时模拟与资源清理（网络 Mock） | 50 | ✅ 通过 |
+| 24 | `bot/test/gateway.test.ts` | Task 16 / Task 17 Step 1–3 | 正式网关、typing、错误、重连、长时模拟与资源清理（网络 Mock） | 69 | ✅ 通过 |
 | 25 | `bot/test/message-entry.test.ts` | Task 16 Step 1 | 指定频道直接 @Bot、提及清理与消息过滤 | 14 | ✅ 通过 |
-| 26 | `bot/test/backend-client.test.ts` | Task 16 Step 2 | 本机 HTTP / SSE、最终回复、错误、中止与重启解析 | 25 | ✅ 通过 |
+| 26 | `bot/test/backend-client.test.ts` | Task 16 Step 2 | 本机 HTTP / SSE、最终回复、错误、中止与重启解析 | 34 | ✅ 通过 |
 | 27 | `bot/test/split-message.test.ts` | Task 16 Step 3 | 长回复完整分段、段落 / 换行优先、UTF-16 与 CRLF 边界 | 10 | ✅ 通过 |
 | 28 | `bot/test/request-scheduler.test.ts` | Task 17 Step 1 | FIFO、跨频道、队满、用户冷却、失败恢复与退出 | 7 | ✅ 通过 |
 | 29 | `server/test/request-budget.test.ts` | Task 17 Step 1 | 滚动请求预算、限流暂停与恢复 | 10 | ✅ 通过 |
@@ -51,7 +51,8 @@
 | 41 | `server/test/search-timeout.test.ts` | Task 20 Step 2 | 单调期限、取消、迟到结果与剩余预算 | 7 | ✅ 通过 |
 | 42 | `src/test/search-metadata.test.ts` | Task 21 Step 1 | 客户端搜索结构与URL独立校验 | 45 | ✅ 通过 |
 | 43 | `src/test/search-sources.test.tsx` | Task 21 Step 1 | 来源纯文本、安全链接与降级展示 | 16 | ✅ 通过 |
-| **合计** | **43 个测试文件** | **Phase 1–5 / 审计修复** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **742** | **✅ 100% 通过** |
+| 44 | `bot/test/search-sources.test.ts` | Task 21 Step 2 | Discord来源转义、独立URL验证与1900单位上限 | 32 | ✅ 通过 |
+| **合计** | **44 个测试文件** | **Phase 1–5 / 审计修复** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **807** | **✅ 100% 通过** |
 
 ---
 
@@ -313,7 +314,7 @@
 - [x] **横幅显示服务端 UNKNOWN 固定文案 会话读取或保存失败，请稍后重试。**
 
 
-### 2.13 `src/test/streaming-ui.test.tsx` (10 项)
+### 2.13 `src/test/streaming-ui.test.tsx` (12 项)
 > **任务对应**：Task 10 · 流式打字机光标动效、停止生成按钮、顶栏联动禁用与 Smart Sticky Bottom 触底滚动守卫
 
 
@@ -340,7 +341,7 @@
 #### Task 11 Step 2: 健康检查接口
 - [x] **GET /api/health 应返回 200 状态码与共享健康状态结构**
 
-### 2.15 `core/test/sse-contract.test.ts` (8 项)
+### 2.15 `core/test/sse-contract.test.ts` (9 项)
 > **任务对应**：Task 11 Step 2 · 共享 SSE 协议与无状态到会话化的演进契约
 
 #### Task 11 Step 2: 共享 SSE 契约
@@ -535,7 +536,7 @@
 - [x] **Step3: 供应商角色指令只留在用户资料且模型输出不能触发额外能力**：真实Tavily适配器配Mock fetch，固定system规则、单用户资料块、不注入URL、无tools、模型伪工具命令只保存为正文，回放不重搜。
 - [x] **Step3: 取消真实适配器的%s不生成不写盘且迟到响应仅清理**（2项）：fetch挂起 / 读取挂起，客户端取消、响应体清理、锁释放、零事件与空消息日志。
 
-### 2.19 `src/test/remote-chat-adapter.test.ts` (21 项)
+### 2.19 `src/test/remote-chat-adapter.test.ts` (22 项)
 > **任务对应**：Task 13 Step 1 / Task 14 Step 3 · RemoteChatAdapter 实现、会话模式与契约测试
 
 #### Task 13 Step 1: RemoteChatAdapter 的 SSE 消费与错误映射
@@ -612,7 +613,7 @@
 
 - [x] **读取时拒绝磁盘篡改：%s**（7项）：危险协议、超过三条、超长URL、超长摘要、来源多余字段、元数据多余字段、伪造域名；isSearchMetadata及当前 / 新存储实例均拒绝，原文件不改写。
 
-### 2.22 `server/test/session-api.test.ts` (31 项)
+### 2.22 `server/test/session-api.test.ts` (32 项)
 > **任务对应**：Task 17 Step 2 / Task 16 Step 2 / Task 14 Step 2 · 会话 API、多轮全量上下文与归档语义
 
 #### Task 14 Step 2: 会话 API 与多轮上下文
@@ -696,7 +697,7 @@
 - [x] **会话失效时停止，SDK 错误原文不进入日志**
 - [x] **退出信号在登录期间也能清理网关资源**
 
-### 2.24 `bot/test/gateway.test.ts` (50 项)
+### 2.24 `bot/test/gateway.test.ts` (69 项)
 > **任务对应**：Task 17 Step 1–3 / Task 16 Step 1–3 · 配置、网关稳定性与长回复发送，网络调用全 Mock。
 
 - [x] **正式入口读取根目录环境配置并清理空白**
@@ -786,7 +787,7 @@
 - [x] **忽略Webhook消息**
 - [x] **Bot 身份尚未就绪时不处理消息**
 
-### 2.26 `bot/test/backend-client.test.ts` (25 项)
+### 2.26 `bot/test/backend-client.test.ts` (34 项)
 > **任务对应**：Task 17 Step 2 / Task 16 Step 2 · 注入 fetch / ReadableStream 验证；真实本机 HTTP 集成见 2.22。
 
 - [x] **跨 UTF-8 字节边界读取中文最终回复**
@@ -1371,7 +1372,7 @@
 - [x] Task 21: 来源纯文本与安全链接 标题摘要作为原样文本节点 [点击](javascript:evil)
 - [x] Task 21: 来源纯文本与安全链接 标题摘要作为原样文本节点 @everyone
 - [x] Task 21: 来源纯文本与安全链接 标题摘要作为原样文本节点 \u202e反向\u202c
-- [x] Task 21: 来源纯文本与安全链接 降级固定提示独立展示，不显示枚举或原文
+- [x] Task 21: 来源纯文本与安全链接 降级提示交由MessageList展示，来源组件不重复显示
 - [x] Task 21: 来源纯文本与安全链接 旧消息和未请求不展示搜索内容 undefined
 - [x] Task 21: 来源纯文本与安全链接 旧消息和未请求不展示搜索内容 {"status":"not_requested","sources":[]}
 
@@ -1510,3 +1511,166 @@
 - Task 20 Step 2: 账本与会话生命周期 进程重装和reset不清Discord日额度且预算拒绝仍普通生成：listen EPERM: operation not permitted 127.0.0.1。
 - T3: 账本故障原因持久化与回放 坏账本使用ledger_unavailable且刷新重启回放保持一致：listen EPERM: operation not permitted 127.0.0.1。
 - T3: 账本故障原因持久化与回放 写入失败使用ledger_unavailable且刷新重启回放保持一致：listen EPERM: operation not permitted 127.0.0.1。
+
+
+## Task 21 Step 2：Discord搜索与W1 / W2（2026-10-19）
+
+新增65项（742→807），7个测试文件新增用例，另有src/test/search-sources.test.tsx改为验证降级提示由MessageList负责；Bot / 本机HTTP既有断言适配结构化BotReply，原错误、分段、取消、队列及/reset回归保留。新增1个测试文件，共44文件；下面列出全部新增项，概览与既有章节计数同步到最终JSON。
+
+### `bot/test/backend-client.test.ts`（新增9项，文件共34项）
+
+- [x] Task 21 Step 2: Bot搜索请求和最终来源 仅搜索请求发送搜索标记及作者身份 true
+- [x] Task 21 Step 2: Bot搜索请求和最终来源 仅搜索请求发送搜索标记及作者身份 false
+- [x] Task 21 Step 2: Bot搜索请求和最终来源 坏或缺失search只返回正文 undefined
+- [x] Task 21 Step 2: Bot搜索请求和最终来源 坏或缺失search只返回正文 null
+- [x] Task 21 Step 2: Bot搜索请求和最终来源 坏或缺失search只返回正文 {"status":"succeeded","sources":[]}
+- [x] Task 21 Step 2: Bot搜索请求和最终来源 坏或缺失search只返回正文 {"status":"degraded","sources":[],"reason":"SECRET","notice":"SECRET"}
+- [x] Task 21 Step 2: Bot搜索请求和最终来源 只读取done的元数据，不接受chunk伪造来源
+- [x] Task 21 Step 2: Bot搜索请求和最终来源 降级元数据采用共享固定文案，空正文仍拒绝
+- [x] Task 21 Step 2: 默认期限兼容 默认120秒期限不因搜索字段改变且不自动重试
+
+### `bot/test/gateway.test.ts`（新增19项，文件共69项）
+
+- [x] Task 21 Step 2: 命令解析 普通文本原样聊天 /reset xxx
+- [x] Task 21 Step 2: 命令解析 普通文本原样聊天 /searchxyz
+- [x] Task 21 Step 2: 命令解析 普通文本原样聊天 普通文本提到搜索
+- [x] Task 21 Step 2: 命令解析 空搜索仅固定用法和外发告知、无后端调用 /search
+- [x] Task 21 Step 2: 命令解析 空搜索仅固定用法和外发告知、无后端调用 /search\u0020\u0020\u0020
+- [x] Task 21 Step 2: 命令解析 空搜索仅固定用法和外发告知、无后端调用 /search\u000a\u0009
+- [x] Task 21 Step 2: 命令解析 搜索只传命令后问题且不触发重置 /search /reset
+- [x] Task 21 Step 2: 命令解析 搜索只传命令后问题且不触发重置 /search  \u0009问题
+- [x] Task 21 Step 2: 命令解析 501个码点被本地拒绝，500个emoji完整送出，精确reset仍优先
+- [x] Task 21 Step 2: 最终来源发送 先完整发送正文再来源，来源禁用提及和预览且不超过1900
+- [x] Task 21 Step 2: 最终来源发送 降级固定文案单独先发，正文仍按原分段规则发送且不显示原因
+- [x] Task 21 Step 2: 最终来源发送 缺失或非法搜索字段只发送正文 undefined
+- [x] Task 21 Step 2: 最终来源发送 缺失或非法搜索字段只发送正文 {"status":"not_requested","sources":[]}
+- [x] Task 21 Step 2: 最终来源发送 缺失或非法搜索字段只发送正文 {"status":"succeeded","sources":[]}
+- [x] Task 21 Step 2: 最终来源发送 缺失或非法搜索字段只发送正文 {"status":"degraded","reason":"SECRET","notice":"SECRET","sources":[]}
+- [x] Task 21 Step 2: 最终来源发送 来源段发送失败只反馈一次、不重发正文、不继续后续来源
+- [x] Task 21 Step 2: 最终来源发送 开始回复即停止typing，等待正文或来源发送时均不刷新
+- [x] Task 21 Step 2: 最终来源发送 正文发送期间退出后不继续来源
+- [x] Task 21 Step 2: 最终来源发送 空正文不能靠来源或降级提示成为有效回复
+
+### `bot/test/search-sources.test.ts`（新增32项，文件共32项）
+
+- [x] Task 21 Step 2: Discord来源格式与边界 每条独立来源含编号标题摘要、真实域名和尖括号原链接
+- [x] Task 21 Step 2: Discord来源格式与边界 转义或消除文本结构 *加粗* _斜体_ ~删除~ ||剧透||
+- [x] Task 21 Step 2: Discord来源格式与边界 转义或消除文本结构 [文字](https://fake.example)
+- [x] Task 21 Step 2: Discord来源格式与边界 转义或消除文本结构 \`\`\`code\`\`\`
+- [x] Task 21 Step 2: Discord来源格式与边界 转义或消除文本结构 @everyone @here <@123456789012345678> <#123456789012345678>
+- [x] Task 21 Step 2: Discord来源格式与边界 转义或消除文本结构 \u202e伪装\u202c\u000a新行
+- [x] Task 21 Step 2: Discord来源格式与边界 Markdown特殊字符实际按文本转义
+- [x] Task 21 Step 2: Discord来源格式与边界 标题先按80码点截断，emoji不拆分且转义后计整段UTF16长度
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 javascript:alert(1)
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 data:text/html,evil
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 vbscript:evil
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 //evil.example
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://u:p@real.example
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://real.example/a b
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://real.example/a\u0009b
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://real.example/a\u000ab
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://real.example/a\u0000b
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://real.example/a\u007fb
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://real.example/a\u0085b
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://real.example/a\u2028b
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://real.example/a\u202eb
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://real.example/>evil
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://real.example/\`evil
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://real.example/\evil
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://real.example/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+- [x] Task 21 Step 2: Discord来源格式与边界 符合原URL上限但整段超过1900时不发送截断链接
+- [x] Task 21 Step 2: Discord来源格式与边界 URL使整段恰好1900时保留，超过一个单位时回退
+- [x] Task 21 Step 2: Discord来源格式与边界 IDN真实域名使用URL解析后的punycode
+- [x] Task 21 Step 2: Discord来源格式与边界 最多三条来源且不接受非法元数据
+- [x] Task 21 Step 2: Discord来源格式与边界 普通轮次不生成来源 undefined
+- [x] Task 21 Step 2: Discord来源格式与边界 普通轮次不生成来源 {"status":"not_requested","sources":[]}
+- [x] Task 21 Step 2: 异常长域名边界 超长hostname不会使无效URL回退消息突破1900单位
+
+### `core/test/sse-contract.test.ts`（新增1项，文件共9项）
+
+- [x] Task 21 Step 2 S3: 可选Discord身份契约 搜索请求可携带身份，旧请求可省略，信任仍由服务端判定
+
+### `server/test/session-api.test.ts`（新增1项，文件共32项）
+
+- [x] Task 21 Step 2: Bot搜索本机HTTP贯通 真实本机HTTP传作者身份并返回来源，普通轮次无搜索字段且不重搜
+
+### `src/test/remote-chat-adapter.test.ts`（新增1项，文件共22项）
+
+- [x] Task 21 Step 2 W2: 无状态搜索意图 无状态请求不发送search:true，仍保留普通消息
+
+### `src/test/streaming-ui.test.tsx`（新增2项，文件共12项）
+
+- [x] Task 21 Step 2 W1: 降级提示顺序 固定降级提示位于正文之前且只出现一次，成功来源仍在正文之后
+- [x] Task 21 Step 2 W1: 坏元数据兼容 未经校验的degraded字段不触发降级提示
+
+### TDD与开发期记录
+
+- W1 / W2两项先红：`固定降级提示位于正文之前且只出现一次，成功来源仍在正文之后`（DOCUMENT_POSITION_FOLLOWING预期truthy实际0）及`无状态请求不发送search:true，仍保留普通消息`（实际多出search:true）。仅移动降级渲染职责、移除无状态分支字段，四文件94/94通过。原始日志`/private/tmp/task21s2-w-red.log`与`task21s2-w-green.log`。
+- Bot接口 / 路由 / 元数据回归先红：格式化模块未实现，Bot后端 / handler仍返回string且无搜索字段，3文件14项行为失败及新格式化模块导入失败，见`/private/tmp/task21s2-bot-red.log`；实现结构化返回、解析与发送后四文件142/142通过。
+- 格式化测试先暴露`Markdown特殊字符实际按文本转义`：discord.js escapeMarkdown默认不转义方括号链接，预期\[摘要\]、实际[摘要](假目标)。显式补方括号 / 圆括号转义，并开启标题 / 列表转义；角括号改全角、正文中的http(s)冒号改全角以免制造额外自动链接。原始`/private/tmp/task21s2-format.log`，不放宽断言。
+- W1补充回归`未经校验的degraded字段不触发降级提示`先红：只查status会显示固定提示，改为MessageList同样先调用共享校验，坏字段仍无搜索内容。见`/private/tmp/task21s2-w1-validation-red.log`，定向随后112/112通过。
+- `超长hostname不会使无效URL回退消息突破1900单位`先红：new URL接受4000字符host，原回退消息超过1900；独立Bot校验将超过253字符的hostname判为“域名无效”，不显示伪造或截断域名。32/32格式化测试通过，见`/private/tmp/task21s2-domain-red.log`与`task21s2-domain-green.log`。
+- 开发期类型检查发现HTTP测试夹具使用DOM的HeadersInit，在server包无DOM lib时TS2304；改用既有RequestInit['headers']，未放宽tsconfig。Bot首次从core总入口作运行时导入曾将模型SDK带入包体，改为直接引用core纯校验 / 契约模块；最终Bot约32.4kb，构建产物无GoogleGenAI / Gemini端点字符串，无依赖增加。
+
+### 最终验证
+
+| 全量轮次 | 文件通过 | 用例通过 | 结果 |
+| :--- | :--- | :--- | :--- |
+| 1 | 44/44 | 806/806 | 通过；增加超长hostname回归前 |
+| 2 | 44/44 | 807/807 | 最终源码连续通过1/3 |
+| 3 | 44/44 | 807/807 | 最终源码连续通过2/3 |
+| 4 | 44/44 | 807/807 | 最终源码连续通过3/3 |
+
+所有全量均获准在沙箱外使用本机临时HTTP端口，外部上游全部Mock；本轮全量无失败，不调查或宣称解决既有deployment-validation第96行偶发失败。机器结果及完整日志位于`/private/tmp/task21s2-full-<N>.json`和`.log`。本机HTTP定向2文件66/66通过，见`task21s2-http.json`；根与四包类型检查、Web / Express / Bot三构建通过，Express既有1.8mb大小标记保留，无新增编译诊断。git diff --check及台账逐文件计数核验通过。
+
+### 要求到实现 / 测试映射
+
+- W1：MessageList校验后在正文前显示固定SEARCH_DEGRADED_NOTICE，SearchSources只负责后置成功来源；顺序、唯一性、坏元数据、旧来源组件职责及既有App恢复回归通过。W2：只有会话模式发送search:true，无状态分支省略；现有会话请求与幂等模式回归保留。
+- D02 / S2：先精确/reset，再判断/search及空白分隔；/reset xxx、/searchxyz、普通文本走原聊天；/search /reset只搜索问题/reset。空/search仅本地固定用法 + Tavily外发 / 频道可见 / Discord保存告知；501码点本地固定拒绝、500emoji完整发送，均不截断。未新增FailureKind，未调用后端时不扣搜索 / 生成 / 计数额度；仍沿用既有调度冷却。
+- S3：ChatStreamRequest加入可选discordUserId及信任边界注释；Bot仅搜索请求发送作者ID，不额外在chat请求传channelId。server/app.ts现有无Origin / loopback / 17–20位数字校验未改。真实本机HTTP（临时端口、模型与搜索Mock）验证身份被接受、完成来源与持久化一致，普通后续不重搜；既有Origin伪造拒绝回归保留。
+- 校验迁至core/search-metadata.ts并由core/index.ts导出，Web原入口重导出，45项既有Web元数据边界仍通过；Bot运行时直接引用纯模块，done坏元数据只返回正文，chunk元数据不采信，空正文不因来源 / 降级文案绕过K1。BotReply只含正文及可选search，reset成功和本地提示统一包装正文。
+- D08：正文使用未改动的splitMessage分段；降级固定文案作为独立第一条消息，计入长度且不显示reason枚举；成功正文全部发完，再发最多3条独立来源消息，各自带标题及编号。标题80码点、摘要100码点在转义前限制，完整消息转义后按UTF16检查<=1900；恰好1900保留、超1单位回退。危险协议、协议相对、凭据、控制 / 空白、角括号 / 反引号 / 反斜线、超长URL与hostname回退，仅解析域名和固定“链接过长未展示”，不产生截断后仍可点击的链接。真实域名含IDN取URL.hostname，不信任供应商domain；有效URL以原值尖括号链接展示。
+- Gateway来源发送带MessageFlags.SuppressEmbeds及allowedMentions:{parse:[],repliedUser:false}；不用Embed或隐藏目标链接。Markdown、代码块、@everyone / @here、用户 / 频道标记与双向控制夹具均覆盖。typing在等待后端期间刷新，首条回复发送前停止，来源等待不重启。来源发送失败沿用一次固定反馈，已发正文不重发，后续来源停止，退出不发送剩余来源。
+- Bot120秒期限、无自动重发 / 无全链路幂等不变，旧/reset管理员、FIFO、分段、取消、K1、P1及Task20 / Step1回归全部通过。生产搜索网络未装配；无真实Discord / Tavily / Gemini / VPS、真实Key或会话访问，不改环境 / systemd / 部署 / 依赖，不变更版本，不合main。
+
+### Discord实际Mock输出
+
+离线调用formatSearchSources所得输出（完整文件`/private/tmp/task21s2-source-example.txt`），未经任何Discord连接；标题 / 摘要中的反斜线是实际发送的Markdown转义，＠文本靠空allowedMentions禁止通知，提及结构改全角。来源URL仍独立可见，原文中的其他URL不生成链接。
+
+```text
+本轮检索来源
+1. \*标题\* @everyone ＜@123456789012345678＞
+real.example
+\[摘要\]\(https：//fake.example\) \`代码\`
+<https://real.example/path>
+```
+
+此来源消息发送时附flags=MessageFlags.SuppressEmbeds、allowedMentions={parse:[],repliedUser:false}；降级时第一条仅为固定“本轮未完成联网检索，以下回复未使用实时搜索。”，后续消息发送模型正文，不发送来源。
+
+### 交付文件与遗留
+
+- `src/components/MessageList.tsx`
+- `src/components/SearchSources.tsx`
+- `src/adapters/RemoteChatAdapter.ts`
+- `src/test/streaming-ui.test.tsx`
+- `src/test/search-sources.test.tsx`
+- `src/test/remote-chat-adapter.test.ts`
+- `core/contracts/sse.ts`
+- `core/search-metadata.ts`
+- `core/index.ts`
+- `src/services/searchMetadata.ts`
+- `core/test/sse-contract.test.ts`
+- `bot/index.ts`
+- `bot/backend-client.ts`
+- `bot/gateway.ts`
+- `bot/search-sources.ts`
+- `bot/test/backend-client.test.ts`
+- `bot/test/gateway.test.ts`
+- `bot/test/search-sources.test.ts`
+- `server/test/session-api.test.ts`
+- `dev-docs/backlog.md`
+- `dev-docs/tests.md`
+- `dev-docs/history.md`
+- `dev-docs/status.md`
+
+D12既有Web停止 / 失败残留片段与末条assistant无法重试属P1-4 / R3，本步未实施；须在Task21收尾人工验收前由用户决定是否单独授权。Task22真实网络 / 双入口 / 延迟验收与上线仍受N3许可门槛约束；当前Mock不证明真实Discord渲染 / 性能、供应商许可或来源事实正确。既有.zcodeignore保留不提交。

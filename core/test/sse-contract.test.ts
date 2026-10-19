@@ -99,3 +99,13 @@ describe('Task 20 Step 1: 搜索共享契约', () => {
     expectTypeOf<ChatSseEvent['event']>().toEqualTypeOf<'chunk' | 'done' | 'error'>();
   });
 });
+
+describe('Task 21 Step 2 S3: 可选Discord身份契约', () => {
+  it('搜索请求可携带身份，旧请求可省略，信任仍由服务端判定', () => {
+    const search: ChatStreamRequest = { sessionId: 'session', messages: [{ role: 'user', content: '问题' }], search: true, discordUserId: '333333333333333333' };
+    const ordinary: ChatStreamRequest = { sessionId: 'session', messages: search.messages };
+    expectTypeOf<ChatStreamRequest['discordUserId']>().toEqualTypeOf<string | undefined>();
+    expect(search.discordUserId).toBe('333333333333333333');
+    expect(ordinary).not.toHaveProperty('discordUserId');
+  });
+});

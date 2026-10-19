@@ -37,7 +37,7 @@ describe('Task 16 Step 2: Bot 后端与 SSE 对话', () => {
       controller.close();
     } });
     const fetcher = vi.fn().mockResolvedValueOnce(resolved()).mockResolvedValueOnce(new Response(stream));
-    await expect(new BackendClient({ fetch: fetcher }).chat(input)).resolves.toBe('中文回复');
+    await expect(new BackendClient({ fetch: fetcher }).chat(input)).resolves.toEqual({ content: '中文回复' });
   });
   it('读取未结束的 SSE 时超时会取消 reader 并清理请求', async () => {
     vi.useFakeTimers();
@@ -54,7 +54,7 @@ describe('Task 16 Step 2: Bot 后端与 SSE 对话', () => {
       'event: do', 'ne\r\ndata: {"content":"最终回复"}\r\n\r\n',
     ]));
     const client = new BackendClient({ fetch: fetcher });
-    await expect(client.chat(input)).resolves.toBe('最终回复');
+    await expect(client.chat(input)).resolves.toEqual({ content: '最终回复' });
     expect(JSON.parse(fetcher.mock.calls[0][1].body)).toEqual({ guildId: input.guildId, channelId: input.channelId });
     expect(JSON.parse(fetcher.mock.calls[1][1].body)).toEqual({ sessionId, messages: [{ role: 'user', content: '本轮' }] });
   });
@@ -185,5 +185,55 @@ describe('P1-3: Bot 存储失败提示', () => {
     await expect(new BackendClient({ fetch: fetcher }).chat(input)).rejects.toMatchObject({
       kind: 'BACKEND', message: '后端对话失败，请检查服务状态后再试。',
     });
+  });
+});
+
+describe('Task 21 Step 2: Bot搜索请求和最终来源', () => {
+  const search = { status: 'succeeded', sources: [{ provider: 'tavily', retrievedAt: 1, index: 1, title: '标题', summary: '摘要', url: 'https://example.com', domain: 'example.com' }] };
+  it.each([true, false])('仅搜索请求发送搜索标记及作者身份 %s', async requested => {
+    const fetcher = vi.fn().mockResolvedValueOnce(resolved()).mockResolvedValueOnce(sse([`event: done\ndata: ${JSON.stringify({ content: '正文', search })}\n\n`]));
+    const result = await new BackendClient({ fetch: fetcher }).chat({ ...input, userId: '333333333333333333' }, undefined, { search: requested });
+    expect(result).toEqual({ content: '正文', search });
+    const body = JSON.parse(fetcher.mock.calls[1][1].body);
+    if (requested) expect(body).toMatchObject({ search: true, discordUserId: '333333333333333333' });
+    else { expect(body).not.toHaveProperty('search'); expect(body).not.toHaveProperty('discordUserId'); }
+    expect(body).not.toHaveProperty('channelId'); expect(body).not.toHaveProperty('requestId');
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+  it.each([undefined, null, { status: 'succeeded', sources: [] }, { status: 'degraded', sources: [], reason: 'SECRET', notice: 'SECRET' }])('坏或缺失search只返回正文 %j', async search => {
+    const fetcher = vi.fn().mockResolvedValueOnce(resolved()).mockResolvedValueOnce(sse([`event: done\ndata: ${JSON.stringify({ content: '正文', search })}\n\n`]));
+    expect(await new BackendClient({ fetch: fetcher }).chat(input)).toEqual({ content: '正文' });
+  });
+  it('只读取done的元数据，不接受chunk伪造来源', async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce(resolved()).mockResolvedValueOnce(sse([
+      `event: chunk\ndata: ${JSON.stringify({ delta: '片段', accumulated: '片段', search })}\n\n`,
+      'event: done\ndata: {"content":"正文"}\n\n',
+    ]));
+    expect(await new BackendClient({ fetch: fetcher }).chat(input)).toEqual({ content: '正文' });
+  });
+  it('降级元数据采用共享固定文案，空正文仍拒绝', async () => {
+    const { SEARCH_DEGRADED_NOTICE } = await import('@gemini-chat/core');
+    const search = { status: 'degraded', sources: [], reason: 'unavailable', notice: SEARCH_DEGRADED_NOTICE };
+    for (const content of ['正文', ' ']) {
+      const fetcher = vi.fn().mockResolvedValueOnce(resolved()).mockResolvedValueOnce(sse([`event: done\ndata: ${JSON.stringify({ content, search })}\n\n`]));
+      const pending = new BackendClient({ fetch: fetcher }).chat(input);
+      if (content.trim()) expect(await pending).toEqual({ content, search });
+      else await expect(pending).rejects.toMatchObject({ kind: 'PROTOCOL' });
+    }
+  });
+});
+
+describe('Task 21 Step 2: 默认期限兼容', () => {
+  it('默认120秒期限不因搜索字段改变且不自动重试', async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn((_url, init) => new Promise<Response>((_resolve, reject) => {
+      init.signal.addEventListener('abort', () => reject(new Error('cancelled')), { once: true });
+    }));
+    const client = new BackendClient({ fetch: fetcher });
+    const pending = expect(client.chat(input, undefined, { search: true })).rejects.toMatchObject({ kind: 'TIMEOUT' });
+    await vi.advanceTimersByTimeAsync(119999);
+    expect(fetcher.mock.calls[0][1].signal.aborted).toBe(false);
+    await vi.advanceTimersByTimeAsync(1); await pending;
+    expect(fetcher).toHaveBeenCalledOnce(); expect(vi.getTimerCount()).toBe(0);
   });
 });
