@@ -190,6 +190,8 @@ Claude Task 20 Step 3 复核前置（2026-10-19，详见 history）：Task 21 St
 **V1完成（2026-10-19）**：CONTROL加入U+2028 / U+2029；两项回归先红后绿，资料块与规范化标题 / 摘要不再包含分隔符，isSearchMetadata通过且再次规范化不变；仅修改这一处服务端实现。
 
 - [x] **Step 1（Web Playground；2026-10-19完成，待Claude复核）**：首个子步骤修复V1；逐轮联网开关默认关闭，已接受发送后复位，告知当前问题外发Tavily且来源随回复保存、不承诺零留存，超过500 Unicode码点提示缩短。原输入保留search模式及requestId，重试不受当前开关影响；done.search经客户端结构校验及可选ChatChunk传到对应assistant，仅最终done展示来源，普通chunk仍只含正文。回复末尾按编号展示纯文本标题 / 摘要、解析真实域名及独立校验的HTTP(S)链接，拒绝凭据 / 控制字符 / 空白 / 超长URL，使用noopener noreferrer；无效URL只显示标题与域名。固定降级提示与正文分离，刷新、单done回放及旧消息兼容，篡改done / 持久化数据与恶意文本夹具有回归；审计第7节危险渲染API扫描0匹配。新增91项，最终连续3轮43/43文件742/742用例、根 / 四包类型检查与三构建通过；首轮沙箱端口EPERM记录于tests.md。D12既有残留片段 / 重试差异仅记录，P1-4 / R3未实施；全部Mock，生产搜索网络未装配，Step 2（含S2 / S3）与Task 22未授权。
+Claude Task 21 Step 1 复核前置（2026-10-19，详见 history）：Step 2 首个子步骤须修复 **W1（低）**——Web 降级提示 `SEARCH_DEGRADED_NOTICE`（“本轮未完成联网检索，以下回复未使用实时搜索。”）现由 `SearchSources` 渲染在正文之后，与“以下”不符；ADR-015 固定文案不改，须将降级提示移至 `MessageList` 正文之前并补渲染顺序回归；**W2（低）**——`src/adapters/RemoteChatAdapter.ts` 无状态分支亦发送 `search: true`，而服务端要求 `search: true` 必须带 sessionId，致整个请求被判无效；须仅在会话模式发送并补回归。另：Step 1 如实记录既有 D12 差异（停止后 Web 保留已生成片段、末条 assistant 无法重试），属 P1-4 / R3 实施范围，未授权；须在 Task 21 收尾人工验收前由用户决定是否单独授权。
+
 - [ ] **Step 2（Discord）**：来源展示不触发用户 / 角色提及、抑制链接预览、限制条数防刷屏；与既有长消息分段规则（Task 16 Step 3）协调；标题 Markdown 转义、禁止伪装链接；以 `SuppressEmbeds` 或 `<>` 抑制预览，显示标题 / 域名并限制长度；输入中提示持续至开始回复。
 
 ### Task 22：Part 1 验收与结项（以 ADR-015 裁决为准）
