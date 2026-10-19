@@ -185,6 +185,8 @@ Claude Task 20 Step 2 复核前置（2026-10-18，不通过，详见 status / hi
 
 ### Task 21：双入口接入与来源展示（以 ADR-015 裁决为准）
 
+Claude Task 20 Step 3 复核前置（2026-10-19，详见 history）：Task 21 Step 1 开工前（或作为其首个子步骤）须修复 **V1（低）**——`server/search-context.ts` 的 `CONTROL` 未包含 U+2028 / U+2029，`JSON.stringify` 亦不转义，致其原样进入模型资料块（看似换行，弱化隔离）并随标题 / 摘要持久化、后续在 Web / Discord 展示时断行；须将二者加入 `CONTROL` 并在注入夹具补对应回归。另：Task 20 Step 3 期间定位的既有偶发失败 `server/test/deployment-validation.test.ts:96`（Task 18 部署验证，`eligible_24h` 期望 true 实际 false）根因未确认，与搜索无关，须另行立项调查，不纳入 Task 21。S2 / S3 仍随 Task 21 处理。
+
 - [ ] **Step 1（Web Playground）**：按裁决的触发方式接入，消息流内展示来源链接，不破坏 ADR-012 幂等与 ADR-013 窗口语义；来源链接仅允许 `http` / `https` 协议、标题按纯文本渲染并有测试；复核审计第 7 节「无 XSS 面」结论在引入外部链接后仍成立。
 - [ ] **Step 2（Discord）**：来源展示不触发用户 / 角色提及、抑制链接预览、限制条数防刷屏；与既有长消息分段规则（Task 16 Step 3）协调；标题 Markdown 转义、禁止伪装链接；以 `SuppressEmbeds` 或 `<>` 抑制预览，显示标题 / 域名并限制长度；输入中提示持续至开始回复。
 
