@@ -6,6 +6,8 @@ Phase 1–4已结项；Phase 5 Part 1 Task 19 Step 1–3与Task 20 Step 1–2已
 
 ## 当前授权
 
+- **本轮授权已完成（2026-10-18）**：用户确认留档 Claude 起草的 Task 20 Step 3 GPT 提示词，新增 `dev-docs/prompts/task20-step3-gpt.md` 并记录 history；用户表示随后交给GPT。仅文档，不构成开工授权；Task 20 Step 3以用户对GPT的实际指派为准，Task 21–22未授权。
+
 - **本轮授权已完成（2026-10-18）**：用户指派 Claude 复核 T1–T3 修复（`324b02e` / `04a88cd`）并确认记录；复核通过。T1：删除第三轮资料缩短、第二轮与select共用0.8安全阈值，Claude复现脚本在20轮历史、回复100 / 200 / 400字时均保留3条100字摘要并删除最旧历史（保留32 / 20 / 10条历史消息）；T2：读期间取消不扣额、写期间取消保留预留，后续请求均正常准入；T3：坏账本降级原因为ledger_unavailable。本机全量41/41文件568/568用例与类型检查通过；首次复跑出现1条偶发失败，其后16次（含并行负载）均未复现，输出未保留、用例未定位，登记为待观察的时间敏感偶发失败。仅修改backlog / history / status；本提交后按累计提交数创建annotated tag。Task 20 Step 3待用户指派，Task 21–22未授权。
 
 - **本轮授权已完成（2026-10-18）**：用户指派T1–T3修复并确认15文件计划后修改；T1删除为完整历史挤压资料的第三轮fit，第二轮按无历史最小输入与select共用0.8安全阈值；T2取消只结束本地等待，tail保持串行并在IO结束后让后续请求重读准入，不永久关闭；T3新增ledger_unavailable，真实账本故障仍按N4关闭，额度拒绝保留admission_denied。新增9项，全量41/41文件568/568用例、根 / 四包类型检查、三构建、台账 / diff及15文件范围验证通过。修复提交`324b02e`（`fix: preserve search sources and recover admission after cancellation`）已推送origin/test；本状态收尾后按累计214提交创建并推送annotated tag `V0.0.2-build.214`，最终远端核验见主会话汇报。全部Mock / 临时存储，无真实搜索 / 模型 / Discord / VPS / 会话访问、不读取真实Key、不改部署文件、不新增依赖或部署。完成后等待Claude复核，Step 3仍未勾选 / 未开工，Task 21及其他范围未授权。
