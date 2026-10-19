@@ -9,7 +9,7 @@ function object(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
 }
 function safeUrl(value: unknown): URL | undefined {
-  if (typeof value !== 'string' || value.length > 2048 || /[\u0000-\u0020\u007f-\u009f]/.test(value)) return;
+  if (typeof value !== 'string' || value.length > 2048 || /[\s\u0000-\u0020\u007f-\u009f]/.test(value)) return;
   try {
     const url = new URL(value);
     if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) return;

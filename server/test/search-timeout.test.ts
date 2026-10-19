@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SearchDeadline, searchWithTimeout } from '../search-timeout';
-import { MockSearchAdapter } from '../search-adapter';
+import { MockSearchAdapter, TavilySearchAdapter } from '../search-adapter';
 afterEach(() => vi.useRealTimers());
 describe('Task 20 Step 2: 搜索期限与单调时钟', () => {
   it('搜索8秒后中止忽略abort的上游且迟到结果被丢弃', async () => {
@@ -24,5 +24,42 @@ describe('Task 20 Step 2: 搜索期限与单调时钟', () => {
     vi.useFakeTimers(); const deadline = new SearchDeadline(5);
     const pending = searchWithTimeout({ search: async () => new Promise<never[]>(() => {}) }, '问题', new AbortController().signal, 8000, deadline);
     const expected = expect(pending).rejects.toMatchObject({ code: 'NETWORK_ERROR' }); await vi.advanceTimersByTimeAsync(5); await expected;
+  });
+});
+
+describe('Task 20 Step 3: Response流与不合作清理', () => {
+  it('慢速分块不刷新搜索期限且不等待永不结束的cancel', async () => {
+    vi.useFakeTimers(); let stream!: ReadableStreamDefaultController<Uint8Array>;
+    const cancel = vi.fn(() => new Promise<void>(() => {}));
+    const body = new ReadableStream<Uint8Array>({ start(c) { stream = c; }, cancel });
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(body));
+    const pending = searchWithTimeout(new TavilySearchAdapter({ apiKey: 'fixture', fetcher }), '问题', new AbortController().signal, 8000, new SearchDeadline(115000));
+    const rejected = expect(pending).rejects.toMatchObject({ code: 'NETWORK_ERROR' });
+    await vi.advanceTimersByTimeAsync(3000); stream.enqueue(new TextEncoder().encode('{"results":['));
+    await vi.advanceTimersByTimeAsync(3000); stream.enqueue(new TextEncoder().encode('{"title":"迟到'));
+    await vi.advanceTimersByTimeAsync(2000); await rejected;
+    expect(cancel).toHaveBeenCalledOnce(); expect(fetcher).toHaveBeenCalledOnce();
+    expect(body.locked).toBe(false); expect(vi.getTimerCount()).toBe(0);
+  });
+  it('超时后迟到的fetch响应仅取消响应体而不接受来源', async () => {
+    vi.useFakeTimers(); let finish!: (r: Response) => void; let upstream!: AbortSignal;
+    const fetcher = vi.fn<typeof fetch>(async (_url, options) => {
+      upstream = options!.signal!; return new Promise<Response>(resolve => { finish = resolve; });
+    });
+    const pending = searchWithTimeout(new TavilySearchAdapter({ apiKey: 'fixture', fetcher }), '问题', new AbortController().signal, 8000, new SearchDeadline(115000));
+    const rejected = expect(pending).rejects.toMatchObject({ code: 'NETWORK_ERROR' });
+    await vi.advanceTimersByTimeAsync(8000); await rejected; expect(upstream.aborted).toBe(true);
+    const cancel = vi.fn(); finish(new Response(new ReadableStream({ cancel })));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(cancel).toHaveBeenCalledOnce(); expect(fetcher).toHaveBeenCalledOnce(); expect(vi.getTimerCount()).toBe(0);
+  });
+  it('同步解析越过期限也拒绝结果而不依赖计时器先执行', async () => {
+    let now = 0; const clock = vi.spyOn(performance, 'now').mockImplementation(() => now);
+    try {
+      const adapter = { search: vi.fn(async () => { now = 8001; return []; }) };
+      await expect(searchWithTimeout(adapter, '问题', new AbortController().signal, 8000, new SearchDeadline(115000)))
+        .rejects.toMatchObject({ code: 'NETWORK_ERROR' });
+      expect(adapter.search).toHaveBeenCalledOnce();
+    } finally { clock.mockRestore(); }
   });
 });

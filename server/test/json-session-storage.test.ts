@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -156,6 +156,26 @@ describe('P0-2: 请求身份存储防线', () => {
 });
 
 describe('Task 20 Step 1: 搜索JSON兼容', () => {
+  it.each(['危险协议', '超过三条', '超长URL', '超长摘要', '来源多余字段', '元数据多余字段', '伪造域名'])('读取时拒绝磁盘篡改：%s', async mode => {
+    const { storage, dataDirectory } = await createStorage(); const session = await storage.createSession();
+    const { normalizeSearchSources, isSearchMetadata } = await import('../search-context');
+    const source: Record<string, unknown> = { ...normalizeSearchSources([{ title: '标题', url: 'https://example.com/a', content: '摘要' }], 123)[0] };
+    const search: Record<string, unknown> = { status: 'succeeded', sources: [source] };
+    if (mode === '危险协议') source.url = 'javascript:alert("secret")';
+    if (mode === '超过三条') search.sources = Array.from({ length: 4 }, (_, i) => ({ ...source, index: i + 1 }));
+    if (mode === '超长URL') source.url = 'https://example.com/' + 'x'.repeat(2048);
+    if (mode === '超长摘要') source.summary = 'x'.repeat(101);
+    if (mode === '来源多余字段') source.raw_content = 'secret';
+    if (mode === '元数据多余字段') search.query = 'secret';
+    if (mode === '伪造域名') source.domain = 'trusted.example';
+    expect(isSearchMetadata(search)).toBe(false);
+    const path = join(dataDirectory, `${session.id}.json`);
+    const tampered = JSON.stringify({ ...session, messages: [{ ...message('reply', '回复'), role: 'assistant', search }] });
+    await writeFile(path, tampered);
+    await expect(storage.getSession(session.id)).rejects.toThrow('Invalid persisted session');
+    await expect(new JsonSessionStorage(dataDirectory).getSession(session.id)).rejects.toThrow('Invalid persisted session');
+    expect(await readFile(path, 'utf8')).toBe(tampered);
+  });
   it('旧消息仍可读取且读取操作不补写搜索字段', async () => {
     const { storage, dataDirectory } = await createStorage(); const session = await storage.createSession();
     await storage.appendMessage(session.id, message('old', '旧消息'));

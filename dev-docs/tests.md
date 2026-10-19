@@ -1,7 +1,7 @@
 # 测试套件与测试用例台账
 
 > **维护规范**：
-> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（41 个套件）与具体测试用例（568 个断言项）。
+> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（41 个套件）与具体测试用例（651 个断言项）。
 > 2. **铁律联动**：后续开发中，每次有新功能开发、重构或测试内容更新时，**必须同步在此台账中维护新增或修改的测试项**，保持与实际测试套件 100% 同步。
 
 ## 1. 测试套件概览看板
@@ -24,12 +24,12 @@
 | 14 | `server/test/server-skeleton.test.ts` | Task 11 | Express 服务端骨架、双环境运行、根路径与健康检查响应 | 4 | ✅ 通过 |
 | 15 | `core/test/sse-contract.test.ts` | Task 11 | 共享 SSE 事件、错误载荷与 sessionId 演进契约 | 8 | ✅ 通过 |
 | 16 | `server/test/cors.test.ts` | Task 11 | CORS 白名单解析、允许/拒绝策略与预检链路 | 5 | ✅ 通过 |
-| 17 | `server/test/chat-stream.test.ts` | Task 12 | SSE 流式管道、心跳、续传声明与中断级联 | 16 | ✅ 通过 |
-| 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 / Task 17 Step 1 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 62 | ✅ 通过 |
+| 17 | `server/test/chat-stream.test.ts` | Task 12 | SSE 流式管道、心跳、续传声明与中断级联 | 28 | ✅ 通过 |
+| 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 / Task 17 Step 1 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 65 | ✅ 通过 |
 | 19 | `src/test/remote-chat-adapter.test.ts` | Task 13 / Task 14 Step 3 | RemoteChatAdapter 的 SSE 消费、错误映射、AbortSignal 与 sessionId 模式 | 15 | ✅ 通过 |
 | 20 | `src/test/app-remote-integration.test.tsx` | Task 13 Step 3 / Task 14 Step 3 / Phase 3 收尾 | App 的后端 SSE 装配、会话恢复、归档清空与旧配置迁移 | 7 | ✅ 通过 |
-| 21 | `server/test/json-session-storage.test.ts` | Task 14 Step 1 / Task 16 Step 2 | JSON 会话、频道关联、重启恢复与严格追加 | 15 | ✅ 通过 |
-| 22 | `server/test/session-api.test.ts` | Task 14 Step 2 / Task 16 Step 2 | 会话 API、频道上下文、归档与来源隔离 | 27 | ✅ 通过 |
+| 21 | `server/test/json-session-storage.test.ts` | Task 14 Step 1 / Task 16 Step 2 | JSON 会话、频道关联、重启恢复与严格追加 | 22 | ✅ 通过 |
+| 22 | `server/test/session-api.test.ts` | Task 14 Step 2 / Task 16 Step 2 | 会话 API、频道上下文、归档与来源隔离 | 31 | ✅ 通过 |
 | 23 | `server/test/discord-demo.test.ts` | Task 15 Step 2 | 配置、测试频道回显、连接事件、日志脱敏与退出清理（网络 Mock） | 14 | ✅ 通过 |
 | 24 | `bot/test/gateway.test.ts` | Task 16 / Task 17 Step 1–3 | 正式网关、typing、错误、重连、长时模拟与资源清理（网络 Mock） | 50 | ✅ 通过 |
 | 25 | `bot/test/message-entry.test.ts` | Task 16 Step 1 | 指定频道直接 @Bot、提及清理与消息过滤 | 14 | ✅ 通过 |
@@ -42,14 +42,14 @@
 | 32 | `server/test/deployment-validation.test.ts` | Task 18 Step 2 | 采集故障、重连中断、24 小时 / 新鲜度 / 证据缺口判定 | 11 | ✅ 通过 |
 | 33 | `server/test/context-window.test.ts` | P0-1 第一步 | 轮次窗口、计数降级、超时与内存校准 | 32 | ✅ 通过 |
 | 34 | `server/test/generation-timeout.test.ts` | P1-2 / R2 | 首包 / 总期限、取消、迭代等待与清理边界、启动配置（假时钟 / Mock） | 7 | ✅ 通过 |
-| 35 | `server/test/chat-error-safety.test.ts` | P1-3 | 存储错误分类、上游脱敏、固定提示与白名单日志 | 23 | ✅ 通过 |
+| 35 | `server/test/chat-error-safety.test.ts` | P1-3 | 存储错误分类、上游脱敏、固定提示与白名单日志 | 34 | ✅ 通过 |
 | 36 | `server/test/source-budget.test.ts` | P1-7 | 持久化来源防伪、Web保留额度、总守卫与计数 / 生成暂停 | 8 | ✅ 通过 |
-| 37 | `server/test/search-adapter.test.ts` | Task 20 Step 1 | 固定端点、原生HTTP、限读、取消与离线Mock | 6 | ✅ 通过 |
-| 38 | `server/test/search-context.test.ts` | Task 20 Step 1 | 来源过滤、Unicode上限、资料隔离与URL不入模型 | 12 | ✅ 通过 |
+| 37 | `server/test/search-adapter.test.ts` | Task 20 Step 1 | 固定端点、原生HTTP、限读、取消与离线Mock | 28 | ✅ 通过 |
+| 38 | `server/test/search-context.test.ts` | Task 20 Step 1 | 来源过滤、Unicode上限、资料隔离与URL不入模型 | 33 | ✅ 通过 |
 | 39 | `server/test/search-budget.test.ts` | Task 20 Step 2 | 配置、原子多守卫、故障关闭、并发与429隔离 | 17 | ✅ 通过 |
 | 40 | `server/test/search-ledger.test.ts` | Task 20 Step 2 | UTC日账本、原子写、重启 / 换日与N4 | 10 | ✅ 通过 |
-| 41 | `server/test/search-timeout.test.ts` | Task 20 Step 2 | 单调期限、取消、迟到结果与剩余预算 | 4 | ✅ 通过 |
-| **合计** | **41 个测试文件** | **Phase 1–5 / 审计修复** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **568** | **✅ 100% 通过** |
+| 41 | `server/test/search-timeout.test.ts` | Task 20 Step 2 | 单调期限、取消、迟到结果与剩余预算 | 7 | ✅ 通过 |
+| **合计** | **41 个测试文件** | **Phase 1–5 / 审计修复** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **651** | **✅ 100% 通过** |
 
 ---
 
@@ -372,7 +372,7 @@
 - [x] **白名单外来源应被拒绝并返回 403**
 - [x] **白名单内来源的 OPTIONS 预检应返回 204 与允许的方法和请求头**
 
-### 2.17 `server/test/chat-stream.test.ts` (16 项)
+### 2.17 `server/test/chat-stream.test.ts` (28 项)
 > **任务对应**：Task 12 Step 1 · 服务端 SSE 流式管道与生命周期管理
 
 #### Task 12 Step 1: 服务端 SSE 流式管道与生命周期管理
@@ -412,7 +412,12 @@
 - [x] **拒绝非布尔搜索字段以及无状态搜索请求**
 - [x] **只有无Origin本机请求可提供可信Discord身份且请求体的可信字段被忽略**
 
-### 2.18 `server/test/chat-adapter-stream-source.test.ts` (62 项)
+#### Task 20 Step 3（2026-10-19，Mock）
+
+- [x] **非loopback连接%s不信任身份或伪造转发头**（4项）：公网IPv4、私网IPv4、IPv4映射IPv6、IPv6连接，X-Forwarded-For与请求体可信字段均不放行。
+- [x] **非法Discord身份%j按缺失处理**（8项）：空串、16 / 21位、全角数字、末尾换行、数值、null、对象。
+
+### 2.18 `server/test/chat-adapter-stream-source.test.ts` (65 项)
 > **任务对应**：Task 17 Step 2 / Task 12 Step 2–3 · 服务端 Adapter 承载、自动降级与错误透传
 
 #### Task 12 Step 3: Adapter 自动选择与统一错误透传
@@ -523,6 +528,11 @@
 - [x] **T1: 无历史的最小输入略超安全阈值时缩资料后成功而非整轮降级**
 - [x] **T3: 账本写失败使用独立原因并继续普通生成且不调用搜索**
 
+#### Task 20 Step 3（2026-10-19，Mock）
+
+- [x] **Step3: 供应商角色指令只留在用户资料且模型输出不能触发额外能力**：真实Tavily适配器配Mock fetch，固定system规则、单用户资料块、不注入URL、无tools、模型伪工具命令只保存为正文，回放不重搜。
+- [x] **Step3: 取消真实适配器的%s不生成不写盘且迟到响应仅清理**（2项）：fetch挂起 / 读取挂起，客户端取消、响应体清理、锁释放、零事件与空消息日志。
+
 ### 2.19 `src/test/remote-chat-adapter.test.ts` (15 项)
 > **任务对应**：Task 13 Step 1 / Task 14 Step 3 · RemoteChatAdapter 实现、会话模式与契约测试
 
@@ -568,7 +578,7 @@
 - [x] **请求冲突横幅使用固定提示并保留重试入口**
 
 
-### 2.21 `server/test/json-session-storage.test.ts` (15 项)
+### 2.21 `server/test/json-session-storage.test.ts` (22 项)
 > **任务对应**：Task 16 Step 2 / Task 14 Step 1 · JSON 文件会话持久化与 ADR-005 严格追加语义
 
 #### Task 14 Step 1: JSON 会话存储层
@@ -596,7 +606,11 @@
 - [x] **来源元数据重启恢复且返回对象与内部来源深拷贝隔离**
 - [x] **拒绝不合法来源状态角色与不安全URL且日志不变**
 
-### 2.22 `server/test/session-api.test.ts` (27 项)
+#### Task 20 Step 3（2026-10-19，Mock）
+
+- [x] **读取时拒绝磁盘篡改：%s**（7项）：危险协议、超过三条、超长URL、超长摘要、来源多余字段、元数据多余字段、伪造域名；isSearchMetadata及当前 / 新存储实例均拒绝，原文件不改写。
+
+### 2.22 `server/test/session-api.test.ts` (31 项)
 > **任务对应**：Task 17 Step 2 / Task 16 Step 2 / Task 14 Step 2 · 会话 API、多轮全量上下文与归档语义
 
 #### Task 14 Step 2: 会话 API 与多轮上下文
@@ -657,6 +671,10 @@
 #### T1–T3修复（2026-10-18，Mock）
 - [x] **坏账本使用ledger_unavailable且刷新重启回放保持一致**
 - [x] **写入失败使用ledger_unavailable且刷新重启回放保持一致**
+
+#### Task 20 Step 3（2026-10-19，Mock）
+
+- [x] **%s不能经刷新或重启回放下发**（4项）：危险协议、超过三条、超长URL、多余字段；当前 / 新服务的GET与SSE返回固定错误，不重搜不生成、不改写坏文件，日志无路径 / 篡改正文。
 
 ### 2.23 `server/test/discord-demo.test.ts` (14 项)
 > **任务对应**：Task 15 Step 2 · 最小网关 Demo（Task 16 Step 1 实现移至 bot/demo.ts，测试路径保留）；所有 Discord 网络调用均 Mock，不能替代真实网关验收。
@@ -1002,7 +1020,7 @@
 - [x] **搜索和计数消耗后的整体期限不在生成阶段重新开始**
 - [x] **墙钟跳变不改变首包和总生成期限**
 
-### 2.35 `server/test/chat-error-safety.test.ts` (23 项)
+### 2.35 `server/test/chat-error-safety.test.ts` (34 项)
 > **任务对应**：P1-3 · 存储 / 模型分类与服务端脱敏边界
 
 #### P1-3 错误分类与安全文案回归
@@ -1046,6 +1064,10 @@
 #### Task 20 Step 1（2026-10-18，Mock）
 - [x] **search阶段只记录白名单且保留count阶段**
 
+#### Task 20 Step 3（2026-10-19，Mock）
+
+- [x] **Step3: %s仅产生本地降级及白名单日志**（11项）：301 / 302 / 303 / 307 / 308 / 401 / 429、坏JSON、坏结构、超大响应、fetch异常；真实适配器配Mock fetch后仅provider_failure降级，一次生成，日志字段及值精确白名单，Key / query / URL / stack不泄漏。
+
 ### 2.36 `server/test/source-budget.test.ts` (8 项)
 > **任务对应**：P1-7 · 持久化来源、生成 / 计数保留预算与暂停边界
 
@@ -1074,7 +1096,7 @@
 - Linux复用现网lockfile，独立新发行目录运行全部Mock测试，不访问现网会话数据；生产依赖审计0漏洞。真实上线冒烟为Web回复“P1部署成功”及刷新恢复、用户直接@Bot确认Discord正常；服务端metadata证明旧消息保留、新增两条消息、两服务无重启。
 - 无sessionId的HTTP400与非法ID ../x的固定UNKNOWN文案探针通过，不消耗真实模型额度或追加输入；真实超时 / 429未强制触发，相关异常仅Mock回归。完整证据与备份校验见phase3-deployment.md第12节，不宣称新版本已完成24小时观察。
 
-### 2.37 `server/test/search-adapter.test.ts` (6 项)
+### 2.37 `server/test/search-adapter.test.ts` (28 项)
 
 > **任务对应**：Task 20 Step 1 · 全Mock，不调用真实供应商。
 
@@ -1085,7 +1107,14 @@
 - [x] **取消挂起的响应读取可结束本地等待**
 - [x] **Mock适配器可离线提供受限来源且已取消不工作**
 
-### 2.38 `server/test/search-context.test.ts` (12 项)
+#### Task 20 Step 3（2026-10-19，Mock）
+
+- [x] **结果地址只作元数据且不会读取：%s**（11项）：loopback、10 / 172.16 / 192.168私网、link-local、元数据地址、IPv6 loopback / link-local / ULA、显式端口、带凭据；fetch只访问固定端点一次，凭据URL过滤。
+- [x] **端点%s拒绝重定向且不读取Location或正文**（5项）：301 / 302 / 303 / 307 / 308，redirect:error、固定错误、不重试。
+- [x] **拒绝异常results结构：%j**（6项）：null、数组、空对象、results为null / 对象 / 字符串。
+- [x] 既有固定端点用例追加精确Content-Type与Authorization头断言，不增加用例数。
+
+### 2.38 `server/test/search-context.test.ts` (33 项)
 
 > **任务对应**：Task 20 Step 1 · 全Mock，不调用真实供应商。
 
@@ -1107,6 +1136,12 @@
 - [x] **按实际隔离块估算先缩摘要后减来源且展示摘要与注入保持一致**
 - [x] **最小资料仍超预算返回空来源并保持连续编号**
 - [x] **最小来源仍超限时清空而不保留一字摘要绕过阈值**
+
+#### Task 20 Step 3（2026-10-19，Mock）
+
+- [x] **危险URL不进入来源或持久化元数据：%s**（14项）：javascript / data / vbscript / file、协议相对、凭据、普通空格 / tab / 换行 / NUL / DEL / NBSP / 全角空格、超2048字符；规范化及持久化校验共用过滤。
+- [x] **域名只能来自URL解析且IDN使用解析后的hostname**：解析punycode域名、忽略标题域名伪装，拒绝存储伪造domain。
+- [x] **供应商文本只能留在单个转义资料块内：%s**（6项）：双标记、零宽变体、HTML系统角色、JSON助手角色、控制 / 双向 / 换行、Markdown URL；固定三行及唯一首尾标记，控制字符清除、URL不注入、来源可持久化。
 
 ### 2.39 `server/test/search-budget.test.ts` (17 项)
 
@@ -1148,7 +1183,7 @@
 - [x] **rename失败保留原账本并禁止发起搜索**
 - [x] **降低配置仍保留既有使用量且过期合法账本换日不带旧身份**
 
-### 2.41 `server/test/search-timeout.test.ts` (4 项)
+### 2.41 `server/test/search-timeout.test.ts` (7 项)
 
 > **任务对应**：Task 20 Step 2 · 上游Mock / 隔离临时账本。
 
@@ -1156,6 +1191,12 @@
 - [x] **客户端取消维持ABORTED而非超时降级**
 - [x] **阶段剩余预算不随墙钟或新阶段重置**
 - [x] **整体剩余时间小于搜索期限时按剩余时间结束**
+
+#### Task 20 Step 3（2026-10-19，Mock）
+
+- [x] **慢速分块不刷新搜索期限且不等待永不结束的cancel**：实际Response流在3 / 6秒给片段，8秒终止、reader释放、不合作cancel不阻塞、计时器清空。
+- [x] **超时后迟到的fetch响应仅取消响应体而不接受来源**：fetch忽略abort，8秒本地终止，迟到响应体取消、无重试。
+- [x] **同步解析越过期限也拒绝结果而不依赖计时器先执行**：单调时钟越过8000ms，拒绝迟到结果。
 
 ## Task 20 Step 2 要求与测试映射（2026-10-18）
 
@@ -1175,3 +1216,44 @@
 - T3：流源新增写失败原因回归，session-api.test.ts新增坏账本 / 写失败的原因持久化、刷新及重启回放回归；原额度不足 / 冷却仍断言admission_denied，ledger测试按判别联合适配。
 
 本轮新增9项，全量41/41文件568/568用例通过；准入返回值改为判别联合，旧布尔断言按允许 / 额度拒绝 / 账本故障分别更新。无真实上游调用、VPS或部署。
+
+
+## Task 20 Step 3：ADR-015 §6 最终威胁映射（2026-10-19）
+
+本轮新增83项（568→651），8个既有测试文件扩展，无新增测试文件或依赖。下表文件均在server/test；本步只验证服务端Mock边界。
+
+| §6威胁 | 测试文件与用例（含已有回归） | 证据范围 / 遗留 |
+| :--- | :--- | :--- |
+| SSRF：内网 / 跳转 / DNS | search-adapter.test.ts：结果地址只作元数据且不会读取、端点%s拒绝重定向且不读取Location或正文、只向固定端点发送当前问题且禁用答案全文与重定向；chat-error-safety.test.ts：Step3降级矩阵 | 只调用固定HTTPS端点一次、方法 / 头 / body固定、redirect:error；不解析结果DNS、不抓取结果网页。未来抓取须另行裁决。 |
+| 间接提示注入 | search-context.test.ts：供应商文本只能留在单个转义资料块内；chat-adapter-stream-source.test.ts：Step3: 供应商角色指令只留在用户资料且模型输出不能触发额外能力 | 单个转义资料块、固定SEARCH_SYSTEM_RULE、供应商不新增角色、完整URL不入模型、无tools / 额外搜索、伪命令只作正文。证明构造与权限边界，不证明模型语义免疫；不是OS文件权限隔离证明。 |
+| XSS / 伪装链接 / Discord提及预览 | search-context.test.ts：危险URL不进入来源或持久化元数据、域名只能来自URL解析且IDN使用解析后的hostname；json-session-storage.test.ts：读取时拒绝磁盘篡改；session-api.test.ts：%s不能经刷新或重启回放下发 | 服务端协议 / 凭据 / 控制与空白 / 长度 / 域名 / 严格元数据校验；客户端独立安全渲染、Discord提及预览与限长留Task 21。 |
+| 无界响应 / 不合作上游 / 锁 | search-adapter.test.ts：响应流超过256KiB时停止读取、坏JSON返回本地错误且不泄露原始文本、拒绝异常results结构；search-timeout.test.ts：慢速分块不刷新搜索期限且不等待永不结束的cancel、超时后迟到的fetch响应仅取消响应体而不接受来源、同步解析越过期限也拒绝结果而不依赖计时器先执行；chat-adapter-stream-source.test.ts：Step3取消真实适配器、既有搜索超时本地降级不等待迟到结果且不重搜重扣 | 限读、绝对期限不刷新、取消无普通生成 / 无新消息、迟到只清理、锁释放。真实端到端延迟与网络实现留Task 22。 |
+| 身份伪造 / 回放重复收费 / 重启reset | chat-stream.test.ts：非loopback连接%s不信任身份或伪造转发头、非法Discord身份%j按缺失处理、只有无Origin本机请求可提供可信Discord身份且请求体的可信字段被忽略；source-budget.test.ts：请求体伪造web来源、回放与两种冲突不调用预算；search-budget.test.ts：全局日额度不可通过重建守卫绕过且UTC换日正常开启、读写期间取消；session-api.test.ts：进程重装和reset不清Discord日额度且预算拒绝仍普通生成、T3账本失败回放 | Origin / 真实socket边界、不信任转发头、持久化来源决定身份、回放 / 正文及模式冲突不扣额、重启换日reset和N4。仍是私有本机信任边界，不是公网认证。 |
+| 上下文挤占 / 校准污染 | search-context.test.ts：按实际隔离块估算先缩摘要后减来源且展示摘要与注入保持一致、最小来源仍超限时清空而不保留一字摘要绕过阈值；context-window.test.ts：含资料的成功用量只提高搜索系数并限制上限4、搜索估算取共享与搜索系数较大值普通选择不受搜索系数影响；chat-adapter-stream-source.test.ts：长URL只保留元数据且搜索用量不污染普通系数，空正文不校准、T1长历史 / 最小输入回归 | 复用Step 2 / T1既有验证，2048估算上限 / N1 / 计数≤2 / context_limit；估算不保证真实token数学上界。 |
+| 保存回放一致性 / 错误泄漏 | session-api.test.ts：SSE与刷新及重新装配后的回放保留相同来源且不重新搜索、%s不能经刷新或重启回放下发；chat-adapter-stream-source.test.ts：搜索成功后模型空正文或保存失败不发成功来源；chat-error-safety.test.ts：Step3: %s仅产生本地降级及白名单日志、既有固定错误与日志白名单 | 最终保存后done、严格读取验证、异常值不进入error / 降级诊断或日志；合法成功sources允许校验后的URL，普通模型正文不适用错误脱敏禁词。 |
+
+### TDD与失败观察
+
+- 真实缺陷：`危险URL不进入来源或持久化元数据：%s`中NBSP（U+00A0）与全角空格（U+3000）两例先失败，错误为预期空来源却收到含空白URL的来源。用户补充确认后，仅在server/search-context.ts的safeUrl拒绝字符集加入\s，规范化与持久化校验共用修复；33项资料测试随后通过。
+- 开发期夹具校正：`Step3: 供应商角色指令只留在用户资料且模型输出不能触发额外能力`最初错误预期service.getSession调用1次、实际0次；真实会话读取走inspectRequest，改为断言模型输出没有调用此额外入口，并检查无tools / 额外搜索 / 额外写入。
+- 开发期夹具校正：`Step3: %s仅产生本地降级及白名单日志`的301 / 302 / 303 / 307 / 308 / 401 / 429最初把白名单name预期写成Error，实际是ChatError；改为精确断言既有白名单字段和值。
+- 开发期夹具校正：`Step3: 取消真实适配器的读取挂起不生成不写盘且迟到响应仅清理`曾5000ms超时；ReadableStream默认提前pull，ready早于适配器持有reader，改用highWaterMark:0，使取消点严格发生在实际读取时。不延长超时、不放宽断言，随后通过。
+- 全量第3轮出现既有用例失败：`server/test/deployment-validation.test.ts` → `Task 18 Step 2: online validation > reevaluates old samples only with matching measured journal evidence without rewriting them`，第96行`report.eligible_24h`断言为`AssertionError: expected false to be true // Object.is equality`。该轮650/651通过；根因未确认，不改该测试或deploy脚本，不宣称等同Claude此前未定位的偶发失败。完整JSON / 控制台输出保留在`/private/tmp/task20-step3-run3.json`和`/private/tmp/task20-step3-run3.log`。
+- 源码及测试在以下8轮间未改动；第4至8轮连续5次全量通过，未放宽既有断言。根目录与Web / server / core / bot类型检查、Web / Express / Bot三项构建及git diff --check通过；既有React act提示和esbuild服务端包体大小标记仍在，不是新增诊断。
+
+| 全量轮次 | 文件 | 用例 | 结果 |
+| :--- | :--- | :--- | :--- |
+| 1 | 41/41 | 651/651 | 通过 |
+| 2 | 41/41 | 651/651 | 通过 |
+| 3 | 40/41 | 650/651 | 既有部署证据用例失败，详见上文 |
+| 4 | 41/41 | 651/651 | 连续通过1/5 |
+| 5 | 41/41 | 651/651 | 连续通过2/5 |
+| 6 | 41/41 | 651/651 | 连续通过3/5 |
+| 7 | 41/41 | 651/651 | 连续通过4/5 |
+| 8 | 41/41 | 651/651 | 连续通过5/5 |
+
+8轮完整输出和机器结果位于`/private/tmp/task20-step3-run<N>.log`及对应`.json`，摘要如表。
+
+### 验证边界
+
+仅注入Mock fetch / 模型、临时JSON / 账本及本机HTTP；不调用真实Tavily / Gemini / Discord，不访问VPS、真实Key或会话，不改部署与生产搜索装配。Task 21安全渲染 / S2 / S3、Task 22许可 / 真实网络与延迟、P1-4 / R3、Q4保持原授权边界，N3未解除。

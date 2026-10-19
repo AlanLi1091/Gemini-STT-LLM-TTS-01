@@ -196,6 +196,38 @@ describe('K1: 空 done 纵深防御与安全日志', () => {
 });
 
 describe('Task 20 Step 1: 搜索错误脱敏', () => {
+  it.each(['301', '302', '303', '307', '308', '401', '429', '坏JSON', '坏结构', '超大响应', 'fetch异常'])('Step3: %s仅产生本地降级及白名单日志', async mode => {
+    const { TavilySearchAdapter } = await import('../search-adapter');
+    const { readSearchConfig } = await import('../search-config');
+    const { SEARCH_DEGRADED_NOTICE } = await import('@core/index');
+    const fetcher = vi.fn<typeof fetch>(async () => {
+      if (mode === 'fetch异常') throw Object.assign(new Error(raw), { name: raw, stack: raw, query: raw, apiKey: secret });
+      if (mode === '坏JSON') return new Response(raw);
+      if (mode === '坏结构') return Response.json({ results: { raw, key: secret } });
+      if (mode === '超大响应') return new Response(new Uint8Array(256 * 1024 + 1));
+      return new Response(raw, { status: Number(mode), headers: { Location: 'http://169.254.169.254/' + secret } });
+    });
+    const model = adapter(); const source = createSessionChatStreamSource(model, service, undefined, undefined, undefined, {
+      adapter: new TavilySearchAdapter({ apiKey: secret, fetcher }), config: readSearchConfig({ SEARCH_LEDGER_PATH: join(directory, 'ledger.json') }),
+    });
+    const request = input(sessionId); request.search = true; request.messages[0].content = 'private-query-marker';
+    const events = await collect(source, request);
+    expect(events.at(-1)).toEqual({ event: 'done', data: { content: 'private-model-body', usage: undefined,
+      search: { status: 'degraded', reason: 'provider_failure', sources: [], notice: SEARCH_DEGRADED_NOTICE } } });
+    expect(events.some(e => e.event === 'error')).toBe(false);
+    expect(fetcher).toHaveBeenCalledOnce(); expect(model.stream).toHaveBeenCalledOnce();
+    expect(fetcher.mock.calls[0][0]).toBe('https://api.tavily.com/search');
+    expect(fetcher.mock.calls[0][1]?.headers).toMatchObject({ Authorization: `Bearer ${secret}` });
+    const logs = vi.mocked(console.warn).mock.calls; expect(logs).toHaveLength(1);
+    expect(Object.keys(JSON.parse(String(logs[0][0]))).sort()).toEqual(Number.isInteger(Number(mode))
+      ? ['code', 'name', 'stage', 'status'] : ['code', 'name', 'stage']);
+    expect(JSON.parse(String(logs[0][0]))).toEqual({ stage: 'search', code: 'NETWORK_ERROR',
+      name: Number.isInteger(Number(mode)) ? 'ChatError' : 'Error',
+      ...(Number.isInteger(Number(mode)) ? { status: Number(mode) } : {}) });
+    for (const marker of [secret, 'private-query-marker', '169.254.169.254', 'https://example.test', '/var/lib', 'stack']) {
+      expect(JSON.stringify(events)).not.toContain(marker); expect(JSON.stringify(logs)).not.toContain(marker);
+    }
+  });
   it('search阶段只记录白名单且保留count阶段', async () => {
     const { safeStreamError } = await import('../chat-errors'); const log = vi.fn();
     const error = { name: raw, message: raw, stack: raw, query: raw, url: raw, status: 429 };

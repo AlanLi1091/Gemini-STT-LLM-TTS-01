@@ -1,6 +1,6 @@
 import { readSearchConfig } from '../search-config';
 // @vitest-environment node
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import request from 'supertest';
@@ -43,6 +43,40 @@ async function createTestContext() {
 
 afterEach(async () => {
   await Promise.all(temporaryDirectories.splice(0).map((directory) => rm(directory, { recursive: true })));
+});
+
+describe('Task 20 Step 3: 篡改元数据的HTTP边界', () => {
+  it.each(['危险协议', '超过三条', '超长URL', '多余字段'])('%s不能经刷新或重启回放下发', async mode => {
+    const c = await createTestContext(); const { MockSearchAdapter } = await import('../search-adapter');
+    const search = new MockSearchAdapter(); const call = vi.spyOn(search, 'search');
+    const config = readSearchConfig({ SEARCH_LEDGER_PATH: join(c.dataDirectory, 'ledger.json') });
+    const makeApp = (service: SessionService) => createApp({ sessionService: service,
+      chatStreamSource: createSessionChatStreamSource(c.adapter, service, undefined, undefined, undefined, { adapter: search, config }) });
+    const session = await c.sessionService.createSession(); const body = { sessionId: session.id,
+      requestId: '77777777-7777-4777-8777-777777777777', search: true, messages: [{ role: 'user', content: '问题' }] };
+    await request(makeApp(c.sessionService)).post('/api/chat/stream').send(body).expect(200);
+    const path = join(c.dataDirectory, `${session.id}.json`); const document = JSON.parse(await readFile(path, 'utf8'));
+    const metadata = document.messages[1].search; const source = metadata.sources[0];
+    if (mode === '危险协议') source.url = 'javascript:tampered-secret';
+    if (mode === '超过三条') metadata.sources = Array.from({ length: 4 }, (_, i) => ({ ...source, index: i + 1 }));
+    if (mode === '超长URL') source.url = 'https://example.com/' + 'x'.repeat(2048);
+    if (mode === '多余字段') source.raw_content = 'tampered-secret';
+    const tampered = JSON.stringify(document); await writeFile(path, tampered);
+    const log = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      for (const service of [c.sessionService, new SessionService(new JsonSessionStorage(c.dataDirectory))]) {
+        const app = makeApp(service);
+        const loaded = await request(app).get(`/api/sessions/${session.id}`).expect(400);
+        expect(loaded.body).toEqual({ error: 'Invalid chat session id.' });
+        const replay = await request(app).post('/api/chat/stream').send(body).expect(200);
+        expect(replay.text).toBe('event: error\ndata: {"error":{"code":"UNKNOWN","message":"会话读取或保存失败，请稍后重试。"}}\n\n');
+      }
+      expect(call).toHaveBeenCalledOnce(); expect(c.adapter.histories).toHaveLength(1);
+      expect(JSON.stringify(log.mock.calls)).not.toContain('tampered-secret');
+      expect(JSON.stringify(log.mock.calls)).not.toContain(c.dataDirectory);
+      expect(await readFile(path, 'utf8')).toBe(tampered);
+    } finally { log.mockRestore(); }
+  });
 });
 
 describe('Task 14 Step 2: 会话 API 与多轮上下文', () => {

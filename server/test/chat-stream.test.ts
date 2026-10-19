@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
+import express from 'express';
 import type { ChatStreamSource } from '../chat-stream';
 import { createApp } from '../app';
 
@@ -237,6 +238,29 @@ describe('P1-3: HTTP SSE 错误安全', () => {
 });
 
 describe('Task 20 Step 1: 搜索HTTP输入', () => {
+  it.each(['203.0.113.10', '10.0.0.2', '::ffff:192.168.1.2', '2001:db8::1'])('非loopback连接%s不信任身份或伪造转发头', async address => {
+    const seen: Array<string | undefined> = [];
+    const source: ChatStreamSource = async function* (_request, options) {
+      seen.push(options.trustedDiscordUserId); yield { event: 'done', data: { content: 'ok' } };
+    };
+    // Override only the test connection's address, before entering the real app.
+    const wrapper = express(); wrapper.use((req, _res, next) => {
+      Object.defineProperty(req.socket, 'remoteAddress', { configurable: true, value: address }); next();
+    });
+    wrapper.use(createApp({ chatStreamSource: source }));
+    await request(wrapper).post('/api/chat/stream').set('X-Forwarded-For', '127.0.0.1').send({
+      ...validRequest, search: true, discordUserId: '333333333333333333', trustedDiscordUserId: '333333333333333333',
+    }).expect(200);
+    expect(seen).toEqual([undefined]);
+  });
+  it.each(['', '1'.repeat(16), '1'.repeat(21), '１２３４５６７８９０１２３４５６７８', '333333333333333333\n', 333333333333333333, null, {}])('非法Discord身份%j按缺失处理', async discordUserId => {
+    let seen: string | undefined = 'unexpected';
+    const source: ChatStreamSource = async function* (_request, options) {
+      seen = options.trustedDiscordUserId; yield { event: 'done', data: { content: 'ok' } };
+    };
+    await request(createApp({ chatStreamSource: source })).post('/api/chat/stream').send({ ...validRequest, search: true, discordUserId }).expect(200);
+    expect(seen).toBeUndefined();
+  });
   it('拒绝非布尔搜索字段以及无状态搜索请求', async () => {
     const source = vi.fn<ChatStreamSource>(async function* () { yield { event: 'done', data: { content: 'ok' } }; });
     const app = createApp({ chatStreamSource: source, allowStateless: true });
