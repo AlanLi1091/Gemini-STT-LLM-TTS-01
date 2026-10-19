@@ -2,9 +2,11 @@
 
 ## 当前阶段
 
-Phase 1–4已结项；Phase 5 Part 1 Task 19 Step 1–3与Task 20 Step 1–2已交付。Step 1及S1 / S4已复核通过；Step 2原复核不通过的T1–T3已修复并完成Mock回归，等待Claude复核。Task 20 Step 3与Task 21–22仍未授权，Step 3未勾选 / 未开工。生产未装配搜索网络，Tavily用途许可 / 性能证据待补，N3真实验收与上线门槛未解除；K1及搜索代码未部署，现网保持v002-6f81048。
+Phase 1–4已结项；Phase 5 Part 1 Task 19 Step 1–3与Task 20 Step 1–2已交付。Step 1及S1 / S4已复核通过；Step 2原复核不通过的T1–T3已修复并经Claude复核通过，Task 20 Step 1–2闭环。Task 20 Step 3与Task 21–22仍未授权，Step 3未勾选 / 未开工。生产未装配搜索网络，Tavily用途许可 / 性能证据待补，N3真实验收与上线门槛未解除；K1及搜索代码未部署，现网保持v002-6f81048。
 
 ## 当前授权
+
+- **本轮授权已完成（2026-10-18）**：用户指派 Claude 复核 T1–T3 修复（`324b02e` / `04a88cd`）并确认记录；复核通过。T1：删除第三轮资料缩短、第二轮与select共用0.8安全阈值，Claude复现脚本在20轮历史、回复100 / 200 / 400字时均保留3条100字摘要并删除最旧历史（保留32 / 20 / 10条历史消息）；T2：读期间取消不扣额、写期间取消保留预留，后续请求均正常准入；T3：坏账本降级原因为ledger_unavailable。本机全量41/41文件568/568用例与类型检查通过；首次复跑出现1条偶发失败，其后16次（含并行负载）均未复现，输出未保留、用例未定位，登记为待观察的时间敏感偶发失败。仅修改backlog / history / status；本提交后按累计提交数创建annotated tag。Task 20 Step 3待用户指派，Task 21–22未授权。
 
 - **本轮授权已完成（2026-10-18）**：用户指派T1–T3修复并确认15文件计划后修改；T1删除为完整历史挤压资料的第三轮fit，第二轮按无历史最小输入与select共用0.8安全阈值；T2取消只结束本地等待，tail保持串行并在IO结束后让后续请求重读准入，不永久关闭；T3新增ledger_unavailable，真实账本故障仍按N4关闭，额度拒绝保留admission_denied。新增9项，全量41/41文件568/568用例、根 / 四包类型检查、三构建、台账 / diff及15文件范围验证通过。修复提交`324b02e`（`fix: preserve search sources and recover admission after cancellation`）已推送origin/test；本状态收尾后按累计214提交创建并推送annotated tag `V0.0.2-build.214`，最终远端核验见主会话汇报。全部Mock / 临时存储，无真实搜索 / 模型 / Discord / VPS / 会话访问、不读取真实Key、不改部署文件、不新增依赖或部署。完成后等待Claude复核，Step 3仍未勾选 / 未开工，Task 21及其他范围未授权。
 
@@ -63,7 +65,7 @@ Phase 1–4已结项；Phase 5 Part 1 Task 19 Step 1–3与Task 20 Step 1–2已
 
 ## 下一步计划
 
-T1–T3已修复交付，等待用户指派Claude复核；复核通过前不进入Task 20 Step 3。Step 3与Task 21–22仍未授权。Task 21负责S2 / S3、Web开关、Discord命令及来源展示；N3未解除，不真实验收、不部署。P1-4 / R3、M1 / VPS扫描、Q4和其他残余继续待另行授权。
+T1–T3修复已经Claude复核通过（2026-10-18）；下一个待办为用户单独指派 Task 20 Step 3。偶发测试失败1次未定位，后续测试再现时须定位具体用例。原记录：T1–T3已修复交付；Step 3与Task 21–22仍未授权。Task 21负责S2 / S3、Web开关、Discord命令及来源展示；N3未解除，不真实验收、不部署。P1-4 / R3、M1 / VPS扫描、Q4和其他残余继续待另行授权。
 
 ## 本轮验收与遗留
 
