@@ -6,6 +6,8 @@ Phase 1–4已结项；Phase 5 Part 1 Task 19与Task 20已完成并复核通过�
 
 ## 当前授权
 
+- **本轮授权已完成（2026-10-19）**：用户确认留档 Claude 起草的 Task 21 Step 2（含 W1 / W2 子步骤）GPT 提示词，新增 `dev-docs/prompts/task21-step2-gpt.md` 并记录 history。仅文档，不构成开工授权；Task 21 Step 2 以用户对GPT的实际指派为准，Task 22未授权。
+
 - **本轮授权已完成（2026-10-19）**：用户指派 Claude 复核 GPT Task 21 Step 1（`30fbfa3` / `a02bb98`）并记录；复核通过，本机连续3次全量43/43文件742/742用例、类型检查及构建通过，危险渲染API扫描0匹配。W1（低，降级提示在正文后与“以下回复”不符）、W2（低，无状态分支发送search:true致请求无效）登记于backlog Task 21 Step 2首个子步骤；既有D12差异（停止保留片段、末条assistant无法重试）属P1-4 / R3，须在Task 21收尾人工验收前由用户决定是否授权。仅文档；本状态收尾提交后按累计提交数创建annotated tag。Task 21 Step 2、Task 22未授权。
 
 - **本轮授权已完成（2026-10-19）**：用户确认22文件计划并指派“请开工”，完成Task 21 Step 1与首个子步骤V1。CONTROL只补U+2028 / U+2029，回归先红后绿；Web默认关闭逐轮开关、Tavily外发 / 保存告知、500 Unicode码点校验、已接受发送后复位、原模式与UUID重试复用落地。SSE done.search经可选ChatChunk→Hook→assistant，客户端结构校验覆盖SSE / 会话恢复 / 渲染；最终来源编号、纯文本标题摘要、new URL解析真实域名与HTTP(S) / 凭据 / 控制空白 / 长度校验、安全新窗口属性、无效URL仅标题域名，固定降级文案独立于正文。单done回放与旧会话兼容，来源最终加入遵守滚动守卫，停止后迟到done不展示来源。新增91项，最终第5–7轮连续3次43/43文件742/742用例、根及四包类型检查和三构建通过，台账逐文件计数一致；首轮沙箱37/43文件662/742用例，listen EPERM及关联超时80项完整登记tests.md，获准沙箱外后第2–7轮均通过；未修改部署测试或放宽断言。渲染API rg扫描0匹配，安全结论限定为本步应用渲染边界。交付提交`30fbfa3`（`feat: add per-turn web search and safe source display`）已推送origin/test；本状态收尾后按累计226创建并推送annotated tag `V0.0.2-build.226`，最终远端核验见主会话汇报。D12既有保留片段及末条assistant无法重试差异仅记录，P1-4 / R3未实施；全部上游Mock、无真实Key / 会话 / Tavily / Gemini / Discord / VPS访问、无新依赖或部署，生产无搜索网络。22文件范围完成，既有.zcodeignore保留不提交；完成后停止等待Claude复核，Step 2（含S2 / S3）、Task 22、Q4及其余项未授权，N3保留。
