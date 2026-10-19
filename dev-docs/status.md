@@ -6,6 +6,8 @@ Phase 1–4 已完成并正式结项。Phase 5 Part 1 Task 19 Step 1–3已完�
 
 ## 当前授权
 
+- **本轮授权已完成（2026-10-18）**：用户采纳 Claude 建议裁决 Task 20 前置 Q1（仅搜索轮次调整准入顺序）、Q2（日志阶段保留count）、Q3（Discord缺可信身份降级普通生成）及 Step 1 / 2 边界（Step 1 做资料块格式 / 隔离与固定上限Mock资料，2048子预算 / N1 / 账本 / 期限归Step 2），登记于backlog Task 20前置与history。仅文档；ADR正文修订留给Task 20 Step 1首个子步骤。Task 20–22均未授权。
+
 - **本轮授权已完成（2026-10-13）**：用户指派 Claude 复核 GPT Task 19 Step 3（`3c07804` / `9a2ca66`）并确认记录；复核通过，Q1（准入顺序与ADR-012 / 013冲突，中）、Q2（日志阶段漏count）、Q3（Discord缺可信身份处理）、Q4（AGENTS.md / Task20 Step3文字过时）写入history，backlog Task 20登记前置（提交 `44fd3d4`）。仅文档，未改ADR / 源码 / 测试 / 配置；本状态收尾提交后按累计194提交创建annotated tag `V0.0.2-build.194`。Task 20–22均未授权。
 
 - **本轮授权已完成（2026-10-13）**：用户指派 Task 19 Step 3并批准八文件计划；ADR-015、ADR-007 / ADR-009目标流式契约、roadmap / risks / backlog / history / status同步。仅文档，Tavily用途许可 / 性能待补，N1–N4及D12实施授权边界保留；不修改应用 / 测试 / 配置，不调用真实API，不部署。Task 20–22、P1-4 / R3实施、M1 / VPS扫描及其他残余未授权。交付提交 `3c07804`（`docs: finalize Task 19 Step 3 external search architecture`）已推送origin/test；本状态收尾提交后，按最终累计192提交创建annotated tag `V0.0.2-build.192`并推送，最终远端核验见主会话汇报。
@@ -43,9 +45,11 @@ Phase 1–4 已完成并正式结项。Phase 5 Part 1 Task 19 Step 1–3已完�
 
 ## 下一步计划
 
-Claude已复核Task 19 Step 3通过（2026-10-13）；下一个待办仍为用户单独指派 Task 20 Step 1，但开工前须先定案Q1准入顺序并同步修订ADR-012 / 013，修正Q2 / Q3，见backlog Task 20前置。原记录：Task 19 Step 3架构落档验证已通过，本轮Git闭环后停止；下一个待办为用户单独指派 Task 20 Step 1（按 ADR-015用Mock实现搜索接入 / 触发及来源共享契约）。P1-4 / R3语义已由D12裁决，但UI与持久化实施须另行授权，并在相关验收前明确依赖。Tavily共享 / 长期留存 / 数据用途许可与中文质量 / 生产延迟仍待补；N3门槛未解除，Task 22真实验收与VPS上线不得进行。M1 / VPS扫描、其余残余、Part 2 / Part 3均未授权。
+Claude已复核Task 19 Step 3通过（2026-10-13）；Q1–Q3与Step边界已于2026-10-18裁决（见backlog Task 20前置）；下一个待办为用户单独指派 Task 20 Step 1，其首个子步骤须先把裁决写入ADR-012 / 013 / 015（及ADR-009的Q2）再写代码。原记录：Task 19 Step 3架构落档验证已通过，本轮Git闭环后停止；下一个待办为用户单独指派 Task 20 Step 1（按 ADR-015用Mock实现搜索接入 / 触发及来源共享契约）。P1-4 / R3语义已由D12裁决，但UI与持久化实施须另行授权，并在相关验收前明确依赖。Tavily共享 / 长期留存 / 数据用途许可与中文质量 / 生产延迟仍待补；N3门槛未解除，Task 22真实验收与VPS上线不得进行。M1 / VPS扫描、其余残余、Part 2 / Part 3均未授权。
 
 ## 本轮验收与遗留
+
+- **Task 20 前置裁决（2026-10-18）**：Q1–Q3及Step 1 / 2边界登记于backlog / history / status；未改ADR / 源码 / 测试 / 配置，未运行测试（无代码变更）；既有未跟踪 `.zcodeignore` 保留。
 
 - **Claude Task 19 Step 3 复核（2026-10-13）**：复核 `3c07804` / `9a2ca66` 通过，确认仅八份文档变更、diff空白及ADR-015本地链接有效，ADR引用的现有代码基线一致；Q1–Q4写入history、backlog Task 20前置同步。仅修改backlog / history / status，测试台账不变、未运行测试（无代码变更）；既有未跟踪 `.zcodeignore` 保留。
 
