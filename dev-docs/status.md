@@ -2,9 +2,11 @@
 
 ## 当前阶段
 
-Phase 1–4已结项；Phase 5 Part 1 Task 19 Step 1–3、Task 20 Step 1–2已完成并复核通过，Task 20 Step 3已交付并经Claude复核通过，Task 20闭环。Step 3以Mock补齐ADR-015 §6七行威胁的服务端验证，并最小修复Unicode空白URL过滤；backlog已勾选。Task 21–22仍未授权。生产未装配搜索网络，Tavily用途许可 / 性能证据待补，N3真实验收与上线门槛未解除；K1及搜索代码未部署，现网保持v002-6f81048。
+Phase 1–4已结项；Phase 5 Part 1 Task 19与Task 20已完成并复核通过。Task 21 Step 1（含V1）已交付，待Claude复核；Web逐轮搜索意图、最终来源 / 独立降级提示、安全链接、刷新与回放已接通。Task 21 Step 2（Discord，含S2 / S3）及Task 22仍未授权。生产未装配搜索网络，Tavily用途许可 / 性能证据待补，N3真实验收与上线门槛未解除；K1及搜索代码未部署，现网保持v002-6f81048。
 
 ## 当前授权
+
+- **本轮授权已完成（2026-10-19）**：用户确认22文件计划并指派“请开工”，完成Task 21 Step 1与首个子步骤V1。CONTROL只补U+2028 / U+2029，回归先红后绿；Web默认关闭逐轮开关、Tavily外发 / 保存告知、500 Unicode码点校验、已接受发送后复位、原模式与UUID重试复用落地。SSE done.search经可选ChatChunk→Hook→assistant，客户端结构校验覆盖SSE / 会话恢复 / 渲染；最终来源编号、纯文本标题摘要、new URL解析真实域名与HTTP(S) / 凭据 / 控制空白 / 长度校验、安全新窗口属性、无效URL仅标题域名，固定降级文案独立于正文。单done回放与旧会话兼容，来源最终加入遵守滚动守卫，停止后迟到done不展示来源。新增91项，最终第5–7轮连续3次43/43文件742/742用例、根及四包类型检查和三构建通过，台账逐文件计数一致；首轮沙箱37/43文件662/742用例，listen EPERM及关联超时80项完整登记tests.md，获准沙箱外后第2–7轮均通过；未修改部署测试或放宽断言。渲染API rg扫描0匹配，安全结论限定为本步应用渲染边界。交付提交`30fbfa3`（`feat: add per-turn web search and safe source display`）已推送origin/test；本状态收尾后按累计226创建并推送annotated tag `V0.0.2-build.226`，最终远端核验见主会话汇报。D12既有保留片段及末条assistant无法重试差异仅记录，P1-4 / R3未实施；全部上游Mock、无真实Key / 会话 / Tavily / Gemini / Discord / VPS访问、无新依赖或部署，生产无搜索网络。22文件范围完成，既有.zcodeignore保留不提交；完成后停止等待Claude复核，Step 2（含S2 / S3）、Task 22、Q4及其余项未授权，N3保留。
 
 - **本轮授权已完成（2026-10-19）**：用户指派 Claude 起草并留档 Task 21 Step 1（含 V1 子步骤）GPT 提示词，新增 `dev-docs/prompts/task21-step1-gpt.md` 并记录 history。仅文档，不构成开工授权；Task 21 Step 1 以用户对GPT的实际指派为准，Step 2与Task 22未授权。
 
@@ -68,14 +70,16 @@ Phase 1–4已结项；Phase 5 Part 1 Task 19 Step 1–3、Task 20 Step 1–2已
 - **授权任务**：2026-10-07 V0.0.2 私有VPS部署、双入口与管理员重置验收完成；四份交付记录87b1617与状态提交8b5731c已推送origin/test，发布PR为[#5](https://github.com/AlanLi1091/Gemini-STT-LLM-TTS-01/pull/5)。本提交补充最终交付信息，随后按已确认计划合并PR并创建annotated tag `V0.0.2-build.149`（test最终提交累计数，非main合并提交计数）；最终远端PR / tag核验见主会话汇报。Phase 5、P1与其余残余仍未授权。
 - **VPS 现状**：Vultr Seattle、1核1G、Ubuntu 26.04.1，内核 7.0.0-38、Node v24.21.0，Auto Backup 已开启；gemini-admin 公钥管理，禁用 root / 密码 SSH，UFW 仅开放 22/tcp。gemini-server / gemini-bot 两个非 root systemd 服务 active / enabled，Express 仅监听 127.0.0.1:3001，数据目录独立持久化。无域名、仅本人使用，通过 SSH 隧道访问 http://127.0.0.1:18080，详见 [运维说明](../deploy/README.md)。服务保持常驻。 当前发行物v002-6f81048，两个服务实际进程cwd均为该目录，NRestarts=0；server.env配置生成10 / Web保留4、计数20 / Web保留8及首包60秒 / 总90秒，bot.env和systemd单元未改。
 - **最近交付 commit**：`ba0ac12` — `fix: reject whitespace source URLs and verify search security boundaries`，已推送origin/test；本状态收尾后tag `V0.0.2-build.220`。Task 20 Step 3待Claude复核；现网仍v002-6f81048，本轮无部署。
-- **当前测试基线**：Task 20 Step 3全量41/41文件651/651用例（新增83），根 / 四包类型检查及Web / Express / Bot三构建通过。8轮完整全量中第3轮650/651（既有部署证据用例失败，根因未确认），第4–8轮连续5次651/651。台账41文件及各文件用例数与机器报告一致，14文件批准范围和diff检查通过；完整报告`/private/tmp/task20-step3-run<N>.json`及`.log`不入Git。HTTP测试按既有listen EPERM限制获准在沙箱外使用本机临时端口；全部上游Mock，无真实API / Key / 生产数据或VPS访问。现网仍462/462基线；既有React act提示与服务端1.8mb大小标记保留，无新增编译诊断。
+- **当前测试基线**：Task 21 Step 1全量43/43文件742/742用例（新增91），最终源码连续3轮通过；根 / 四包类型检查及Web / Express / Bot三构建通过，台账43文件逐项计数与JSON一致。全部7轮全量及首轮沙箱listen EPERM / 关联超时明细见tests.md；完整输出`/private/tmp/task21-full-<N>.json`及`.log`不入Git。HTTP测试获准沙箱外使用本机临时端口，所有外部上游Mock。22文件批准范围和diff检查通过；无真实API / Key / 生产数据 / VPS访问，现网仍462/462基线，服务端1.8mb既有大小标记保留。
 - **当前功能验收**：Playground 仅连接后端服务；启动时恢复最近活动会话，无可恢复会话时创建新会话。发送仅提交本轮输入、`sessionId` 与稳定 `requestId`；失败重试复用同一 `requestId`，不重复保存输入，已完成回复直接回放（ADR-012）。服务端从完整持久化日志中选取有限上下文窗口送入模型，完整日志不变（ADR-013）。清空对话归档旧会话并切换至新会话。Discord 管理员可在指定频道以 `@Bot /reset` 归档并重置频道会话（ADR-014）。旧版直连设置迁移为后端模式并清除浏览器存储的 Key 字段。
 
 ## 下一步计划
 
-Task 20 Step 3已经Claude复核通过（2026-10-19）；下一个待办为用户单独指派 Task 21，其开工前（或首个子步骤）须先修复V1。deployment-validation第96行偶发失败另行立项。原记录：停止等待Claude复核Task 20 Step 3（交付ba0ac12及本状态收尾）。本轮完整记录了一次既有部署证据用例偶发失败，随后连续5轮全量通过，根因未确认，不宣称Claude此前未定位的失败已解决。下一开发待办为Task 21，仍须用户单独指派；其负责S2 / S3、Web开关、Discord命令及安全来源展示。Task 22真实网络 / 延迟与用途许可验证仍受N3约束，不真实验收、不部署。P1-4 / R3、M1 / VPS扫描、Q4和其他残余继续待另行授权。
+停止，等待Claude复核Task 21 Step 1（交付30fbfa3及本状态收尾）；后续开发为用户单独指派Task 21 Step 2，包含Discord命令 / 来源展示与S2 / S3。D12既有UI片段和重试差异归P1-4 / R3，未顺带修改；deployment-validation第96行偶发失败根因未确认、另行立项，本轮沙箱EPERM失败与其不同。Task 22真实网络 / 延迟验收与上线受N3用途许可门槛约束；不真实验收、不部署，P1-4 / R3、M1 / VPS扫描、Q4及其他残余待另行授权。
 
 ## 本轮验收与遗留
+
+- **Task 21 Step 1 / V1（2026-10-19，待Claude复核）**：22文件，新增91项，43/43文件742/742用例最终连续3轮通过，类型 / 三构建 / 台账 / 安全扫描通过；V1与无效URL仅标题域名回退均有先红后绿证据。完整实现、安全与TDD映射、沙箱80项环境失败明细见tests.md；backlog已勾选并修订Step 1，history已追加。生产无搜索网络，D12差异、S2 / S3、N3 / Task 22及既有偶发失败保留，未跟踪.zcodeignore不提交。
 
 - **Claude Task 20 Step 3 复核（2026-10-19）**：复核通过，连续5次全量651/651用例通过；V1登记于backlog Task 21前置，偶发失败用例已定位、根因未确认。仅修改backlog / history / status，测试台账不变；既有未跟踪 `.zcodeignore` 保留。
 
