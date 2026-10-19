@@ -87,3 +87,15 @@ describe('P0-1: 超限契约', () => {
     expect(event.data.error.code).toBe('CONTEXT_LIMIT');
   });
 });
+
+describe('Task 20 Step 1: 搜索共享契约', () => {
+  it('显式搜索请求与最终来源不改变chunk和旧请求结构', async () => {
+    const { SEARCH_DEGRADED_NOTICE } = await import('../index');
+    const req: ChatStreamRequest = { sessionId: 'session', search: true, messages: [{ role: 'user', content: '问题' }] };
+    const event: SseDoneEvent = { event: 'done', data: { content: '回复', search: {
+      status: 'degraded', reason: 'missing_identity', sources: [], notice: SEARCH_DEGRADED_NOTICE,
+    } } };
+    expect(req.search).toBe(true); expect(event.data.search?.status).toBe('degraded');
+    expectTypeOf<ChatSseEvent['event']>().toEqualTypeOf<'chunk' | 'done' | 'error'>();
+  });
+});

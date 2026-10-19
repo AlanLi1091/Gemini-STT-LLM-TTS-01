@@ -1,3 +1,4 @@
+import { isSearchMetadata } from '../search-context';
 import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -19,6 +20,7 @@ function cloneSession(session: Session): Session {
     messages: session.messages.map((message) => ({
       ...message,
       ...(message.usage ? { usage: { ...message.usage } } : {}),
+      ...(message.search ? { search: structuredClone(message.search) } : {}),
     })),
   };
 }
@@ -33,6 +35,8 @@ function isValidMessage(message: Message): boolean {
     message.id.trim().length > 0 &&
     (message.role === 'user' || message.role === 'assistant' || message.role === 'system') &&
     typeof message.content === 'string' &&
+    (message.searchRequested === undefined || (message.role === 'user' && typeof message.searchRequested === 'boolean')) &&
+    (message.search === undefined || (message.role === 'assistant' && isSearchMetadata(message.search))) &&
     Number.isFinite(message.createdAt) &&
     (message.requestId === undefined ||
       (typeof message.requestId === 'string' &&
@@ -155,7 +159,7 @@ export class JsonSessionStorage implements SessionStorage {
 
       const nextSession: Session = {
         ...session,
-        messages: [...session.messages, { ...message, ...(message.usage ? { usage: { ...message.usage } } : {}) }],
+        messages: [...session.messages, { ...message, ...(message.usage ? { usage: { ...message.usage } } : {}), ...(message.search ? { search: structuredClone(message.search) } : {}) }],
       };
       await this.writeSession(nextSession);
       return cloneSession(nextSession);

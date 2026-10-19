@@ -231,3 +231,22 @@ describe('P1-7: 计数来源参数', () => {
     expect(acquire.mock.calls).toEqual([['discord'], ['web']]);
   });
 });
+
+describe('Task 20 Step 1: 搜索窗口挂点', () => {
+  it('搜索系统规则参与本地与精确预算但不作为计数contents', async () => {
+    const policy = new ContextWindow({ inputTokens: 512 });
+    const counter = vi.fn(async (_messages: Message[]) => 1); const current = [user('问题')];
+    expect(await policy.select([], current, adapter(counter), signal(), 'web', { systemInstruction: '中'.repeat(60) })).toEqual(current);
+    expect(counter).toHaveBeenCalledOnce(); expect(counter.mock.calls[0][0]).toEqual(current);
+    await expect(policy.select([], current, adapter(), signal(), 'web', { systemInstruction: '中'.repeat(500) })).rejects.toMatchObject({ code: 'CONTEXT_LIMIT' });
+  });
+  it('降级重选共享计数上限且本地预检不调用计数', async () => {
+    const policy = new ContextWindow({ inputTokens: 512 }); const current = [user('中'.repeat(100))];
+    const counter = vi.fn(async () => 10000); const allowance = { remaining: 2 };
+    expect(() => policy.preflight([user('中'.repeat(500))])).toThrow(); expect(counter).not.toHaveBeenCalled();
+    await expect(policy.select([], current, adapter(counter), signal(), 'web', { countAllowance: allowance })).rejects.toMatchObject({ code: 'CONTEXT_LIMIT' });
+    await expect(policy.select([], current, adapter(counter), signal(), 'web', { countAllowance: allowance })).rejects.toMatchObject({ code: 'CONTEXT_LIMIT' });
+    await expect(policy.select([], current, adapter(counter), signal(), 'web', { countAllowance: allowance })).rejects.toMatchObject({ code: 'CONTEXT_LIMIT' });
+    expect(counter).toHaveBeenCalledTimes(2); expect(allowance.remaining).toBe(0);
+  });
+});

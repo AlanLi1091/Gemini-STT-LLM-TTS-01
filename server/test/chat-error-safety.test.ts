@@ -194,3 +194,16 @@ describe('K1: 空 done 纵深防御与安全日志', () => {
     expect((await storage.getSession(sessionId))!.messages.slice(0, 2)).toEqual(before!.messages);
   });
 });
+
+describe('Task 20 Step 1: 搜索错误脱敏', () => {
+  it('search阶段只记录白名单且保留count阶段', async () => {
+    const { safeStreamError } = await import('../chat-errors'); const log = vi.fn();
+    const error = { name: raw, message: raw, stack: raw, query: raw, url: raw, status: 429 };
+    for (const stage of ['search', 'count'] as const) {
+      logChatFailure(error, stage, 'NETWORK_ERROR', log);
+      expect(JSON.parse(log.mock.calls.at(-1)![0])).toEqual({ stage, code: 'NETWORK_ERROR', name: 'Error', status: 429 });
+      expect(safeStreamError(error, stage, 'NETWORK_ERROR')).toEqual({ code: 'NETWORK_ERROR', message: '网络连接失败，请稍后重试。' });
+    }
+    expect(JSON.stringify(log.mock.calls)).not.toContain(secret);
+  });
+});

@@ -1,3 +1,4 @@
+import type { SearchMetadata } from './search';
 /**
  * 前后端共享的聊天流式传输契约。
  *
@@ -31,6 +32,8 @@ export interface ChatStreamMessage {
 
 export interface ChatStreamRequest {
   messages: ChatStreamMessage[];
+  /** Explicit per-turn intent; absent means false. */
+  search?: boolean;
   /** 省略时使用无状态模式；提供时由服务端寻址持久化会话。 */
   sessionId?: string;
   /** ADR-012: stable UUID for a single user input; reused for failed retries. */
@@ -56,6 +59,7 @@ export interface SseDoneEvent {
   data: {
     content: string;
     usage?: SseUsage;
+    search?: SearchMetadata;
   };
 }
 

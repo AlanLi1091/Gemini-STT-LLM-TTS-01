@@ -154,3 +154,35 @@ describe('P0-2: 请求身份存储防线', () => {
     expect((await reloaded.getSession(session.id))!.messages.map(m => m.requestId)).toEqual([undefined, requestId, requestId]);
   });
 });
+
+describe('Task 20 Step 1: 搜索JSON兼容', () => {
+  it('旧消息仍可读取且读取操作不补写搜索字段', async () => {
+    const { storage, dataDirectory } = await createStorage(); const session = await storage.createSession();
+    await storage.appendMessage(session.id, message('old', '旧消息'));
+    const path = join(dataDirectory, `${session.id}.json`); const before = await readFile(path, 'utf8');
+    expect((await new JsonSessionStorage(dataDirectory).getSession(session.id))?.messages[0].searchRequested).toBeUndefined();
+    expect(await readFile(path, 'utf8')).toBe(before);
+  });
+  it('来源元数据重启恢复且返回对象与内部来源深拷贝隔离', async () => {
+    const { storage, dataDirectory } = await createStorage(); const session = await storage.createSession();
+    const { normalizeSearchSources } = await import('../search-context');
+    const search: import('@core/index').SearchMetadata = { status: 'succeeded', sources: normalizeSearchSources([{ title: '标题', url: 'https://example.com/a', content: '摘要' }], 123) };
+    const saved = await storage.appendMessage(session.id, { ...message('reply', '回复'), role: 'assistant', search });
+    saved.messages[0].search!.sources[0].title = 'mutated'; search.sources[0].summary = 'mutated';
+    const restored = await new JsonSessionStorage(dataDirectory).getSession(session.id);
+    expect(restored?.messages[0].search?.sources[0]).toMatchObject({ title: '标题', summary: '摘要', retrievedAt: 123 });
+  });
+  it('拒绝不合法来源状态角色与不安全URL且日志不变', async () => {
+    const { storage } = await createStorage(); const session = await storage.createSession();
+    const { normalizeSearchSources } = await import('../search-context');
+    const sources = normalizeSearchSources([{ title: '标题', url: 'https://example.com', content: '摘要' }], 123);
+    const invalid = [
+      { ...message('a', 'a'), search: { status: 'succeeded', sources } },
+      { ...message('b', 'b'), role: 'assistant', search: { status: 'succeeded', sources: [{ ...sources[0], url: 'javascript:alert(1)' }] } },
+      { ...message('c', 'c'), role: 'assistant', search: { status: 'degraded', reason: 'raw provider text', sources: [], notice: 'raw' } },
+      { ...message('d', 'd'), searchRequested: 'true' },
+    ];
+    for (const value of invalid) await expect(storage.appendMessage(session.id, value as Message)).rejects.toThrow();
+    expect((await storage.getSession(session.id))?.messages).toEqual([]);
+  });
+});

@@ -12,6 +12,8 @@ const REQUEST_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3
 
 export interface ChatStreamSourceOptions {
   signal: AbortSignal;
+  /** Server-only context derived from an Origin-free loopback request. */
+  trustedDiscordUserId?: string;
 }
 
 export type ChatStreamSource = (
@@ -24,6 +26,7 @@ export interface ChatStreamHandlerOptions {
   heartbeatIntervalMs?: number;
   /** Explicit injection for legacy stateless tests; production keeps the default false. */
   allowStateless?: boolean;
+  trustedDiscordUser?: (req: import('express').Request) => string | undefined;
 }
 
 export function isChatStreamRequest(value: unknown, allowStateless = false): value is ChatStreamRequest {
@@ -31,6 +34,8 @@ export function isChatStreamRequest(value: unknown, allowStateless = false): val
 
   const candidate = value as Partial<ChatStreamRequest>;
   if (!Array.isArray(candidate.messages)) return false;
+  if (candidate.search !== undefined && typeof candidate.search !== 'boolean') return false;
+  if (candidate.search === true && candidate.sessionId === undefined) return false;
   if (candidate.sessionId !== undefined && typeof candidate.sessionId !== 'string') return false;
 
   const validMessages = candidate.messages.every(
@@ -92,7 +97,10 @@ export function createChatStreamHandler(options: ChatStreamHandlerOptions): Requ
     heartbeat.unref();
 
     try {
-      const stream = options.source(req.body, { signal: upstreamController.signal });
+      const trustedDiscordUserId = options.trustedDiscordUser?.(req);
+      const stream = options.source(req.body, { signal: upstreamController.signal,
+        ...(trustedDiscordUserId ? { trustedDiscordUserId } : {}),
+      });
 
       for await (const event of stream) {
         if (upstreamController.signal.aborted || res.destroyed) break;

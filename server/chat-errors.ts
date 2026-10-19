@@ -3,7 +3,7 @@ import { GenerationTimeoutError } from './generation-timeout';
 import { SessionArchivedError } from './session-service';
 import { SessionNotFoundError, SessionRequestConflictError } from './storage/session-storage';
 
-export type ErrorStage = 'storage' | 'count' | 'model';
+export type ErrorStage = 'storage' | 'count' | 'search' | 'model';
 export const SAFE_ERROR_MESSAGES: Readonly<Record<ChatErrorCode, string>> = Object.freeze({
   AUTH_ERROR: '模型服务鉴权失败，请检查服务端配置。',
   RATE_LIMIT: '模型请求达到限额，请稍后重试。',
@@ -31,7 +31,7 @@ export function safeStreamError(error: unknown, stage: ErrorStage, code: ChatErr
       AUTH_ERROR: ['API Key 中包含不可见的非法字符，请重新复制粘贴。',
         'Gemini API key is required. Please configure your API key.'],
       MODEL_ERROR: ['模型达到生成长度上限但未返回正文，请稍后重新提问。', '模型计数结果无效。',
-        '模型未返回有效正文，请稍后重新提问。'],
+        '模型未返回有效正文，请稍后重新提问。', '联网搜索问题最多500个字符，请缩短后重试。'],
     };
     const hint = fixedHints[code]?.find(message => message === error.message);
     if (hint) return { code, message: hint };

@@ -235,3 +235,26 @@ describe('P1-3: HTTP SSE 错误安全', () => {
     } finally { log.mockRestore(); }
   });
 });
+
+describe('Task 20 Step 1: 搜索HTTP输入', () => {
+  it('拒绝非布尔搜索字段以及无状态搜索请求', async () => {
+    const source = vi.fn<ChatStreamSource>(async function* () { yield { event: 'done', data: { content: 'ok' } }; });
+    const app = createApp({ chatStreamSource: source, allowStateless: true });
+    for (const search of ['true', 1, {}, null]) await request(app).post('/api/chat/stream').send({ ...validRequest, search }).expect(400);
+    await request(app).post('/api/chat/stream').send({ messages: validRequest.messages, search: true }).expect(400);
+    expect(source).not.toHaveBeenCalled();
+  });
+  it('只有无Origin本机请求可提供可信Discord身份且请求体的可信字段被忽略', async () => {
+    const seen: Array<string | undefined> = [];
+    const source: ChatStreamSource = async function* (_request, options) {
+      seen.push(options.trustedDiscordUserId); yield { event: 'done', data: { content: 'ok' } };
+    };
+    const app = createApp({ chatStreamSource: source, allowedOrigins: ['https://browser.example'] });
+    const body = { ...validRequest, search: true, discordUserId: '333333333333333333', trustedDiscordUserId: '444444444444444444' };
+    await request(app).post('/api/chat/stream').send(body).expect(200);
+    await request(app).post('/api/chat/stream').set('Origin', 'https://browser.example').send(body).expect(200);
+    await request(app).post('/api/chat/stream').send({ ...body, discordUserId: 'bad' }).expect(200);
+    await request(app).post('/api/chat/stream').send({ ...validRequest, trustedDiscordUserId: body.discordUserId }).expect(200);
+    expect(seen).toEqual(['333333333333333333', undefined, undefined, undefined]);
+  });
+});

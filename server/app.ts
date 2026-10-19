@@ -88,7 +88,7 @@ export function createApp(options: AppOptions = {}): Express {
 
   const requireLocalDiscordRequest = (req: Request, res: Response): boolean => {
     const address = req.socket.remoteAddress;
-    if (req.get('Origin') || !['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(address ?? '')) {
+    if (req.headers.origin !== undefined || !['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(address ?? '')) {
       res.status(403).json({ error: 'Discord session resolution is local only.' });
       return false;
     }
@@ -161,6 +161,11 @@ export function createApp(options: AppOptions = {}): Express {
       source: options.chatStreamSource,
       heartbeatIntervalMs: options.chatStreamHeartbeatIntervalMs,
       allowStateless: options.allowStateless,
+      trustedDiscordUser: req => {
+        if (req.headers.origin !== undefined || !['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress ?? '')) return;
+        const value: unknown = req.body?.discordUserId;
+        return typeof value === 'string' && /^\d{17,20}$/.test(value) ? value : undefined;
+      },
     }),
   );
 

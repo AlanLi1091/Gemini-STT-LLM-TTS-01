@@ -81,14 +81,18 @@ export class ContextWindow {
     }
   }
   private readonly log: (message: string) => void;
-  private base(messages: readonly Message[]): number {
-    return 256 + textUnits(this.config.systemInstruction) + this.contentUnits(messages);
+  private base(messages: readonly Message[], extraSystem = ''): number {
+    return 256 + textUnits(this.config.systemInstruction) + textUnits(extraSystem) + this.contentUnits(messages);
   }
   private contentUnits(messages: readonly Message[]): number {
     return messages.reduce((n, message) => n + 32 + textUnits(message.content), 0);
   }
-  private systemReserve(): number { return Math.ceil((256 + textUnits(this.config.systemInstruction)) * this.factor); }
-  estimate(messages: readonly Message[]): number { return Math.ceil(this.base(messages) * this.factor); }
+  private systemReserve(extraSystem = ''): number { return Math.ceil((256 + textUnits(this.config.systemInstruction) + textUnits(extraSystem)) * this.factor); }
+  estimate(messages: readonly Message[], extraSystem = ''): number { return Math.ceil(this.base(messages, extraSystem) * this.factor); }
+  /** Search preflight uses only system overhead and the current question, without counting. */
+  preflight(inputs: readonly Message[]): void {
+    if (this.estimate(inputs) > this.config.inputTokens) this.limit();
+  }
   observe(messages: readonly Message[], promptTokens?: number): void {
     if (!Number.isSafeInteger(promptTokens) || promptTokens! <= 0) return;
     const next = Math.min(MAX_FACTOR, Math.max(this.factor, promptTokens! / this.base(messages) * DEFAULT_FACTOR));
@@ -100,8 +104,9 @@ export class ContextWindow {
   private limit(): never {
     throw new ChatError('本轮输入超过上下文预算，请缩短内容后重新发送。', 'CONTEXT_LIMIT');
   }
-  private async count(adapter: ChatAdapter, messages: Message[], signal: AbortSignal, source: string): Promise<number | undefined> {
-    if (!adapter.countTokens || this.countBudget.acquire(source)) return undefined;
+  private async count(adapter: ChatAdapter, messages: Message[], signal: AbortSignal, source: string, allowance?: { remaining: number }): Promise<number | undefined> {
+    if (!adapter.countTokens || (allowance && allowance.remaining <= 0) || this.countBudget.acquire(source)) return undefined;
+    if (allowance) allowance.remaining--;
     const controller = new AbortController();
     const abort = () => controller.abort();
     signal.addEventListener('abort', abort, { once: true });
@@ -128,7 +133,8 @@ export class ContextWindow {
       clearTimeout(timer); signal.removeEventListener('abort', abort);
     }
   }
-  async select(history: readonly Message[], inputs: readonly Message[], adapter: ChatAdapter, signal: AbortSignal, source = 'web'): Promise<Message[]> {
+  async select(history: readonly Message[], inputs: readonly Message[], adapter: ChatAdapter, signal: AbortSignal, source = 'web', options: { systemInstruction?: string; countAllowance?: { remaining: number } } = {}): Promise<Message[]> {
+    const extraSystem = options.systemInstruction ?? '';
     if (signal.aborted) throw new ChatError('The operation was aborted.', 'ABORTED');
     const current = historyTurns(inputs).flat();
     const allTurns = this.config.historyTurns === 0 ? [] : historyTurns(history).slice(-this.config.historyTurns);
@@ -137,17 +143,17 @@ export class ContextWindow {
     const payloadFits = (messages: Message[]) => messages.reduce((n, m) => n + Buffer.byteLength(m.content, 'utf8'), 0) <= payloadLimit;
     const safe = this.config.inputTokens * SAFE_RATIO;
     const full = candidate(allTurns);
-    if (this.estimate(full) <= safe && payloadFits(full)) return full;
+    if (this.estimate(full, extraSystem) <= safe && payloadFits(full)) return full;
     // Bound the first probe, but retain all eligible history for expansion.
     const sampleTurns = allTurns.slice(-COUNT_SAMPLE_TURNS);
     while (sampleTurns.length && !payloadFits(candidate(sampleTurns))) sampleTurns.shift();
     let selected = candidate(sampleTurns);
     if (!payloadFits(selected)) return this.limit();
-    const systemReserve = this.systemReserve();
+    const systemReserve = this.systemReserve(extraSystem);
     let knownSafe: Message[] | undefined;
     let knownOver: Message[] | undefined;
     for (let attempt = 0; attempt < 2; attempt++) {
-      const contentsTokens = await this.count(adapter, selected, signal, source);
+      const contentsTokens = await this.count(adapter, selected, signal, source, options.countAllowance);
       if (signal.aborted) throw new ChatError('The operation was aborted.', 'ABORTED');
       if (contentsTokens === undefined) break;
       const measured = contentsTokens + systemReserve;
@@ -179,14 +185,14 @@ export class ContextWindow {
     // Failure/exhaustion: keep a verified safe probe or a smaller local window.
     if (knownSafe) return knownSafe;
     const fallbackTurns = allTurns.slice();
-    while (fallbackTurns.length && (this.estimate(candidate(fallbackTurns)) > safe ||
+    while (fallbackTurns.length && (this.estimate(candidate(fallbackTurns), extraSystem) > safe ||
       !payloadFits(candidate(fallbackTurns)))) fallbackTurns.shift();
     let fallback = candidate(fallbackTurns);
     if (knownOver && fallback.length === knownOver.length && fallback.every((m, i) => m === knownOver![i])) {
       if (!fallbackTurns.length) return this.limit();
       fallbackTurns.shift(); fallback = candidate(fallbackTurns);
     }
-    if (this.estimate(fallback) > safe || !payloadFits(fallback)) return this.limit();
+    if (this.estimate(fallback, extraSystem) > safe || !payloadFits(fallback)) return this.limit();
     return fallback;
   }
 }

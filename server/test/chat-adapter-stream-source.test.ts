@@ -705,3 +705,133 @@ describe('K1: SDK 空正文会话重试', () => {
     } finally { warn.mockRestore(); await rm(directory, { recursive: true }); }
   });
 });
+
+describe('Task 20 Step 1: 搜索会话编排', () => {
+  const id = '33333333-3333-4333-8333-333333333333';
+  async function setup(run: (c: {
+    storage: JsonSessionStorage; service: import('../session-service').SessionService;
+    adapter: import('@core/index').ChatAdapter; window: import('../context-window').ContextWindow;
+    search: import('../search-adapter').SearchAdapter; budget: RequestBudget;
+    make: (options?: import('../chat-adapter-stream-source').SessionSearchOptions) => import('../chat-stream').ChatStreamSource;
+    req: import('@core/index').ChatStreamRequest;
+  }) => Promise<void>) {
+    const { SessionService } = await import('../session-service');
+    const { ContextWindow } = await import('../context-window');
+    const { MockSearchAdapter } = await import('../search-adapter');
+    const { createSessionChatStreamSource } = await import('../chat-adapter-stream-source');
+    const directory = await mkdtemp(join(tmpdir(), 'search-source-'));
+    try {
+      const storage = new JsonSessionStorage(directory); const service = new SessionService(storage);
+      const session = await service.createSession(); const window = new ContextWindow();
+      const adapter: import('@core/index').ChatAdapter = { id: 'test', name: 'test', send: async () => ({ content: 'ok' }),
+        stream: vi.fn(async function* () { yield { delta: '', accumulated: 'ok', done: true, usage: { promptTokens: 99999 } }; }) };
+      const search = new MockSearchAdapter(); vi.spyOn(search, 'search');
+      const budget = new RequestBudget({ requestsPerMinute: 10 });
+      await run({ storage, service, adapter, window, search, budget,
+        make: (options = {}) => createSessionChatStreamSource(adapter, service, budget, window, undefined, { adapter: search, ...options }),
+        req: { sessionId: session.id, requestId: id, search: true, messages: [{ role: 'user', content: '当前问题' }] } });
+    } finally { await rm(directory, { recursive: true }); }
+  }
+  async function collect(source: import('../chat-stream').ChatStreamSource, req: import('@core/index').ChatStreamRequest, options: Partial<import('../chat-stream').ChatStreamSourceOptions> = {}) {
+    const events: ChatSseEvent[] = []; for await (const e of source(req, { signal: new AbortController().signal, ...options })) events.push(e); return events;
+  }
+  it('成功保存来源且重启后完整回放不搜索不计数不扣生成额度', async () => setup(async c => {
+    const acquire = vi.spyOn(c.budget, 'acquire'); const observe = vi.spyOn(c.window, 'observe');
+    const source = c.make(); const first = await collect(source, c.req);
+    expect(first.at(-1)).toMatchObject({ event: 'done', data: { content: 'ok', search: { status: 'succeeded', sources: [{ domain: 'example.com' }] } } });
+    expect(await collect(c.make(), c.req)).toEqual(first);
+    expect(c.search.search).toHaveBeenCalledOnce(); expect(c.adapter.stream).toHaveBeenCalledOnce();
+    expect(acquire).toHaveBeenCalledOnce(); expect(observe).not.toHaveBeenCalled();
+    const saved = (await c.storage.getSession(c.req.sessionId!))!.messages;
+    expect(saved[0]).toMatchObject({ content: '当前问题', searchRequested: true });
+    expect(saved[1].search).toEqual((first[0] as import('@core/index').SseDoneEvent).data.search);
+    const sent = vi.mocked(c.adapter.stream).mock.calls[0][0];
+    expect(sent[0]).toMatchObject({ role: 'system' }); expect(sent.at(-1)?.content).toContain('UNTRUSTED_SEARCH_DATA');
+    expect(JSON.stringify(sent)).not.toContain('https://example.com/mock');
+    await collect(source, { sessionId: c.req.sessionId, messages: [{ role: 'user', content: '后续普通问题' }] });
+    expect(vi.mocked(c.adapter.stream).mock.calls[1][0].map(m => m.content)).toEqual(['当前问题', 'ok', '后续普通问题']);
+    expect(observe).toHaveBeenCalledOnce();
+  }));
+  it('同标识搜索模式不同先冲突且不再次搜索或扣额度', async () => setup(async c => {
+    await collect(c.make(), c.req);
+    expect(await collect(c.make(), { ...c.req, search: false })).toMatchObject([{ event: 'error', data: { error: { code: 'REQUEST_CONFLICT' } } }]);
+    expect(c.search.search).toHaveBeenCalledOnce();
+  }));
+  it('生成额度拒绝前不搜索不计数不写入', async () => setup(async c => {
+    c.budget.pause(); const select = vi.spyOn(c.window, 'select');
+    expect(await collect(c.make(), c.req)).toMatchObject([{ event: 'error', data: { error: { code: 'RATE_LIMIT' } } }]);
+    expect(select).not.toHaveBeenCalled(); expect(c.search.search).not.toHaveBeenCalled();
+    expect((await c.storage.getSession(c.req.sessionId!))?.messages).toEqual([]);
+  }));
+  it('系统和问题本地预检超限时不扣任何额度', async () => setup(async c => {
+    const { ContextWindow } = await import('../context-window'); const { createSessionChatStreamSource } = await import('../chat-adapter-stream-source');
+    const window = new ContextWindow({ inputTokens: 512 }); const acquire = vi.spyOn(c.budget, 'acquire');
+    const source = createSessionChatStreamSource(c.adapter, c.service, c.budget, window, undefined, { adapter: c.search });
+    expect(await collect(source, { ...c.req, messages: [{ role: 'user', content: '中'.repeat(300) }] })).toMatchObject([{ event: 'error', data: { error: { code: 'CONTEXT_LIMIT' } } }]);
+    expect(acquire).not.toHaveBeenCalled(); expect(c.search.search).not.toHaveBeenCalled();
+  }));
+  it('超过500码点的搜索问题先拒绝且500个emoji不会按UTF16误拒绝', async () => setup(async c => {
+    expect(await collect(c.make(), { ...c.req, messages: [{ role: 'user', content: '😀'.repeat(501) }] })).toMatchObject([{ event: 'error' }]);
+    expect(c.search.search).not.toHaveBeenCalled();
+    expect((await collect(c.make(), { ...c.req, messages: [{ role: 'user', content: '😀'.repeat(500) }] })).at(-1)?.event).toBe('done');
+  }));
+  it('供应商失败降级为一次普通生成且不暂停生成预算', async () => setup(async c => {
+    vi.mocked(c.search.search).mockRejectedValue({ status: 429, message: 'secret provider query key' });
+    const pause = vi.spyOn(c.budget, 'pause'); const observe = vi.spyOn(c.window, 'observe');
+    const result = await collect(c.make(), c.req);
+    expect(result).toMatchObject([{ event: 'done', data: { content: 'ok', search: { status: 'degraded', reason: 'provider_failure', sources: [], notice: expect.stringContaining('未使用实时搜索') } } }]);
+    expect(JSON.stringify(result)).not.toContain('secret'); expect(pause).not.toHaveBeenCalled();
+    expect(c.adapter.stream).toHaveBeenCalledOnce(); expect(observe).toHaveBeenCalledOnce();
+  }));
+  it('搜索准入拒绝和无结果均降级且生成额度只扣一次', async () => setup(async c => {
+    const acquire = vi.spyOn(c.budget, 'acquire');
+    const result = await collect(c.make({ admit: () => false }), c.req);
+    expect(result).toMatchObject([{ event: 'done', data: { search: { reason: 'admission_denied' } } }]);
+    expect(acquire).toHaveBeenCalledOnce(); expect(c.search.search).not.toHaveBeenCalled();
+    vi.mocked(c.search.search).mockResolvedValue([]);
+    expect(await collect(c.make(), { ...c.req, requestId: undefined })).toMatchObject([{ event: 'done', data: { search: { reason: 'no_results' } } }]);
+  }));
+  it('Discord缺可信身份降级且可信身份可触发Mock搜索', async () => setup(async c => {
+    const session = await c.storage.resolveDiscordSession('111111111111111111', '222222222222222222');
+    const req = { ...c.req, sessionId: session.id };
+    expect(await collect(c.make(), req)).toMatchObject([{ event: 'done', data: { search: { reason: 'missing_identity' } } }]);
+    expect(c.search.search).not.toHaveBeenCalled();
+    expect(await collect(c.make(), { ...req, requestId: undefined }, { trustedDiscordUserId: '333333333333333333' })).toMatchObject([{ event: 'done', data: { search: { status: 'succeeded' } } }]);
+  }));
+  it('取消忽略abort的搜索释放会话锁且迟到结果不生成不保存', async () => setup(async c => {
+    let finish!: (value: import('@core/index').SearchSource[]) => void; let started!: () => void;
+    const ready = new Promise<void>(resolve => { started = resolve; });
+    vi.mocked(c.search.search).mockImplementation((_query, { signal }) => { expect(signal).toBeInstanceOf(AbortSignal); started(); return new Promise(resolve => { finish = resolve; }); });
+    const controller = new AbortController(); const pending = collect(c.make(), c.req, { signal: controller.signal });
+    await ready; controller.abort(); expect(await pending).toEqual([]);
+    const release = c.service.tryAcquireRequest(c.req.sessionId!); expect(release).toBeTypeOf('function'); release?.();
+    finish([]); await Promise.resolve(); expect(c.adapter.stream).not.toHaveBeenCalled();
+    expect((await c.storage.getSession(c.req.sessionId!))?.messages).toEqual([]);
+  }));
+  it('资料放不下时降级重选且合计计数不超过两次', async () => setup(async c => {
+    const { ContextWindow } = await import('../context-window'); const { createSessionChatStreamSource } = await import('../chat-adapter-stream-source');
+    const window = new ContextWindow({ inputTokens: 512 });
+    c.adapter.countTokens = vi.fn(async (messages: import('@core/index').Message[]) => messages.some(m => m.content.includes('UNTRUSTED_SEARCH_DATA')) ? 10000 : 1);
+    const source = createSessionChatStreamSource(c.adapter, c.service, c.budget, window, undefined, { adapter: c.search });
+    expect(await collect(source, c.req)).toMatchObject([{ event: 'done', data: { search: { reason: 'context_limit', sources: [] } } }]);
+    expect(vi.mocked(c.adapter.countTokens).mock.calls.length).toBeLessThanOrEqual(2);
+    expect(vi.mocked(c.adapter.stream).mock.calls[0][0].map(m => m.content)).toEqual(['当前问题']);
+  }));
+  it('搜索后精确计数发现问题仍超限时不写入且不退款', async () => setup(async c => {
+    const { ContextWindow } = await import('../context-window'); const { createSessionChatStreamSource } = await import('../chat-adapter-stream-source');
+    const window = new ContextWindow({ inputTokens: 1024 }); c.adapter.countTokens = vi.fn(async () => 20000);
+    const acquire = vi.spyOn(c.budget, 'acquire');
+    const source = createSessionChatStreamSource(c.adapter, c.service, c.budget, window, undefined, { adapter: c.search });
+    expect(await collect(source, { ...c.req, messages: [{ role: 'user', content: '中'.repeat(300) }] })).toMatchObject([{ event: 'error', data: { error: { code: 'CONTEXT_LIMIT' } } }]);
+    expect(acquire).toHaveBeenCalledOnce(); expect(c.search.search).toHaveBeenCalledOnce();
+    expect((await c.storage.getSession(c.req.sessionId!))?.messages).toEqual([]);
+  }));
+  it('搜索成功后模型空正文或保存失败不发成功来源', async () => setup(async c => {
+    c.adapter.stream = vi.fn(async function* () { yield { delta: '', accumulated: '', done: true }; });
+    expect(await collect(c.make(), c.req)).toMatchObject([{ event: 'error', data: { error: { code: 'MODEL_ERROR' } } }]);
+    c.adapter.stream = vi.fn(async function* () { yield { delta: '', accumulated: 'ok', done: true }; });
+    vi.spyOn(c.service, 'appendAssistantResponse').mockRejectedValue(new Error('secret storage'));
+    expect(await collect(c.make(), c.req)).toMatchObject([{ event: 'error', data: { error: { message: '会话读取或保存失败，请稍后重试。' } } }]);
+    expect((await c.storage.getSession(c.req.sessionId!))?.messages.map(m => m.role)).toEqual(['user']);
+  }));
+});

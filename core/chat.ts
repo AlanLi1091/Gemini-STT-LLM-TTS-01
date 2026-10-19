@@ -1,3 +1,4 @@
+import type { SearchMetadata } from './contracts/search';
 import type { ChatErrorCode } from './contracts/sse';
 
 export type { ChatErrorCode } from './contracts/sse';
@@ -12,6 +13,10 @@ export interface Message {
   usage?: ChatUsage;
   /** ADR-012: correlation for an idempotent input and its completed reply. */
   requestId?: string;
+  /** Input fingerprint; absent means false on legacy inputs. */
+  searchRequested?: boolean;
+  /** Only completed assistant messages carry search results. */
+  search?: SearchMetadata;
 }
 
 export interface ChatUsage {

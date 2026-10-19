@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { ChatUsage, Message, ResetDiscordSessionRequest, ResetDiscordSessionResponse } from '@core/index';
+import type { ChatUsage, Message, SearchMetadata, ResetDiscordSessionRequest, ResetDiscordSessionResponse } from '@core/index';
 import {
   type Session,
   SessionNotFoundError,
@@ -26,14 +26,14 @@ export class SessionService {
     return () => { this.activeSessions.delete(sessionId); };
   }
 
-  async inspectRequest(sessionId: string, content: string, requestId?: string): Promise<{
+  async inspectRequest(sessionId: string, content: string, requestId?: string, searchRequested = false): Promise<{
     session: Session; inputExists: boolean; response?: Message;
   }> {
     const session = await this.requireActiveSession(sessionId);
     if (!requestId) return { session, inputExists: false };
     const input = session.messages.find(message => message.role === 'user' && message.requestId === requestId);
     if (!input) return { session, inputExists: false };
-    if (input.content !== content) throw new SessionRequestConflictError();
+    if (input.content !== content || (input.searchRequested ?? false) !== searchRequested) throw new SessionRequestConflictError();
     // A completed reply is replayable even after later conversation turns.
     const response = session.messages.find(message => message.role === 'assistant' && message.requestId === requestId);
     if (response) return { session, inputExists: true, response };
@@ -81,6 +81,7 @@ export class SessionService {
     sessionId: string,
     inputs: ReadonlyArray<{ role: Message['role']; content: string }>,
     requestId?: string,
+    searchRequested = false,
   ): Promise<Session> {
     let session = await this.requireActiveSession(sessionId);
     for (const input of inputs) {
@@ -90,6 +91,7 @@ export class SessionService {
         content: input.content,
         createdAt: Date.now(),
         ...(requestId ? { requestId } : {}),
+        ...(searchRequested ? { searchRequested: true } : {}),
       });
     }
     return session;
@@ -100,6 +102,7 @@ export class SessionService {
     content: string,
     usage?: ChatUsage,
     requestId?: string,
+    search?: SearchMetadata,
   ): Promise<Session> {
     await this.requireActiveSession(sessionId);
     return this.storage.appendMessage(sessionId, {
@@ -108,6 +111,7 @@ export class SessionService {
       content,
       createdAt: Date.now(),
       ...(usage ? { usage } : {}),
+      ...(search ? { search } : {}),
       ...(requestId ? { requestId } : {}),
     });
   }

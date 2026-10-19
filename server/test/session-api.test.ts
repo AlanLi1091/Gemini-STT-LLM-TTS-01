@@ -360,3 +360,37 @@ describe('P0-1 Step 2: 频道重置与归档锁', () => {
     } finally { await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve())); }
   });
 });
+
+describe('Task 20 Step 1: 搜索来源HTTP生命周期', () => {
+  it('SSE与刷新及重新装配后的回放保留相同来源且不重新搜索', async () => {
+    const c = await createTestContext(); const { MockSearchAdapter } = await import('../search-adapter');
+    const search = new MockSearchAdapter(); const call = vi.spyOn(search, 'search');
+    const source = createSessionChatStreamSource(c.adapter, c.sessionService, undefined, undefined, undefined, { adapter: search });
+    const app = createApp({ sessionService: c.sessionService, chatStreamSource: source });
+    const session = await c.sessionService.createSession();
+    const body = { sessionId: session.id, requestId: '11111111-1111-4111-8111-111111111111', search: true, messages: [{ role: 'user', content: '问题' }] };
+    const first = await request(app).post('/api/chat/stream').send(body).expect(200);
+    const loaded = await request(app).get(`/api/sessions/${session.id}`).expect(200);
+    const metadata = loaded.body.messages[1].search;
+    expect(metadata).toMatchObject({ status: 'succeeded', sources: [{ domain: 'example.com' }] });
+    expect(first.text).toContain(JSON.stringify(metadata));
+    const service = new SessionService(new JsonSessionStorage(c.dataDirectory));
+    const reloaded = createApp({ sessionService: service, chatStreamSource: createSessionChatStreamSource(c.adapter, service, undefined, undefined, undefined, { adapter: search }) });
+    const replay = await request(reloaded).post('/api/chat/stream').send(body).expect(200);
+    expect(replay.text).toContain(JSON.stringify(metadata)); expect(replay.text).not.toContain('event: chunk');
+    expect(call).toHaveBeenCalledOnce(); expect(c.adapter.histories).toHaveLength(1);
+    await request(reloaded).post('/api/chat/stream').send({ ...body, search: false }).expect(200).expect(res => expect(res.text).toContain('REQUEST_CONFLICT'));
+  });
+  it('持久化Discord来源不接受浏览器伪造身份绕过降级', async () => {
+    const c = await createTestContext(); const { MockSearchAdapter } = await import('../search-adapter');
+    const search = new MockSearchAdapter(); const call = vi.spyOn(search, 'search');
+    const app = createApp({ allowedOrigins: ['https://browser.example'], sessionService: c.sessionService,
+      chatStreamSource: createSessionChatStreamSource(c.adapter, c.sessionService, undefined, undefined, undefined, { adapter: search }) });
+    const session = await c.storage.resolveDiscordSession('111111111111111111', '222222222222222222');
+    const body = { sessionId: session.id, search: true, discordUserId: '333333333333333333', messages: [{ role: 'user', content: '问题' }] };
+    const result = await request(app).post('/api/chat/stream').set('Origin', 'https://browser.example').send(body).expect(200);
+    expect(result.text).toContain('missing_identity'); expect(call).not.toHaveBeenCalled();
+    const next = await request(app).post('/api/chat/stream').send(body).expect(200);
+    expect(next.text).toContain('succeeded'); expect(call).toHaveBeenCalledOnce();
+  });
+});
