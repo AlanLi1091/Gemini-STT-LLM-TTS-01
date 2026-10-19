@@ -1,3 +1,4 @@
+import { readSearchConfig } from '../search-config';
 // @vitest-environment node
 import { GoogleGenAI } from '@google/genai';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -713,7 +714,7 @@ describe('Task 20 Step 1: 搜索会话编排', () => {
     adapter: import('@core/index').ChatAdapter; window: import('../context-window').ContextWindow;
     search: import('../search-adapter').SearchAdapter; budget: RequestBudget;
     make: (options?: import('../chat-adapter-stream-source').SessionSearchOptions) => import('../chat-stream').ChatStreamSource;
-    req: import('@core/index').ChatStreamRequest;
+    req: import('@core/index').ChatStreamRequest; config: import('../search-config').SearchConfig;
   }) => Promise<void>) {
     const { SessionService } = await import('../session-service');
     const { ContextWindow } = await import('../context-window');
@@ -726,9 +727,10 @@ describe('Task 20 Step 1: 搜索会话编排', () => {
       const adapter: import('@core/index').ChatAdapter = { id: 'test', name: 'test', send: async () => ({ content: 'ok' }),
         stream: vi.fn(async function* () { yield { delta: '', accumulated: 'ok', done: true, usage: { promptTokens: 99999 } }; }) };
       const search = new MockSearchAdapter(); vi.spyOn(search, 'search');
+      const config = readSearchConfig({ SEARCH_LEDGER_PATH: join(directory, 'search-ledger.json') });
       const budget = new RequestBudget({ requestsPerMinute: 10 });
-      await run({ storage, service, adapter, window, search, budget,
-        make: (options = {}) => createSessionChatStreamSource(adapter, service, budget, window, undefined, { adapter: search, ...options }),
+      await run({ storage, service, adapter, window, search, budget, config,
+        make: (options = {}) => createSessionChatStreamSource(adapter, service, budget, window, undefined, { adapter: search, config, ...options }),
         req: { sessionId: session.id, requestId: id, search: true, messages: [{ role: 'user', content: '当前问题' }] } });
     } finally { await rm(directory, { recursive: true }); }
   }
@@ -766,7 +768,7 @@ describe('Task 20 Step 1: 搜索会话编排', () => {
   it('系统和问题本地预检超限时不扣任何额度', async () => setup(async c => {
     const { ContextWindow } = await import('../context-window'); const { createSessionChatStreamSource } = await import('../chat-adapter-stream-source');
     const window = new ContextWindow({ inputTokens: 512 }); const acquire = vi.spyOn(c.budget, 'acquire');
-    const source = createSessionChatStreamSource(c.adapter, c.service, c.budget, window, undefined, { adapter: c.search });
+    const source = createSessionChatStreamSource(c.adapter, c.service, c.budget, window, undefined, { adapter: c.search, config: c.config });
     expect(await collect(source, { ...c.req, messages: [{ role: 'user', content: '中'.repeat(300) }] })).toMatchObject([{ event: 'error', data: { error: { code: 'CONTEXT_LIMIT' } } }]);
     expect(acquire).not.toHaveBeenCalled(); expect(c.search.search).not.toHaveBeenCalled();
   }));
@@ -812,7 +814,7 @@ describe('Task 20 Step 1: 搜索会话编排', () => {
     const { ContextWindow } = await import('../context-window'); const { createSessionChatStreamSource } = await import('../chat-adapter-stream-source');
     const window = new ContextWindow({ inputTokens: 512 });
     c.adapter.countTokens = vi.fn(async (messages: import('@core/index').Message[]) => messages.some(m => m.content.includes('UNTRUSTED_SEARCH_DATA')) ? 10000 : 1);
-    const source = createSessionChatStreamSource(c.adapter, c.service, c.budget, window, undefined, { adapter: c.search });
+    const source = createSessionChatStreamSource(c.adapter, c.service, c.budget, window, undefined, { adapter: c.search, config: c.config });
     expect(await collect(source, c.req)).toMatchObject([{ event: 'done', data: { search: { reason: 'context_limit', sources: [] } } }]);
     expect(vi.mocked(c.adapter.countTokens).mock.calls.length).toBeLessThanOrEqual(2);
     expect(vi.mocked(c.adapter.stream).mock.calls[0][0].map(m => m.content)).toEqual(['当前问题']);
@@ -821,7 +823,7 @@ describe('Task 20 Step 1: 搜索会话编排', () => {
     const { ContextWindow } = await import('../context-window'); const { createSessionChatStreamSource } = await import('../chat-adapter-stream-source');
     const window = new ContextWindow({ inputTokens: 1024 }); c.adapter.countTokens = vi.fn(async () => 20000);
     const acquire = vi.spyOn(c.budget, 'acquire');
-    const source = createSessionChatStreamSource(c.adapter, c.service, c.budget, window, undefined, { adapter: c.search });
+    const source = createSessionChatStreamSource(c.adapter, c.service, c.budget, window, undefined, { adapter: c.search, config: c.config });
     expect(await collect(source, { ...c.req, messages: [{ role: 'user', content: '中'.repeat(300) }] })).toMatchObject([{ event: 'error', data: { error: { code: 'CONTEXT_LIMIT' } } }]);
     expect(acquire).toHaveBeenCalledOnce(); expect(c.search.search).toHaveBeenCalledOnce();
     expect((await c.storage.getSession(c.req.sessionId!))?.messages).toEqual([]);
@@ -833,5 +835,98 @@ describe('Task 20 Step 1: 搜索会话编排', () => {
     vi.spyOn(c.service, 'appendAssistantResponse').mockRejectedValue(new Error('secret storage'));
     expect(await collect(c.make(), c.req)).toMatchObject([{ event: 'error', data: { error: { message: '会话读取或保存失败，请稍后重试。' } } }]);
     expect((await c.storage.getSession(c.req.sessionId!))?.messages.map(m => m.role)).toEqual(['user']);
+  }));
+});
+
+describe('Task 20 Step 2: 搜索预算期限与校准编排', () => {
+  async function fixture(run: (c: {
+    directory: string; service: import('../session-service').SessionService; storage: JsonSessionStorage;
+    budget: import('../search-budget').SearchBudget; generation: RequestBudget;
+    window: import('../context-window').ContextWindow; adapter: import('@core/index').ChatAdapter;
+    search: import('../search-adapter').SearchAdapter; config: import('../search-config').SearchConfig;
+    req: import('@core/index').ChatStreamRequest;
+    make: () => import('../chat-stream').ChatStreamSource;
+  }) => Promise<void>) {
+    const { SessionService } = await import('../session-service'); const { ContextWindow } = await import('../context-window');
+    const { SearchBudget } = await import('../search-budget'); const { JsonSearchLedger } = await import('../storage/search-ledger');
+    const { MockSearchAdapter } = await import('../search-adapter'); const { createSessionChatStreamSource } = await import('../chat-adapter-stream-source');
+    const directory = await mkdtemp(join(tmpdir(), 'step2-search-source-'));
+    try {
+      const storage = new JsonSessionStorage(directory); const service = new SessionService(storage); const session = await service.createSession();
+      const config = readSearchConfig({ SEARCH_LEDGER_PATH: join(directory, 'search-ledger.json') });
+      const budget = new SearchBudget(config, new JsonSearchLedger(config.ledgerPath)); const generation = new RequestBudget(); const window = new ContextWindow();
+      const search = new MockSearchAdapter([{ title: 'English source', url: 'https://example.com/' + 'long-path-'.repeat(100), content: 'English summary '.repeat(7) }]); vi.spyOn(search, 'search');
+      const adapter: import('@core/index').ChatAdapter = { id: 'step2', name: 'step2', send: async () => ({ content: 'ok' }),
+        stream: vi.fn(async function* () { yield { delta: '', accumulated: 'ok', done: true, usage: { promptTokens: 99999 } }; }) };
+      const req: import('@core/index').ChatStreamRequest = { sessionId: session.id, requestId: '55555555-5555-4555-8555-555555555555', search: true, messages: [{ role: 'user', content: 'current question' }] };
+      await run({ directory, service, storage, budget, generation, window, adapter, search, config, req,
+        make: () => createSessionChatStreamSource(adapter, service, generation, window, undefined, { adapter: search, budget, config }) });
+    } finally { await rm(directory, { recursive: true }); }
+  }
+  async function collect(source: import('../chat-stream').ChatStreamSource, req: import('@core/index').ChatStreamRequest, options: Partial<import('../chat-stream').ChatStreamSourceOptions> = {}) {
+    const events: ChatSseEvent[] = []; for await (const e of source(req, { signal: new AbortController().signal, ...options })) events.push(e); return events;
+  }
+  it('先持久化尝试与credit再搜索，回放和模式冲突不进搜索预算', async () => fixture(async c => {
+    const { readFile } = await import('node:fs/promises'); const { MockSearchAdapter } = await import('../search-adapter'); const original = MockSearchAdapter.prototype.search.bind(c.search); const acquire = vi.spyOn(c.budget, 'acquire');
+    vi.mocked(c.search.search).mockImplementation(async (q, options) => {
+      const ledger = JSON.parse(await readFile(c.config.ledgerPath, 'utf8'));
+      expect(ledger.total).toEqual({ attempts: 1, credits: 1 }); return original(q, options);
+    });
+    const source = c.make(); const first = await collect(source, c.req); expect(first.at(-1)?.event).toBe('done');
+    expect(await collect(source, c.req)).toEqual(first);
+    expect(await collect(source, { ...c.req, search: false })).toMatchObject([{ event: 'error', data: { error: { code: 'REQUEST_CONFLICT' } } }]);
+    expect(acquire).toHaveBeenCalledOnce(); expect(c.search.search).toHaveBeenCalledOnce();
+  }));
+  it('搜索额度不足只扣一次生成额度并固定降级普通生成', async () => fixture(async c => {
+    c.budget.pause(); const generation = vi.spyOn(c.generation, 'acquire');
+    expect(await collect(c.make(), c.req)).toMatchObject([{ event: 'done', data: { search: { reason: 'admission_denied' } } }]);
+    expect(generation).toHaveBeenCalledOnce(); expect(c.search.search).not.toHaveBeenCalled(); expect(c.adapter.stream).toHaveBeenCalledOnce();
+  }));
+  it('搜索429暂停所有搜索来源而不暂停生成和计数', async () => fixture(async c => {
+    vi.mocked(c.search.search).mockRejectedValue({ status: 429, message: 'secret key query user' });
+    const pause = vi.spyOn(c.generation, 'pause');
+    expect(await collect(c.make(), c.req)).toMatchObject([{ event: 'done', data: { search: { reason: 'provider_failure' } } }]);
+    expect(await collect(c.make(), { ...c.req, requestId: undefined })).toMatchObject([{ event: 'done', data: { search: { reason: 'admission_denied' } } }]);
+    expect(c.search.search).toHaveBeenCalledOnce(); expect(pause).not.toHaveBeenCalled();
+    expect(await c.budget.acquire({ source: 'discord', userId: '111111111111111111', channelId: '222222222222222222' })).toBe(false);
+  }));
+  it('坏账本不中断普通生成、不清零且不调用供应商', async () => fixture(async c => {
+    const { writeFile, readFile } = await import('node:fs/promises'); await writeFile(c.config.ledgerPath, '{corrupt');
+    expect(await collect(c.make(), c.req)).toMatchObject([{ event: 'done', data: { search: { reason: 'admission_denied' } } }]);
+    expect(c.search.search).not.toHaveBeenCalled(); expect(await readFile(c.config.ledgerPath, 'utf8')).toBe('{corrupt');
+  }));
+  it('搜索超时本地降级不等待迟到结果且不重搜重扣', async () => fixture(async c => {
+    c.config.timeoutMs = 5; vi.useFakeTimers(); let finish!: (sources: import('@core/index').SearchSource[]) => void; let started!: () => void;
+    const ready = new Promise<void>(resolve => { started = resolve; }); let upstream!: AbortSignal;
+    vi.mocked(c.search.search).mockImplementation((_query, { signal }) => { upstream = signal; started(); return new Promise(resolve => { finish = resolve; }); });
+    const source = c.make(); const pending = collect(source, c.req); await ready;
+    await vi.advanceTimersByTimeAsync(5); const result = await pending;
+    expect(result).toMatchObject([{ event: 'done', data: { search: { reason: 'provider_failure' } } }]); expect(upstream.aborted).toBe(true);
+    finish([]); await Promise.resolve(); expect(await collect(source, c.req)).toEqual(result); expect(c.search.search).toHaveBeenCalledOnce();
+    expect((await c.storage.getSession(c.req.sessionId!))?.messages).toHaveLength(2);
+  }));
+  it('取消搜索不降级生成但保留已持久化额度且释放锁', async () => fixture(async c => {
+    let started!: () => void; const ready = new Promise<void>(resolve => { started = resolve; });
+    vi.mocked(c.search.search).mockImplementation(async () => { started(); return new Promise(() => {}); });
+    const controller = new AbortController(); const result = collect(c.make(), c.req, { signal: controller.signal });
+    await ready; controller.abort(); expect(await result).toEqual([]); expect(c.adapter.stream).not.toHaveBeenCalled();
+    const { readFile } = await import('node:fs/promises'); expect(JSON.parse(await readFile(c.config.ledgerPath, 'utf8')).total.attempts).toBe(1);
+    const release = c.service.tryAcquireRequest(c.req.sessionId!); expect(release).toBeTypeOf('function'); release?.();
+  }));
+  it('长URL只保留元数据且搜索用量不污染普通系数，空正文不校准', async () => fixture(async c => {
+    const input = [{ id: 'test', role: 'user' as const, content: 'unchanged ordinary context', createdAt: 0 }]; const before = c.window.estimate(input);
+    const observe = vi.spyOn(c.window, 'observeSearch');
+    const first = await collect(c.make(), c.req); expect(first.at(-1)?.event).toBe('done');
+    expect(c.window.estimate(input)).toBe(before); expect(c.window.estimate(input, '', true)).toBeGreaterThan(before);
+    const sent = vi.mocked(c.adapter.stream).mock.calls[0][0]; expect(JSON.stringify(sent)).not.toContain('long-path-'); expect(JSON.stringify(sent)).toContain('English summary');
+    expect(observe).toHaveBeenCalledOnce(); c.adapter.stream = vi.fn(async function* () { yield { delta: '', accumulated: '', done: true }; });
+    expect(await collect(c.make(), { ...c.req, requestId: undefined })).toMatchObject([{ event: 'error', data: { error: { code: 'MODEL_ERROR' } } }]);
+    expect(observe).toHaveBeenCalledOnce();
+  }));
+  it('问题不合法、生成拒绝与缺可信身份均不扣搜索额度', async () => fixture(async c => {
+    const acquire = vi.spyOn(c.budget, 'acquire');
+    expect((await collect(c.make(), { ...c.req, messages: [{ role: 'user', content: 'x'.repeat(501) }] }))[0].event).toBe('error');
+    c.generation.pause(); expect((await collect(c.make(), c.req))[0].event).toBe('error');
+    expect(acquire).not.toHaveBeenCalled();
   }));
 });

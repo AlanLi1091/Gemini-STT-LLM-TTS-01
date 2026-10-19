@@ -250,3 +250,49 @@ describe('Task 20 Step 1: 搜索窗口挂点', () => {
     expect(counter).toHaveBeenCalledTimes(2); expect(allowance.remaining).toBe(0);
   });
 });
+
+describe('Task 20 Step 2: N1完整输入独立校准', () => {
+  it('含资料的成功用量只提高搜索系数并限制上限4', () => {
+    const policy = new ContextWindow({ systemInstruction: 'configured' }); const current = [user('question and English summary')];
+    const ordinary = policy.estimate(current); const search = policy.estimate(current, 'trusted rule', true);
+    policy.observeSearch([system('trusted rule'), ...current], 999999);
+    expect(policy.estimate(current)).toBe(ordinary);
+    expect(policy.estimate(current, 'trusted rule', true)).toBe(Math.ceil((256 + 'configured\n\ntrusted rule'.length * 0.9 + 32 + current[0].content.length * 0.9) * 4));
+    const capped = policy.estimate(current, 'trusted rule', true); policy.observeSearch([system('trusted rule'), ...current], 99999999);
+    expect(policy.estimate(current, 'trusted rule', true)).toBe(capped);
+    expect(new ContextWindow({ systemInstruction: 'configured' }).estimate(current, 'trusted rule', true)).toBe(search);
+  });
+  it('搜索系数比较基数包含配置系统规则历史问题与实际资料', () => {
+    const policy = new ContextWindow({ systemInstruction: 'system' }); const contents = [user('history'), assistant('reply'), user('question\nEnglish source summary')];
+    const rule = 'rule'; const before = policy.estimate(contents, rule, true);
+    const promptTokens = before / 1.25 * 1.5;
+    policy.observeSearch([system(rule), ...contents], Math.ceil(promptTokens));
+    const after = policy.estimate(contents, rule, true);
+    expect(after).toBeGreaterThan(before); expect(after).toBeLessThan(before * 2);
+    for (const usage of [undefined, NaN, 0, -1, 0.5]) policy.observeSearch([system(rule), ...contents], usage);
+    expect(policy.estimate(contents, rule, true)).toBe(after);
+  });
+  it('搜索估算取共享与搜索系数较大值普通选择不受搜索系数影响', async () => {
+    const policy = new ContextWindow({ inputTokens: 1000 }); const current = [user('x'.repeat(300))];
+    expect(await policy.select([], current, adapter(), signal())).toEqual(current);
+    policy.observeSearch(current, 99999);
+    expect(await policy.select([], current, adapter(), signal())).toEqual(current);
+    await expect(policy.select([], current, adapter(), signal(), 'web', { search: true })).rejects.toMatchObject({ code: 'CONTEXT_LIMIT' });
+    const second = new ContextWindow(); second.observe(current, 99999);
+    expect(second.estimate(current, '', true)).toBe(second.estimate(current));
+  });
+});
+
+describe('Task 20 Step 2: 计数剩余期限', () => {
+  it('搜索阶段已耗时后计数只等待整体剩余时间并清理计时器', async () => {
+    const { SearchDeadline } = await import('../search-timeout'); vi.useFakeTimers();
+    try {
+      const deadline = new SearchDeadline(10); const policy = new ContextWindow({ inputTokens: 1000 });
+      let upstream!: AbortSignal;
+      const model = adapter(async (_messages, options) => { upstream = options!.signal!; return new Promise(() => {}); });
+      const pending = policy.select([], [user('x'.repeat(400))], model, signal(), 'web', { deadline });
+      const expected = expect(pending).rejects.toMatchObject({ code: 'MODEL_ERROR' });
+      await vi.advanceTimersByTimeAsync(10); await expected; expect(upstream.aborted).toBe(true); expect(vi.getTimerCount()).toBe(0);
+    } finally { vi.useRealTimers(); }
+  });
+});

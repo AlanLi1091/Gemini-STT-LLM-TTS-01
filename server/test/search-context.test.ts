@@ -48,3 +48,31 @@ describe('S1: 规范化来源的持久化不变量', () => {
     expect(normalizeSearchSources(sources, 123)).toEqual(sources);
   });
 });
+
+describe('Task 20 Step 2: 搜索资料子预算', () => {
+  it('按实际隔离块估算先缩摘要后减来源且展示摘要与注入保持一致', async () => {
+    const { fitSearchSources } = await import('../search-context');
+    const sources = normalizeSearchSources(Array.from({ length: 3 }, (_, i) => ({ title: 'T'.repeat(120), url: `https://example.com/${'a'.repeat(1800)}?n=${i}`, content: 'English summary '.repeat(10) })), 123);
+    const before = structuredClone(sources); const estimate = (block: string) => block.length * 4;
+    const reduced = fitSearchSources(sources, estimate, 2048);
+    expect(reduced.length).toBeGreaterThan(0); expect(estimate(buildSearchContext(reduced))).toBeLessThanOrEqual(2048);
+    expect(reduced[0].summary.length).toBeLessThan(sources[0].summary.length);
+    expect(sources).toEqual(before); expect(isSearchMetadata({ status: 'succeeded', sources: reduced })).toBe(true);
+    expect(buildSearchContext(reduced)).not.toContain('https://');
+  });
+  it('最小资料仍超预算返回空来源并保持连续编号', async () => {
+    const { fitSearchSources } = await import('../search-context');
+    const sources = normalizeSearchSources([{ title: 'title', url: 'https://example.com', content: 'summary' }], 123);
+    expect(fitSearchSources(sources, () => 9999, 2048)).toEqual([]);
+  });
+});
+
+describe('Task 20 Step 2: 优先收缩资料保留历史', () => {
+  it('历史较长时先缩资料但保留最小来源供后续历史窗口裁剪', async () => {
+    const { fitSearchSources } = await import('../search-context');
+    const sources = normalizeSearchSources([{ title: 'title', url: 'https://example.com', content: 'English summary '.repeat(7) }], 123);
+    const reduced = fitSearchSources(sources, block => 99999 + block.length, 8192, true);
+    expect(reduced).toHaveLength(1); expect(Array.from(reduced[0].summary)).toHaveLength(1);
+    expect(sources[0].summary.length).toBeGreaterThan(1);
+  });
+});

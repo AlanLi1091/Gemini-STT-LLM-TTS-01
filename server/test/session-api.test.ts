@@ -1,3 +1,4 @@
+import { readSearchConfig } from '../search-config';
 // @vitest-environment node
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -365,7 +366,7 @@ describe('Task 20 Step 1: 搜索来源HTTP生命周期', () => {
   it('SSE与刷新及重新装配后的回放保留相同来源且不重新搜索', async () => {
     const c = await createTestContext(); const { MockSearchAdapter } = await import('../search-adapter');
     const search = new MockSearchAdapter(); const call = vi.spyOn(search, 'search');
-    const source = createSessionChatStreamSource(c.adapter, c.sessionService, undefined, undefined, undefined, { adapter: search });
+    const source = createSessionChatStreamSource(c.adapter, c.sessionService, undefined, undefined, undefined, { adapter: search, config: readSearchConfig({ SEARCH_LEDGER_PATH: join(c.dataDirectory, 'search-ledger.json') }) });
     const app = createApp({ sessionService: c.sessionService, chatStreamSource: source });
     const session = await c.sessionService.createSession();
     const body = { sessionId: session.id, requestId: '11111111-1111-4111-8111-111111111111', search: true, messages: [{ role: 'user', content: '问题' }] };
@@ -375,7 +376,7 @@ describe('Task 20 Step 1: 搜索来源HTTP生命周期', () => {
     expect(metadata).toMatchObject({ status: 'succeeded', sources: [{ domain: 'example.com' }] });
     expect(first.text).toContain(JSON.stringify(metadata));
     const service = new SessionService(new JsonSessionStorage(c.dataDirectory));
-    const reloaded = createApp({ sessionService: service, chatStreamSource: createSessionChatStreamSource(c.adapter, service, undefined, undefined, undefined, { adapter: search }) });
+    const reloaded = createApp({ sessionService: service, chatStreamSource: createSessionChatStreamSource(c.adapter, service, undefined, undefined, undefined, { adapter: search, config: readSearchConfig({ SEARCH_LEDGER_PATH: join(c.dataDirectory, 'search-ledger.json') }) }) });
     const replay = await request(reloaded).post('/api/chat/stream').send(body).expect(200);
     expect(replay.text).toContain(JSON.stringify(metadata)); expect(replay.text).not.toContain('event: chunk');
     expect(call).toHaveBeenCalledOnce(); expect(c.adapter.histories).toHaveLength(1);
@@ -385,7 +386,7 @@ describe('Task 20 Step 1: 搜索来源HTTP生命周期', () => {
     const c = await createTestContext(); const { MockSearchAdapter } = await import('../search-adapter');
     const search = new MockSearchAdapter(); const call = vi.spyOn(search, 'search');
     const app = createApp({ allowedOrigins: ['https://browser.example'], sessionService: c.sessionService,
-      chatStreamSource: createSessionChatStreamSource(c.adapter, c.sessionService, undefined, undefined, undefined, { adapter: search }) });
+      chatStreamSource: createSessionChatStreamSource(c.adapter, c.sessionService, undefined, undefined, undefined, { adapter: search, config: readSearchConfig({ SEARCH_LEDGER_PATH: join(c.dataDirectory, 'search-ledger.json') }) }) });
     const session = await c.storage.resolveDiscordSession('111111111111111111', '222222222222222222');
     const body = { sessionId: session.id, search: true, discordUserId: '333333333333333333', messages: [{ role: 'user', content: '问题' }] };
     const result = await request(app).post('/api/chat/stream').set('Origin', 'https://browser.example').send(body).expect(200);
@@ -409,7 +410,7 @@ describe('S1: 截断边界来源保存与回放', () => {
     const { RequestBudget } = await import('../request-budget'); const budget = new RequestBudget();
     const acquire = vi.spyOn(budget, 'acquire');
     const make = (service: SessionService) => createApp({ sessionService: service,
-      chatStreamSource: createSessionChatStreamSource(c.adapter, service, budget, undefined, undefined, { adapter: search }) });
+      chatStreamSource: createSessionChatStreamSource(c.adapter, service, budget, undefined, undefined, { adapter: search, config: readSearchConfig({ SEARCH_LEDGER_PATH: join(c.dataDirectory, 'search-ledger.json') }) }) });
     const session = await c.sessionService.createSession(); const app = make(c.sessionService);
     const body = { sessionId: session.id, requestId: '33333333-3333-4333-8333-333333333333', search: true,
       messages: [{ role: 'user', content: '问题' }] };
@@ -427,5 +428,26 @@ describe('S1: 截断边界来源保存与回放', () => {
     expect(search.search).toHaveBeenCalledOnce(); expect(c.adapter.histories).toHaveLength(1);
     expect(acquire).toHaveBeenCalledOnce();
     expect((await c.storage.getSession(session.id))?.messages).toHaveLength(2);
+  });
+});
+
+describe('Task 20 Step 2: 账本与会话生命周期', () => {
+  it('进程重装和reset不清Discord日额度且预算拒绝仍普通生成', async () => {
+    const c = await createTestContext(); const { MockSearchAdapter } = await import('../search-adapter');
+    const { SearchBudget } = await import('../search-budget'); const { JsonSearchLedger } = await import('../storage/search-ledger');
+    const config = readSearchConfig({ SEARCH_LEDGER_PATH: join(c.dataDirectory, 'search-ledger.json'), SEARCH_DISCORD_REQUESTS_PER_DAY: '1',
+      SEARCH_DISCORD_USER_REQUESTS_PER_DAY: '1', SEARCH_DISCORD_CHANNEL_REQUESTS_PER_DAY: '1' });
+    const search = new MockSearchAdapter(); const call = vi.spyOn(search, 'search');
+    const make = (service: SessionService) => createApp({ sessionService: service, chatStreamSource: createSessionChatStreamSource(c.adapter, service,
+      undefined, undefined, undefined, { adapter: search, config, budget: new SearchBudget(config, new JsonSearchLedger(config.ledgerPath)) }) });
+    const origin = { guildId: '111111111111111111', channelId: '222222222222222222' }; const session = await c.storage.resolveDiscordSession(origin.guildId, origin.channelId);
+    const body = { sessionId: session.id, search: true, discordUserId: '333333333333333333', messages: [{ role: 'user', content: '问题' }] };
+    const app = make(c.sessionService);
+    expect((await request(app).post('/api/chat/stream').send(body).expect(200)).text).toContain('succeeded');
+    const reset = await request(app).post('/api/discord/sessions/reset').send({ ...origin, sessionId: session.id }).expect(200);
+    const reloaded = make(new SessionService(new JsonSessionStorage(c.dataDirectory)));
+    const result = await request(reloaded).post('/api/chat/stream').send({ ...body, sessionId: reset.body.sessionId }).expect(200);
+    expect(result.text).toContain('admission_denied'); expect(result.text).toContain('event: done'); expect(call).toHaveBeenCalledOnce();
+    expect((await new JsonSearchLedger(config.ledgerPath).read())?.discord.attempts).toBe(1);
   });
 });

@@ -34,8 +34,8 @@ describe('P1-2: 服务端生成超时守卫', () => {
       CHAT_GENERATION_FIRST_CHUNK_TIMEOUT_MS: '90001', CHAT_GENERATION_TOTAL_TIMEOUT_MS: '90000',
     })).toThrow('timeout configuration');
     expect(() => readGenerationTimeoutConfig({ CHAT_GENERATION_TOTAL_TIMEOUT_MS: '110000' }, 3001)).toThrow('generation and count');
-    expect(readGenerationTimeoutConfig({ CHAT_GENERATION_TOTAL_TIMEOUT_MS: '109000' }, 3000)).toEqual({
-      firstChunkTimeoutMs: 60000, totalTimeoutMs: 109000,
+    expect(readGenerationTimeoutConfig({ CHAT_GENERATION_TOTAL_TIMEOUT_MS: '101000' }, 3000)).toEqual({
+      firstChunkTimeoutMs: 60000, totalTimeoutMs: 101000,
     });
   });
 
@@ -126,5 +126,28 @@ describe('P1-2: 服务端生成超时守卫', () => {
     rejectLate(new Error('late upstream failure'));
     await vi.advanceTimersByTimeAsync(20);
     expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
+describe('Task 20 Step 2: 生成与搜索期限协调', () => {
+  it('搜索加生成加两次计数默认104秒且超过115秒拒绝', () => {
+    expect(readGenerationTimeoutConfig({}, 3000, 8000)).toEqual(DEFAULT_GENERATION_TIMEOUT_CONFIG);
+    expect(() => readGenerationTimeoutConfig({}, 3000, 19001)).toThrow();
+    expect(readGenerationTimeoutConfig({}, 3000, 19000)).toEqual(DEFAULT_GENERATION_TIMEOUT_CONFIG);
+    expect(() => readGenerationTimeoutConfig({}, 3000, 0)).toThrow();
+  });
+  it('搜索和计数消耗后的整体期限不在生成阶段重新开始', async () => {
+    const { SearchDeadline } = await import('../search-timeout'); vi.useFakeTimers();
+    const deadline = new SearchDeadline(100); await vi.advanceTimersByTimeAsync(90);
+    const iterator = streamWithGenerationTimeout(adapterWithStream(async function* () { await new Promise(() => {}); }), messages,
+      { signal: new AbortController().signal }, { firstChunkTimeoutMs: 60, totalTimeoutMs: 90 }, deadline)[Symbol.asyncIterator]();
+    const result = expect(iterator.next()).rejects.toBeInstanceOf(GenerationTimeoutError);
+    await vi.advanceTimersByTimeAsync(10); await result;
+  });
+  it('墙钟跳变不改变首包和总生成期限', async () => {
+    vi.useFakeTimers(); const iterator = streamWithGenerationTimeout(adapterWithStream(async function* () { await new Promise(() => {}); }), messages,
+      { signal: new AbortController().signal }, { firstChunkTimeoutMs: 5, totalTimeoutMs: 10 })[Symbol.asyncIterator]();
+    const result = expect(iterator.next()).rejects.toBeInstanceOf(GenerationTimeoutError);
+    vi.setSystemTime(Date.now() + 86400000); await vi.advanceTimersByTimeAsync(5); await result;
   });
 });

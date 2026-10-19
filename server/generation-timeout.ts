@@ -21,7 +21,7 @@ function validateConfig(config: GenerationTimeoutConfig): void {
 export function readGenerationTimeoutConfig(environment: {
   CHAT_GENERATION_FIRST_CHUNK_TIMEOUT_MS?: string;
   CHAT_GENERATION_TOTAL_TIMEOUT_MS?: string;
-}, countTimeoutMs = 3000): GenerationTimeoutConfig {
+}, countTimeoutMs = 3000, searchTimeoutMs = 8000): GenerationTimeoutConfig {
   const config = {
     firstChunkTimeoutMs: environment.CHAT_GENERATION_FIRST_CHUNK_TIMEOUT_MS === undefined
       ? DEFAULT_GENERATION_TIMEOUT_CONFIG.firstChunkTimeoutMs : Number(environment.CHAT_GENERATION_FIRST_CHUNK_TIMEOUT_MS),
@@ -30,8 +30,8 @@ export function readGenerationTimeoutConfig(environment: {
   };
   validateConfig(config);
   // Leave at least five seconds before the Bot's unchanged 120-second deadline.
-  if (!Number.isSafeInteger(countTimeoutMs) || countTimeoutMs <= 0 || config.totalTimeoutMs + 2 * countTimeoutMs > 115000) {
-    throw new Error('Invalid chat generation and count timeout configuration.');
+  if (!Number.isSafeInteger(countTimeoutMs) || countTimeoutMs <= 0 || !Number.isSafeInteger(searchTimeoutMs) || searchTimeoutMs <= 0 || config.totalTimeoutMs + 2 * countTimeoutMs + searchTimeoutMs > 115000) {
+    throw new Error('Invalid chat generation and count / search timeout configuration.');
   }
   return config;
 }
@@ -49,12 +49,13 @@ export async function* streamWithGenerationTimeout(
   messages: Message[],
   options: ChatAdapterOptions & { signal: AbortSignal },
   config: GenerationTimeoutConfig = DEFAULT_GENERATION_TIMEOUT_CONFIG,
+  deadline?: { remaining(): number },
 ): AsyncIterable<ChatChunk> {
   validateConfig(config);
   const clientSignal = options.signal;
   if (clientSignal.aborted) throw new ChatError('The operation was aborted.', 'ABORTED');
   const controller = new AbortController();
-  const startedAt = Date.now();
+  const startedAt = globalThis.performance.now();
   let receivedFirstChunk = false;
   let timedOut = false;
   let completed = false;
@@ -74,15 +75,15 @@ export async function* streamWithGenerationTimeout(
     rejectBoundary(new GenerationTimeoutError());
     controller.abort();
   };
-  const firstTimer = setTimeout(timeout, config.firstChunkTimeoutMs);
-  const totalTimer = setTimeout(timeout, config.totalTimeoutMs);
+  const firstTimer = setTimeout(timeout, Math.min(config.firstChunkTimeoutMs, deadline?.remaining() ?? config.firstChunkTimeoutMs));
+  const totalTimer = setTimeout(timeout, Math.min(config.totalTimeoutMs, deadline?.remaining() ?? config.totalTimeoutMs));
   clientSignal.addEventListener('abort', cancelled, { once: true });
   const clearDeadlines = () => { clearTimeout(firstTimer); clearTimeout(totalTimer); };
   const checkDeadline = () => {
     if (clientSignal.aborted) throw new ChatError('The operation was aborted.', 'ABORTED');
     // Check the clock too: delayed timer callbacks must not accept a late done/chunk.
-    const elapsed = Date.now() - startedAt;
-    if (timedOut || elapsed >= config.totalTimeoutMs || (!receivedFirstChunk && elapsed >= config.firstChunkTimeoutMs)) {
+    const elapsed = globalThis.performance.now() - startedAt;
+    if (timedOut || (deadline && deadline.remaining() <= 0) || elapsed >= config.totalTimeoutMs || (!receivedFirstChunk && elapsed >= config.firstChunkTimeoutMs)) {
       timeout();
       throw new GenerationTimeoutError();
     }

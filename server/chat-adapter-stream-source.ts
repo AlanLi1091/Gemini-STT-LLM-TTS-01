@@ -1,5 +1,9 @@
-import { waitForSearch, type SearchAdapter } from './search-adapter';
-import { buildSearchContext, degradedSearch, normalizeSearchSources, SEARCH_SYSTEM_RULE } from './search-context';
+import { readSearchConfig, type SearchConfig, type SearchEnvironment } from './search-config';
+import { SearchBudget } from './search-budget';
+import { JsonSearchLedger } from './storage/search-ledger';
+import { SearchDeadline, searchWithTimeout } from './search-timeout';
+import { type SearchAdapter } from './search-adapter';
+import { buildSearchContext, degradedSearch, fitSearchSources, normalizeSearchSources, SEARCH_SYSTEM_RULE } from './search-context';
 import {
   ChatError,
   GeminiChatAdapter,
@@ -15,7 +19,7 @@ import { isChatStreamRequest, type ChatStreamSource } from './chat-stream';
 import { SessionService } from './session-service';
 import { SessionRequestConflictError, type SessionStorage } from './storage/session-storage';
 import { guardStreamSource, RequestBudget, SourceRequestBudget, readSourceBudgetConfig } from './request-budget';
-import { ContextWindow, readContextConfig } from './context-window';
+import { ContextWindow, historyTurns, readContextConfig } from './context-window';
 import { logChatFailure, safeStreamError, type ErrorStage } from './chat-errors';
 import {
   DEFAULT_GENERATION_TIMEOUT_CONFIG,
@@ -24,7 +28,7 @@ import {
   type GenerationTimeoutConfig,
 } from './generation-timeout';
 
-export interface ServerChatEnvironment {
+export interface ServerChatEnvironment extends SearchEnvironment {
   GEMINI_API_KEY?: string;
   GEMINI_REQUESTS_PER_MINUTE?: string;
   GEMINI_WEB_RESERVED_REQUESTS_PER_MINUTE?: string;
@@ -48,6 +52,7 @@ export interface ServerChatStreamSourceOptions {
   requestBudget?: RequestBudget;
   /** Step 1: code-only Mock injection. No production search network wiring. */
   searchAdapter?: SearchAdapter;
+  searchBudget?: SearchBudget;
 }
 
 /** 将任意共享 ChatAdapter 映射为服务端 SSE 流源。 */
@@ -111,7 +116,9 @@ export function createAdapterStreamSource(
 
 export interface SessionSearchOptions {
   adapter?: SearchAdapter;
-  /** Step 2 replaces this Mock admission hook with atomic guards / ledger. */
+  config?: SearchConfig;
+  budget?: SearchBudget;
+  /** Optional extra code-only restriction; cannot bypass atomic guards / ledger. */
   admit?: (context: { source: 'web' | 'discord'; userId?: string; channelId?: string }) => boolean;
 }
 
@@ -128,6 +135,11 @@ export function createSessionChatStreamSource(
   generationTimeoutConfig: GenerationTimeoutConfig = DEFAULT_GENERATION_TIMEOUT_CONFIG,
   searchOptions: SessionSearchOptions = {},
 ): ChatStreamSource {
+  const searchConfig = searchOptions.config ?? readSearchConfig();
+  const searchBudget = searchOptions.budget ?? new SearchBudget(searchConfig, new JsonSearchLedger(searchConfig.ledgerPath));
+  // Validate the same complete phase relationship for code-injected sources as for env assembly.
+  readGenerationTimeoutConfig({ CHAT_GENERATION_FIRST_CHUNK_TIMEOUT_MS: String(generationTimeoutConfig.firstChunkTimeoutMs),
+    CHAT_GENERATION_TOTAL_TIMEOUT_MS: String(generationTimeoutConfig.totalTimeoutMs) }, contextWindow.config.countTimeoutMs, searchConfig.timeoutMs);
   return async function* sessionChatStreamSource(request, { signal, trustedDiscordUserId }) {
     if (signal.aborted) return;
     if (!isChatStreamRequest(request) || !request.sessionId) {
@@ -154,10 +166,11 @@ export function createSessionChatStreamSource(
         request.messages.map((message, index) => ({ ...message, id: requestId ?? `pending-${index}`, createdAt: 0 }));
       const history = state.inputExists ? state.session.messages.slice(0, -1) : state.session.messages;
       // Only persisted session metadata determines the budget source. Legacy is web.
-      const source = state.session.origin?.type === 'discord' ? 'discord' : 'web';
+      const source: 'web' | 'discord' = state.session.origin?.type === 'discord' ? 'discord' : 'web';
       let selected: Message[];
       let search: SearchMetadata | undefined;
       let injected = false;
+      let deadline: SearchDeadline | undefined;
       const acquireGeneration = (): number => requestBudget?.acquire(source) ?? 0;
       const rejectBudget = (wait: number) => ({ event: 'error' as const, data: { error: {
         code: 'RATE_LIMIT' as const, message: `模型请求预算已满或暂时暂停，请等待 ${Math.ceil(wait / 1000)} 秒后再试。`,
@@ -172,22 +185,26 @@ export function createSessionChatStreamSource(
         const wait = acquireGeneration();
         if (wait) { yield rejectBudget(wait); return; }
         stage = 'search';
+        deadline = new SearchDeadline(115000);
+        const identity = { source, userId: trustedDiscordUserId,
+          channelId: state.session.origin?.type === 'discord' ? state.session.origin.channelId : undefined };
         const validUser = typeof trustedDiscordUserId === 'string' && /^\d{17,20}$/.test(trustedDiscordUserId);
         if (source === 'discord' && !validUser) search = degradedSearch('missing_identity');
-        else if (!(searchOptions.admit?.({ source, userId: validUser ? trustedDiscordUserId : undefined,
-          channelId: state.session.origin?.type === 'discord' ? state.session.origin.channelId : undefined }) ?? true)) {
-          search = degradedSearch('admission_denied');
-        } else if (!searchOptions.adapter) search = degradedSearch('unavailable');
+        else if (!searchOptions.adapter) search = degradedSearch('unavailable');
         else {
           try {
-            const raw = await waitForSearch(() => searchOptions.adapter!.search(question, { signal }), signal);
-            const sources = normalizeSearchSources(raw);
-            search = sources.length ? { status: 'succeeded', sources } : degradedSearch('no_results');
+            if (!(searchOptions.admit?.(identity) ?? true) ||
+              !await deadline.run(phaseSignal => searchBudget.acquire(identity, phaseSignal), signal)) search = degradedSearch('admission_denied');
+            else {
+              const raw = await searchWithTimeout(searchOptions.adapter, question, signal, searchConfig.timeoutMs, deadline);
+              const sources = normalizeSearchSources(raw);
+              search = sources.length ? { status: 'succeeded', sources } : degradedSearch('no_results');
+            }
           } catch (error) {
             if (signal.aborted) return;
-            // Search failures are an explicit downgrade, never a model-budget pause.
             const failure = safeStreamError(error, 'search', 'NETWORK_ERROR');
             logChatFailure(error, 'search', failure.code);
+            if (error && typeof error === 'object' && (error as { status?: unknown }).status === 429) searchBudget.pause();
             search = degradedSearch('provider_failure');
           }
         }
@@ -195,19 +212,33 @@ export function createSessionChatStreamSource(
         stage = 'count';
         const countAllowance = { remaining: 2 };
         if (search.status === 'succeeded') {
-          const withData = inputs.map((input, index) => index === inputs.length - 1
-            ? { ...input, content: `${input.content}\n\n${buildSearchContext(search!.sources)}` } : input);
-          try {
-            selected = await contextWindow.select(history, withData, adapter, signal, source,
-              { systemInstruction: `\n\n${SEARCH_SYSTEM_RULE}`, countAllowance });
-            selected = [{ id: 'search-system-rule', role: 'system', content: SEARCH_SYSTEM_RULE, createdAt: 0 }, ...selected];
-            injected = true;
-          } catch (error) {
-            if (!(error instanceof ChatError) || error.code !== 'CONTEXT_LIMIT') throw error;
+          let sources = fitSearchSources(search.sources, block => contextWindow.estimateSearchBlock(block));
+          const withData = (block: string) => inputs.map((input, index) => index === inputs.length - 1
+            ? { ...input, content: `${input.content}\n\n${block}` } : input);
+          // Fit minimum current input before removing any complete history turn.
+          sources = fitSearchSources(sources, block => contextWindow.estimate(withData(block), SEARCH_SYSTEM_RULE, true), contextWindow.config.inputTokens);
+          if (!sources.length) {
             search = degradedSearch('context_limit');
-            selected = await contextWindow.select(history, inputs, adapter, signal, source, { countAllowance });
+            selected = await contextWindow.select(history, inputs, adapter, signal, source, { countAllowance, deadline });
+          } else {
+            const eligible = contextWindow.config.historyTurns === 0 ? [] : historyTurns(history).slice(-contextWindow.config.historyTurns).flat();
+            // When full history is tight, shrink data before select() removes old whole turns.
+            // Keep one minimal source here: history removal must precede dropping data entirely.
+            sources = fitSearchSources(sources,
+              block => contextWindow.estimate([...eligible, ...withData(block)], SEARCH_SYSTEM_RULE, true), contextWindow.config.inputTokens * 0.8, true);
+            search = { status: 'succeeded', sources };
+            try {
+              selected = await contextWindow.select(history, withData(buildSearchContext(sources)), adapter, signal, source,
+                { systemInstruction: SEARCH_SYSTEM_RULE, countAllowance, search: true, deadline });
+              selected = [{ id: 'search-system-rule', role: 'system', content: SEARCH_SYSTEM_RULE, createdAt: 0 }, ...selected];
+              injected = true;
+            } catch (error) {
+              if (!(error instanceof ChatError) || error.code !== 'CONTEXT_LIMIT') throw error;
+              search = degradedSearch('context_limit');
+              selected = await contextWindow.select(history, inputs, adapter, signal, source, { countAllowance, deadline });
+            }
           }
-        } else selected = await contextWindow.select(history, inputs, adapter, signal, source, { countAllowance });
+        } else selected = await contextWindow.select(history, inputs, adapter, signal, source, { countAllowance, deadline });
       } else {
         // Ordinary rounds retain the established count -> generation-admission order.
         selected = await contextWindow.select(history, inputs, adapter, signal, source);
@@ -221,12 +252,13 @@ export function createSessionChatStreamSource(
       if (signal.aborted) return;
       stage = 'model';
       for await (const chunk of streamWithGenerationTimeout(adapter, selected,
-        { signal, maxTokens: contextWindow.config.outputTokens }, generationTimeoutConfig)) {
+        { signal, maxTokens: contextWindow.config.outputTokens }, generationTimeoutConfig, deadline)) {
         if (signal.aborted) return;
         if (chunk.done) {
           // Reject empty output while still in the model stage, before calibration or storage.
           if (!chunk.accumulated.trim()) throw new ChatError('模型未返回有效正文，请稍后重新提问。', 'MODEL_ERROR');
-          if (!injected) contextWindow.observe(selected, chunk.usage?.promptTokens);
+          if (injected) contextWindow.observeSearch(selected, chunk.usage?.promptTokens);
+          else contextWindow.observe(selected, chunk.usage?.promptTokens);
           stage = 'storage';
           await sessionService.appendAssistantResponse(
             request.sessionId,
@@ -272,7 +304,8 @@ export function createChatStreamSourceFromEnv(
   const countBudget = new SourceRequestBudget({ requestsPerMinute: budgetConfig.countsPerMinute,
     sourceLimits: { discord: budgetConfig.countsPerMinute - budgetConfig.webReservedCounts } });
   const contextWindow = new ContextWindow(contextConfig, { countBudget });
-  const generationTimeoutConfig = readGenerationTimeoutConfig(environment, contextConfig.countTimeoutMs);
+  const searchConfig = readSearchConfig(environment);
+  const generationTimeoutConfig = readGenerationTimeoutConfig(environment, contextConfig.countTimeoutMs, searchConfig.timeoutMs);
   const apiKey = sanitizeGeminiApiKey(environment.GEMINI_API_KEY);
   const adapter: ChatAdapter = apiKey
     ? new GeminiChatAdapter({ apiKey, systemInstruction: contextConfig.systemInstruction })
@@ -285,7 +318,7 @@ export function createChatStreamSourceFromEnv(
   }) : undefined;
   if (options.sessionService || options.sessionStorage) {
     const service = options.sessionService ?? new SessionService(options.sessionStorage!);
-    return createSessionChatStreamSource(adapter, service, budget, contextWindow, generationTimeoutConfig, { adapter: options.searchAdapter });
+    return createSessionChatStreamSource(adapter, service, budget, contextWindow, generationTimeoutConfig, { adapter: options.searchAdapter, config: searchConfig, budget: options.searchBudget });
   }
   const source = createAdapterStreamSource(adapter, contextWindow, generationTimeoutConfig);
   return budget ? guardStreamSource(source, budget) : source;

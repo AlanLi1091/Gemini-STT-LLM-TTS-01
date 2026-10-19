@@ -1,7 +1,7 @@
 # 测试套件与测试用例台账
 
 > **维护规范**：
-> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（38 个套件）与具体测试用例（511 个断言项）。
+> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（41 个套件）与具体测试用例（559 个断言项）。
 > 2. **铁律联动**：后续开发中，每次有新功能开发、重构或测试内容更新时，**必须同步在此台账中维护新增或修改的测试项**，保持与实际测试套件 100% 同步。
 
 ## 1. 测试套件概览看板
@@ -25,11 +25,11 @@
 | 15 | `core/test/sse-contract.test.ts` | Task 11 | 共享 SSE 事件、错误载荷与 sessionId 演进契约 | 8 | ✅ 通过 |
 | 16 | `server/test/cors.test.ts` | Task 11 | CORS 白名单解析、允许/拒绝策略与预检链路 | 5 | ✅ 通过 |
 | 17 | `server/test/chat-stream.test.ts` | Task 12 | SSE 流式管道、心跳、续传声明与中断级联 | 16 | ✅ 通过 |
-| 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 / Task 17 Step 1 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 49 | ✅ 通过 |
+| 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 / Task 17 Step 1 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 57 | ✅ 通过 |
 | 19 | `src/test/remote-chat-adapter.test.ts` | Task 13 / Task 14 Step 3 | RemoteChatAdapter 的 SSE 消费、错误映射、AbortSignal 与 sessionId 模式 | 15 | ✅ 通过 |
 | 20 | `src/test/app-remote-integration.test.tsx` | Task 13 Step 3 / Task 14 Step 3 / Phase 3 收尾 | App 的后端 SSE 装配、会话恢复、归档清空与旧配置迁移 | 7 | ✅ 通过 |
 | 21 | `server/test/json-session-storage.test.ts` | Task 14 Step 1 / Task 16 Step 2 | JSON 会话、频道关联、重启恢复与严格追加 | 15 | ✅ 通过 |
-| 22 | `server/test/session-api.test.ts` | Task 14 Step 2 / Task 16 Step 2 | 会话 API、频道上下文、归档与来源隔离 | 24 | ✅ 通过 |
+| 22 | `server/test/session-api.test.ts` | Task 14 Step 2 / Task 16 Step 2 | 会话 API、频道上下文、归档与来源隔离 | 25 | ✅ 通过 |
 | 23 | `server/test/discord-demo.test.ts` | Task 15 Step 2 | 配置、测试频道回显、连接事件、日志脱敏与退出清理（网络 Mock） | 14 | ✅ 通过 |
 | 24 | `bot/test/gateway.test.ts` | Task 16 / Task 17 Step 1–3 | 正式网关、typing、错误、重连、长时模拟与资源清理（网络 Mock） | 50 | ✅ 通过 |
 | 25 | `bot/test/message-entry.test.ts` | Task 16 Step 1 | 指定频道直接 @Bot、提及清理与消息过滤 | 14 | ✅ 通过 |
@@ -40,13 +40,16 @@
 | 30 | `bot/test/errors.test.ts` | Task 17 Step 2 | 固定安全反馈、Discord 错误分类与启动日志脱敏 | 7 | ✅ 通过 |
 | 31 | `server/test/deployment.test.ts` | Task 18 Step 1 | 私有 loopback 配置、静态托管、SSE / API 隔离与文件边界 | 7 | ✅ 通过 |
 | 32 | `server/test/deployment-validation.test.ts` | Task 18 Step 2 | 采集故障、重连中断、24 小时 / 新鲜度 / 证据缺口判定 | 11 | ✅ 通过 |
-| 33 | `server/test/context-window.test.ts` | P0-1 第一步 | 轮次窗口、计数降级、超时与内存校准 | 28 | ✅ 通过 |
-| 34 | `server/test/generation-timeout.test.ts` | P1-2 / R2 | 首包 / 总期限、取消、迭代等待与清理边界、启动配置（假时钟 / Mock） | 4 | ✅ 通过 |
+| 33 | `server/test/context-window.test.ts` | P0-1 第一步 | 轮次窗口、计数降级、超时与内存校准 | 32 | ✅ 通过 |
+| 34 | `server/test/generation-timeout.test.ts` | P1-2 / R2 | 首包 / 总期限、取消、迭代等待与清理边界、启动配置（假时钟 / Mock） | 7 | ✅ 通过 |
 | 35 | `server/test/chat-error-safety.test.ts` | P1-3 | 存储错误分类、上游脱敏、固定提示与白名单日志 | 23 | ✅ 通过 |
 | 36 | `server/test/source-budget.test.ts` | P1-7 | 持久化来源防伪、Web保留额度、总守卫与计数 / 生成暂停 | 8 | ✅ 通过 |
 | 37 | `server/test/search-adapter.test.ts` | Task 20 Step 1 | 固定端点、原生HTTP、限读、取消与离线Mock | 6 | ✅ 通过 |
-| 38 | `server/test/search-context.test.ts` | Task 20 Step 1 | 来源过滤、Unicode上限、资料隔离与URL不入模型 | 9 | ✅ 通过 |
-| **合计** | **38 个测试文件** | **Phase 1–5 / 审计修复** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **511** | **✅ 100% 通过** |
+| 38 | `server/test/search-context.test.ts` | Task 20 Step 1 | 来源过滤、Unicode上限、资料隔离与URL不入模型 | 12 | ✅ 通过 |
+| 39 | `server/test/search-budget.test.ts` | Task 20 Step 2 | 配置、原子多守卫、故障关闭、并发与429隔离 | 15 | ✅ 通过 |
+| 40 | `server/test/search-ledger.test.ts` | Task 20 Step 2 | UTC日账本、原子写、重启 / 换日与N4 | 10 | ✅ 通过 |
+| 41 | `server/test/search-timeout.test.ts` | Task 20 Step 2 | 单调期限、取消、迟到结果与剩余预算 | 4 | ✅ 通过 |
+| **合计** | **41 个测试文件** | **Phase 1–5 / 审计修复** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **559** | **✅ 100% 通过** |
 
 ---
 
@@ -409,7 +412,7 @@
 - [x] **拒绝非布尔搜索字段以及无状态搜索请求**
 - [x] **只有无Origin本机请求可提供可信Discord身份且请求体的可信字段被忽略**
 
-### 2.18 `server/test/chat-adapter-stream-source.test.ts` (49 项)
+### 2.18 `server/test/chat-adapter-stream-source.test.ts` (57 项)
 > **任务对应**：Task 17 Step 2 / Task 12 Step 2–3 · 服务端 Adapter 承载、自动降级与错误透传
 
 #### Task 12 Step 3: Adapter 自动选择与统一错误透传
@@ -501,6 +504,17 @@
 - [x] **搜索后精确计数发现问题仍超限时不写入且不退款**
 - [x] **搜索成功后模型空正文或保存失败不发成功来源**
 
+
+#### Task 20 Step 2（2026-10-18，Mock）
+- [x] **先持久化尝试与credit再搜索，回放和模式冲突不进搜索预算**
+- [x] **搜索额度不足只扣一次生成额度并固定降级普通生成**
+- [x] **搜索429暂停所有搜索来源而不暂停生成和计数**
+- [x] **坏账本不中断普通生成、不清零且不调用供应商**
+- [x] **搜索超时本地降级不等待迟到结果且不重搜重扣**
+- [x] **取消搜索不降级生成但保留已持久化额度且释放锁**
+- [x] **长URL只保留元数据且搜索用量不污染普通系数，空正文不校准**
+- [x] **问题不合法、生成拒绝与缺可信身份均不扣搜索额度**
+
 ### 2.19 `src/test/remote-chat-adapter.test.ts` (15 项)
 > **任务对应**：Task 13 Step 1 / Task 14 Step 3 · RemoteChatAdapter 实现、会话模式与契约测试
 
@@ -574,7 +588,7 @@
 - [x] **来源元数据重启恢复且返回对象与内部来源深拷贝隔离**
 - [x] **拒绝不合法来源状态角色与不安全URL且日志不变**
 
-### 2.22 `server/test/session-api.test.ts` (24 项)
+### 2.22 `server/test/session-api.test.ts` (25 项)
 > **任务对应**：Task 17 Step 2 / Task 16 Step 2 / Task 14 Step 2 · 会话 API、多轮全量上下文与归档语义
 
 #### Task 14 Step 2: 会话 API 与多轮上下文
@@ -626,6 +640,10 @@
 #### S1 截断后空白修复（2026-10-18，Mock）
 - [x] **title截断点为空白仍保存成功且重启回放不重搜**
 - [x] **summary截断点为空白仍保存成功且重启回放不重搜**
+
+
+#### Task 20 Step 2（2026-10-18，Mock）
+- [x] **进程重装和reset不清Discord日额度且预算拒绝仍普通生成**
 
 ### 2.23 `server/test/discord-demo.test.ts` (14 项)
 > **任务对应**：Task 15 Step 2 · 最小网关 Demo（Task 16 Step 1 实现移至 bot/demo.ts，测试路径保留）；所有 Discord 网络调用均 Mock，不能替代真实网关验收。
@@ -869,7 +887,7 @@
 - [x] **keeps old interruption samples failed when journal evidence is missing**
 
 
-### 2.33 `server/test/context-window.test.ts` (28 项)
+### 2.33 `server/test/context-window.test.ts` (32 项)
 > **任务对应**：P0-1 第一步 / ADR-013 · 窗口算法与可注入计数器，网络无真实调用。
 
 - [x] **过滤 system 与孤立 assistant 连续 user 分别成轮且不修改原数组**
@@ -949,7 +967,14 @@
 - [x] **搜索系统规则参与本地与精确预算但不作为计数contents**
 - [x] **降级重选共享计数上限且本地预检不调用计数**
 
-### 2.34 `server/test/generation-timeout.test.ts` (4 项)
+
+#### Task 20 Step 2（2026-10-18，Mock）
+- [x] **含资料的成功用量只提高搜索系数并限制上限4**
+- [x] **搜索系数比较基数包含配置系统规则历史问题与实际资料**
+- [x] **搜索估算取共享与搜索系数较大值普通选择不受搜索系数影响**
+- [x] **搜索阶段已耗时后计数只等待整体剩余时间并清理计时器**
+
+### 2.34 `server/test/generation-timeout.test.ts` (7 项)
 > **任务对应**：P1-2 / R2 · 服务端生成超时与非协作迭代器退出
 
 #### P1-2: 服务端生成超时守卫
@@ -957,6 +982,12 @@
 - [x] **首包期限中止忽略 signal 的上游，同时不等待挂起的 return**
 - [x] **总期限不会被中间 chunk 重置，已完成 done 不留下计时器**
 - [x] **客户端主动中止不是超时，且迟到拒绝被收敛**
+
+
+#### Task 20 Step 2（2026-10-18，Mock）
+- [x] **搜索加生成加两次计数默认104秒且超过115秒拒绝**
+- [x] **搜索和计数消耗后的整体期限不在生成阶段重新开始**
+- [x] **墙钟跳变不改变首包和总生成期限**
 
 ### 2.35 `server/test/chat-error-safety.test.ts` (23 项)
 > **任务对应**：P1-3 · 存储 / 模型分类与服务端脱敏边界
@@ -1041,7 +1072,7 @@
 - [x] **取消挂起的响应读取可结束本地等待**
 - [x] **Mock适配器可离线提供受限来源且已取消不工作**
 
-### 2.38 `server/test/search-context.test.ts` (9 项)
+### 2.38 `server/test/search-context.test.ts` (12 项)
 
 > **任务对应**：Task 20 Step 1 · 全Mock，不调用真实供应商。
 
@@ -1057,3 +1088,64 @@
 - [x] **截断点为全角空格时来源仍通过校验且再次规范化不变**
 - [x] **截断点为零宽控制字符时来源仍通过校验且再次规范化不变**
 - [x] **截断点为空控制字符时来源仍通过校验且再次规范化不变**
+
+
+#### Task 20 Step 2（2026-10-18，Mock）
+- [x] **按实际隔离块估算先缩摘要后减来源且展示摘要与注入保持一致**
+- [x] **最小资料仍超预算返回空来源并保持连续编号**
+- [x] **历史较长时先缩资料但保留最小来源供后续历史窗口裁剪**
+
+### 2.39 `server/test/search-budget.test.ts` (15 项)
+
+> **任务对应**：Task 20 Step 2 · 上游Mock / 隔离临时账本。
+
+- [x] **默认配置与额度层级校验不读取Key**
+- [x] **Discord达到分钟子额后Web仍可用保留额度且拒绝不扣任何计数**
+- [x] **用户与频道分钟守卫原子拒绝并且零Discord分钟份额合法**
+- [x] **用户日额度跨分钟保留而换频道不能绕过**
+- [x] **频道与Discord总日额度跨用户保留而Web可用剩余额度**
+- [x] **全局日额度不可通过重建守卫绕过且UTC换日正常开启**
+- [x] **并发请求串行检查后再写账本不会超额**
+- [x] **429只暂停搜索所有来源60秒且日计数不退款**
+- [x] **缺身份与预先取消均不写账本**
+- [x] **账本读写失败关闭搜索且不自动恢复或清零**
+- [x] **写入挂起时取消结束本地等待且迟到写入不退款不发请求**
+- [x] **已存在账本丢失或被改写时关闭搜索而不从空状态恢复**
+- [x] **读操作挂起可取消并使后续请求直接降级**
+- [x] **单独频道日上限拒绝不消耗用户或全局额度**
+- [x] **落账期间收到429或跨UTC日时不再发起该次搜索**
+
+### 2.40 `server/test/search-ledger.test.ts` (10 项)
+
+> **任务对应**：Task 20 Step 2 · 上游Mock / 隔离临时账本。
+
+- [x] **首次ENOENT合法且读操作不创建账本**
+- [x] **原子落盘并重启恢复尝试数和credits且不存query等内容**
+- [x] **损坏账本保持原文且关闭搜索: {bad**
+- [x] **损坏账本保持原文且关闭搜索: {}**
+- [x] **损坏账本保持原文且关闭搜索: {"version":1,"day":"2026-02-30","total":{"attempts":0,"credits":0},"discord":{"attempts":0,"credits":0},"users":{},"channels":{}}**
+- [x] **损坏账本保持原文且关闭搜索: {"version":1,"day":"2026-10-18","total":{"attempts":-1,"credits":0},"discord":{"attempts":0,"credits":0},"users":{},"channels":{}}**
+- [x] **目录或非ENOENT读取错误不能当作首次启动**
+- [x] **结构拒绝错账未来日期及额外内容但不受额度配置降低影响**
+- [x] **rename失败保留原账本并禁止发起搜索**
+- [x] **降低配置仍保留既有使用量且过期合法账本换日不带旧身份**
+
+### 2.41 `server/test/search-timeout.test.ts` (4 项)
+
+> **任务对应**：Task 20 Step 2 · 上游Mock / 隔离临时账本。
+
+- [x] **搜索8秒后中止忽略abort的上游且迟到结果被丢弃**
+- [x] **客户端取消维持ABORTED而非超时降级**
+- [x] **阶段剩余预算不随墙钟或新阶段重置**
+- [x] **整体剩余时间小于搜索期限时按剩余时间结束**
+
+## Task 20 Step 2 要求与测试映射（2026-10-18）
+
+| 提示词要求 | 主要回归文件 |
+| :--- | :--- |
+| §2 原子搜索额度 / 来源保留 / 用户频道限额 / 429 | server/test/search-budget.test.ts；server/test/chat-adapter-stream-source.test.ts |
+| §3 先落账再请求 / 重启 / UTC换日 / N4 / reset不清 | server/test/search-ledger.test.ts；server/test/search-budget.test.ts；server/test/session-api.test.ts；server/test/chat-adapter-stream-source.test.ts |
+| §4 搜索超时 / 不合作上游 / 单调与整体剩余时间 | server/test/search-timeout.test.ts；server/test/generation-timeout.test.ts；server/test/context-window.test.ts；server/test/chat-adapter-stream-source.test.ts |
+| §5 2048资料预算 / 优先缩资料 / N1与完整输入 / K1 | server/test/search-context.test.ts；server/test/context-window.test.ts；server/test/chat-adapter-stream-source.test.ts |
+
+本轮新增48项，全量41/41文件559/559用例；旧511项保持通过（既有生成配置上边界断言按新增搜索预留关系更新）。生产未装配搜索网络、不加载搜索Key；无真实搜索 / 模型 / Discord / VPS访问。

@@ -61,3 +61,22 @@ export function isSearchMetadata(value: unknown): value is SearchMetadata {
       typeof s.summary === 'string' && !!s.summary && clamp(s.summary, 100) === s.summary;
   });
 }
+
+/** Shrink summaries before dropping a tail source; never mutate persisted history or caller inputs. */
+export function fitSearchSources(sources: readonly SearchSource[], estimate: (block: string) => number, limit = 2048, keepMinimumSource = false): SearchSource[] {
+  let result = sources.map(s => ({ ...s }));
+  while (result.length && estimate(buildSearchContext(result)) > limit) {
+    const lengths = result.map(s => Array.from(s.summary).length);
+    const longest = Math.max(...lengths);
+    if (longest > 1) {
+      const i = lengths.indexOf(longest);
+      result[i].summary = Array.from(result[i].summary).slice(0, longest - 1).join('').trim();
+      if (!result[i].summary) result.splice(i, 1);
+    } else {
+      if (keepMinimumSource && result.length === 1) break;
+      result.pop();
+    }
+    result = result.map((s, i) => ({ ...s, index: i + 1 }));
+  }
+  return result;
+}
