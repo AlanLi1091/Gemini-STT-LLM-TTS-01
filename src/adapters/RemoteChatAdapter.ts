@@ -1,3 +1,4 @@
+import { parseSearchMetadata } from '../services/searchMetadata';
 import {
   CHAT_ERROR_CODES,
   ChatError,
@@ -127,11 +128,13 @@ export class RemoteChatAdapter implements ChatAdapter {
         body: JSON.stringify(this.sessionId
           ? {
               sessionId: this.sessionId,
+              ...(messages.at(-1)?.searchRequested === true ? { search: true } : {}),
               requestId: messages.at(-1)?.id,
               messages: messages.slice(-1).map(({ role, content }) => ({ role, content })),
             }
           : {
               messages: messages.map(({ role, content }) => ({ role, content })),
+              ...(messages.at(-1)?.searchRequested === true ? { search: true } : {}),
             }),
         signal,
       });
@@ -169,11 +172,12 @@ export class RemoteChatAdapter implements ChatAdapter {
             }
             yield { delta: data.delta, accumulated: data.accumulated, done: false };
           } else if (parsed.event === 'done') {
-            const data = parsed.data as { content?: unknown; usage?: ChatUsage };
+            const data = parsed.data as { content?: unknown; usage?: ChatUsage; search?: unknown };
             if (typeof data.content !== 'string') {
               throw new ChatError('Chat service returned an invalid done event.', 'UNKNOWN');
             }
-            yield { delta: '', accumulated: data.content, usage: data.usage, done: true };
+            const search = parseSearchMetadata(data.search);
+            yield { delta: '', accumulated: data.content, usage: data.usage, done: true, ...(search ? { search } : {}) };
             return;
           } else if (parsed.event === 'error') {
             const error = (parsed.data as { error?: { code?: unknown; message?: unknown } }).error;

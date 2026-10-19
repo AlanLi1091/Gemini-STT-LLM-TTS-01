@@ -19,6 +19,7 @@ import {
 } from './services/sessionApi';
 
 export const App: React.FC = () => {
+  const [searchRequested, setSearchRequested] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [sessionId, setSessionId] = useState<string | undefined>();
   const [isSessionReady, setIsSessionReady] = useState<boolean>(false);
@@ -156,7 +157,14 @@ export const App: React.FC = () => {
         isGenerating={isGenerating}
         onStop={stopGenerating}
         onChange={(e) => setInputText(e.target.value)}
-        onSubmit={() => sendMessage()}
+        searchRequested={searchRequested}
+        onSearchChange={setSearchRequested}
+        onSubmit={() => {
+          if (isBusy || !inputText.trim() || (searchRequested && Array.from(inputText.trim()).length > 500)) return;
+          const requested = searchRequested;
+          setSearchRequested(false);
+          void sendMessage(undefined, requested);
+        }}
       />
 
       {/* 后端连接说明 */}

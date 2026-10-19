@@ -104,6 +104,15 @@ export function describeChatAdapterContract(
     });
 
     describe('stream (流式契约)', () => {
+      it('搜索最终元数据为可选，普通模型流保持旧契约', async () => {
+        const adapter = createAdapter();
+        const messages: Message[] = [{ id: 'optional-search', role: 'user', content: '问题', createdAt: 1 }];
+        const chunks = [];
+        for await (const chunk of adapter.stream(messages, { delayMs: 0, streamChunkDelayMs: 0 })) chunks.push(chunk);
+        expect(chunks.at(-1)?.done).toBe(true);
+        expect(chunks.every(chunk => chunk.search === undefined)).toBe(true);
+      });
+
       it('返回 AsyncIterable，逐步产出 ChatChunk，最终 chunk 标记 done: true 并提供累积内容与用量', async () => {
         const adapter = createAdapter();
         const testMessages: Message[] = [
@@ -124,6 +133,8 @@ export function describeChatAdapterContract(
           delayMs: 0,
           streamChunkDelayMs: 5,
         })) {
+          // Search metadata is optional: model adapters never manufacture display sources.
+          expect(chunk.search).toBeUndefined();
           expect(typeof chunk.delta).toBe('string');
           expect(typeof chunk.accumulated).toBe('string');
           if (chunk.delta) {

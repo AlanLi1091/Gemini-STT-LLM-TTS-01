@@ -338,3 +338,28 @@ describe('Task 10 Step 3: 流式 UI 交互与端到端集成测试', () => {
     });
   });
 });
+
+describe('Task 21: 最终来源滚动', () => {
+  it.each([true, false])('最终来源加入时遵守触底守卫 %s，流中途无来源', atBottom => {
+    const scrollTo = vi.fn();
+    Element.prototype.scrollTo = scrollTo;
+    const messages: Message[] = [
+      { id: 'u', role: 'user', content: '问题', createdAt: 1 },
+      { id: 'a', role: 'assistant', content: '正文', createdAt: 2 },
+    ];
+    const view = render(<MessageList messages={messages} isGenerating />);
+    expect(screen.queryByText('本轮检索来源')).not.toBeInTheDocument();
+    const log = screen.getByRole('log');
+    Object.defineProperties(log, {
+      scrollHeight: { value: 1000, configurable: true },
+      clientHeight: { value: 600, configurable: true },
+      scrollTop: { value: atBottom ? 400 : 100, configurable: true, writable: true },
+    });
+    fireEvent.scroll(log); scrollTo.mockClear();
+    const search = { status: 'succeeded' as const, sources: [{ provider: 'tavily' as const, index: 1, retrievedAt: 1, title: '标题', summary: '摘要', domain: 'example.com', url: 'https://example.com' }] };
+    view.rerender(<MessageList messages={[messages[0], { ...messages[1], search }]} isGenerating={false} />);
+    expect(screen.getByText('本轮检索来源')).toBeInTheDocument();
+    if (atBottom) expect(scrollTo).toHaveBeenCalledWith({ top: 1000, behavior: 'auto' });
+    else expect(scrollTo).not.toHaveBeenCalled();
+  });
+});

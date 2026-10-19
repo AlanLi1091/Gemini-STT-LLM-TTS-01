@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { useChat } from './useChat';
-import { ChatAdapter, ChatError } from '../types';
+import { ChatAdapter, ChatError, Message } from '../types';
 
 describe('useChat Hook 领域逻辑测试', () => {
   it('应正确初始化空消息列表与空输入框', () => {
@@ -420,5 +420,83 @@ describe('P0-2: 输入标识', () => {
       if (original) Object.defineProperty(crypto, 'randomUUID', original);
       else Reflect.deleteProperty(crypto, 'randomUUID');
     }
+  });
+});
+
+describe('Task 21: 逐轮模式与最终搜索来源', () => {
+  const search = { status: 'succeeded' as const, sources: [{ provider: 'tavily' as const, retrievedAt: 1, index: 1, title: '标题', domain: 'example.com', url: 'https://example.com/', summary: '摘要' }] };
+  it('仅在done附着来源，单done回放也附着来源', async () => {
+    const adapter: ChatAdapter = { id: 'test', name: 'test', send: vi.fn(), async *stream() { yield { delta: '', accumulated: '回复', done: true, search }; } };
+    const { result } = renderHook(() => useChat({ adapter }));
+    await act(async () => { await result.current.sendMessage('问题', true); });
+    expect(result.current.messages[0].searchRequested).toBe(true);
+    expect(result.current.messages[1].search).toEqual(search);
+  });
+  it('失败重试沿用原模式及原UUID', async () => {
+    let calls = 0;
+    const stream = vi.fn(async function* (_messages: Message[]) {
+      if (++calls === 1) throw new ChatError('失败', 'MODEL_ERROR');
+      yield { delta: '', accumulated: '回复', done: true, search };
+    });
+    const { result } = renderHook(() => useChat({ adapter: { id: 'test', name: 'test', send: vi.fn(), stream } }));
+    await act(async () => { await result.current.sendMessage('问题', true); });
+    const input = result.current.messages[0];
+    await act(async () => { await result.current.retryFailedSend(); });
+    expect(stream.mock.calls.map(call => call[0][0])).toEqual([input, input]);
+    expect(result.current.messages).toHaveLength(2);
+  });
+  it('搜索超500码点不发请求、不追加输入、不截断问题', async () => {
+    const stream = vi.fn();
+    const { result } = renderHook(() => useChat({ adapter: { id: 'test', name: 'test', send: vi.fn(), stream } }));
+    await act(async () => { expect(await result.current.sendMessage('😀'.repeat(501), true)).toBe(false); });
+    expect(stream).not.toHaveBeenCalled(); expect(result.current.messages).toEqual([]);
+  });
+  it('忽略chunk伪造来源且中途失败不附着成功来源', async () => {
+    const adapter: ChatAdapter = { id: 'test', name: 'test', send: vi.fn(), async *stream() {
+      yield { delta: '片段', accumulated: '片段', done: false, search };
+      throw new ChatError('失败', 'MODEL_ERROR');
+    } };
+    const { result } = renderHook(() => useChat({ adapter }));
+    await act(async () => { await result.current.sendMessage('问题', true); });
+    expect(result.current.messages.at(-1)?.content).toBe('片段');
+    expect(result.current.messages.at(-1)?.search).toBeUndefined();
+  });
+});
+
+describe('Task 21: 取消与迟到最终事件', () => {
+  it('停止后忽略不合作adapter迟到的done及成功来源，保留原片段', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    const adapter: ChatAdapter = { id: 'late', name: 'late', send: vi.fn(), async *stream() {
+      yield { delta: '片段', accumulated: '片段', done: false };
+      await gate;
+      yield { delta: '', accumulated: '迟到正文', done: true, search: { status: 'succeeded', sources: [{ provider: 'tavily', retrievedAt: 1, index: 1, title: '标题', summary: '摘要', domain: 'example.com', url: 'https://example.com' }] } };
+    } };
+    const { result } = renderHook(() => useChat({ adapter }));
+    let pending!: Promise<boolean>;
+    await act(async () => { pending = result.current.sendMessage('问题', true); await Promise.resolve(); });
+    act(() => result.current.stopGenerating());
+    await act(async () => { release(); expect(await pending).toBe(false); });
+    expect(result.current.messages.at(-1)?.content).toBe('片段');
+    expect(result.current.messages.at(-1)?.search).toBeUndefined();
+  });
+});
+
+describe('Task 21: chunk与最终done隔离', () => {
+  it('流式过程中不展示来源，done后才挂载，正文与元数据保持分离', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    const search = { status: 'succeeded' as const, sources: [{ provider: 'tavily' as const, retrievedAt: 1, index: 1, title: '标题', summary: '摘要', domain: 'example.com', url: 'https://example.com' }] };
+    const adapter: ChatAdapter = { id: 'stream', name: 'stream', send: vi.fn(), async *stream() {
+      yield { delta: '正文', accumulated: '正文', done: false, search };
+      await gate;
+      yield { delta: '', accumulated: '正文', done: true, search };
+    } };
+    const { result } = renderHook(() => useChat({ adapter }));
+    let pending!: Promise<boolean>;
+    await act(async () => { pending = result.current.sendMessage('问题', true); await Promise.resolve(); });
+    expect(result.current.messages.at(-1)?.search).toBeUndefined();
+    await act(async () => { release(); await pending; });
+    expect(result.current.messages.at(-1)).toMatchObject({ content: '正文', search });
   });
 });

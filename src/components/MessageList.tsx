@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { MessageSquare, Bot, User, ArrowDown } from 'lucide-react';
 import { Message } from '../types';
 import { ThinkingIndicator } from './ThinkingIndicator';
+import { SearchSources } from './SearchSources';
 import { TokenUsageBadge } from './TokenUsageBadge';
 
 interface MessageListProps {
@@ -66,6 +67,7 @@ export const MessageList: React.FC<MessageListProps> = ({
   // 滚动调度核心：分级滚动与用户守卫
   const lastMessage = messages[messages.length - 1];
   const lastMessageContent = lastMessage?.content;
+  const lastMessageSearch = lastMessage?.search;
 
   useEffect(() => {
     const prevLen = prevMessagesLengthRef.current;
@@ -94,6 +96,9 @@ export const MessageList: React.FC<MessageListProps> = ({
       return;
     }
 
+    // Final metadata changes height even when done repeats the last content.
+    if (lastMessageSearch && isAtBottom) scrollToBottom('auto');
+
     // 场景 C：思考态开启（isLoading 变更）且当前在底部守卫内
     if (isLoading && isAtBottom) {
       scrollToBottom('smooth');
@@ -105,7 +110,7 @@ export const MessageList: React.FC<MessageListProps> = ({
         rafIdRef.current = null;
       }
     };
-  }, [messages.length, lastMessageContent, isGenerating, isLoading, isAtBottom, scrollToBottom]);
+  }, [messages.length, lastMessageContent, lastMessageSearch, isGenerating, isLoading, isAtBottom, scrollToBottom]);
 
   return (
     <div className="relative flex-1 w-full flex flex-col overflow-hidden">
@@ -184,6 +189,7 @@ export const MessageList: React.FC<MessageListProps> = ({
                           />
                         )}
                       </p>
+                      {msg.role === 'assistant' && <SearchSources search={msg.search} />}
                       {!isUser && msg.usage && (
                         <div>
                           <TokenUsageBadge usage={msg.usage} />

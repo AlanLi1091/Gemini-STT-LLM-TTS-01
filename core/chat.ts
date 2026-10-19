@@ -35,6 +35,8 @@ export interface ChatChunk {
   accumulated: string;
   usage?: ChatUsage;
   done: boolean;
+  /** Display metadata only on the final successful chunk; model adapters may omit it. */
+  search?: SearchMetadata;
 }
 
 export interface ChatAdapterOptions {

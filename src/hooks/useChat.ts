@@ -1,3 +1,4 @@
+import { parseSearchMetadata } from '../services/searchMetadata';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Message, ChatAdapter, ChatError } from '../types';
 import { defaultMockAdapter, createAssistantMessage } from '../services/mockChatService';
@@ -15,7 +16,7 @@ export interface UseChatReturn {
   isGenerating: boolean;
   lastError: ChatError | null;
   setInputText: (text: string) => void;
-  sendMessage: (content?: string) => Promise<boolean>;
+  sendMessage: (content?: string, searchRequested?: boolean) => Promise<boolean>;
   retryFailedSend: () => Promise<boolean>;
   stopGenerating: () => void;
   dismissError: () => void;
@@ -107,6 +108,8 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
           });
 
           for await (const chunk of streamIterable) {
+            if (controller.signal.aborted) throw new ChatError('请求已中断。', 'ABORTED');
+            const search = chunk.done ? parseSearchMetadata(chunk.search) : undefined;
             // 第一个 chunk 到达：解除 initial loading 思考态，进入 generating 打字机态
             if (!assistantMounted) {
               assistantMounted = true;
@@ -118,6 +121,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
                 content: chunk.accumulated,
                 createdAt: Date.now(),
                 ...(chunk.usage ? { usage: chunk.usage } : {}),
+                ...(search ? { search } : {}),
               };
               setMessages((prev) => [...prev, initialAssistantMessage]);
             } else {
@@ -132,6 +136,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
                   ...updated[lastIdx],
                   content: chunk.accumulated,
                   ...(chunk.usage ? { usage: chunk.usage } : {}),
+                  ...(search ? { search } : {}),
                 };
                 return updated;
               });
@@ -184,7 +189,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
   );
 
   const sendMessage = useCallback(
-    async (customContent?: string): Promise<boolean> => {
+    async (customContent?: string, searchRequested = false): Promise<boolean> => {
       // 思考中或流式生成中禁止重复触发
       if (isLoading || isGenerating) {
         return false;
@@ -194,7 +199,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
       const trimmed = rawContent.trim();
 
       // 空白防误触：空字符串或全空格不发送
-      if (!trimmed) {
+      if (!trimmed || (searchRequested && Array.from(trimmed).length > 500)) {
         return false;
       }
 
@@ -206,6 +211,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
         role: 'user',
         content: trimmed,
         createdAt: Date.now(),
+        ...(searchRequested ? { searchRequested: true } : {}),
       };
 
       const nextMessages = [...messages, userMessage];

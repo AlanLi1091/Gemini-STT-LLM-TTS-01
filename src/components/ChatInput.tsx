@@ -10,6 +10,8 @@ interface ChatInputProps {
   onStop?: () => void;
   placeholder?: string;
   autoFocus?: boolean;
+  searchRequested?: boolean;
+  onSearchChange?: (requested: boolean) => void;
 }
 
 export interface ChatInputHandle {
@@ -25,10 +27,13 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(({
   onStop,
   placeholder = '输入消息，与机器人对话...',
   autoFocus = true,
+  searchRequested = false,
+  onSearchChange,
 }, ref) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isTrimmedEmpty = value.trim().length === 0;
-  const isSendDisabled = disabled || isTrimmedEmpty;
+  const searchTooLong = searchRequested && Array.from(value.trim()).length > 500;
+  const isSendDisabled = disabled || isTrimmedEmpty || searchTooLong;
 
   useImperativeHandle(ref, () => ({
     focus: () => {
@@ -55,7 +60,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (isTrimmedEmpty || disabled) {
+    if (isSendDisabled) {
       return;
     }
     if (onSubmit) {
@@ -94,6 +99,14 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(({
       className="w-full border-t border-zinc-200 bg-white/90 backdrop-blur-sm px-4 py-3 sm:px-6 sticky bottom-0 z-10"
     >
       <div className="max-w-4xl mx-auto">
+        <div className="mb-2 text-xs text-zinc-600">
+          <label className="inline-flex items-center gap-2">
+            <input type="checkbox" checked={searchRequested} disabled={disabled || isGenerating} onChange={e => onSearchChange?.(e.target.checked)} aria-describedby="chat-search-notice" />
+            联网搜索
+          </label>
+          <p id="chat-search-notice" className="mt-1">开启后本轮问题会发送给 Tavily 检索，检索来源会随回复保存；不承诺零留存。</p>
+          {searchTooLong && <p role="alert" className="mt-1 text-rose-700">联网搜索问题最多 500 个 Unicode 码点，请缩短后发送。</p>}
+        </div>
         <form
           id="chat-input-form"
           onSubmit={handleSubmit}

@@ -1,3 +1,4 @@
+import { parseSearchMetadata } from './searchMetadata';
 import type { Message, SessionOrigin } from '@core/index';
 
 export const RECENT_SESSION_STORAGE_KEY = 'recent_chat_session_id_v1';
@@ -46,7 +47,14 @@ async function readSessionResponse(response: Response): Promise<PersistedSession
   if (body.origin && body.origin.type !== 'web') {
     throw new SessionApiError('Chat session service returned an invalid origin.');
   }
-  return body;
+  return {
+    ...body,
+    messages: body.messages.map(message => {
+      const { search: rawSearch, ...rest } = message;
+      const search = message.role === 'assistant' ? parseSearchMetadata(rawSearch) : undefined;
+      return { ...rest, ...(search ? { search } : {}) };
+    }),
+  };
 }
 
 export function loadRecentSessionId(storage: Storage = window.localStorage): string | undefined {

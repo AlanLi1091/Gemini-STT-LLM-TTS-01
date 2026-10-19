@@ -1,7 +1,7 @@
 # 测试套件与测试用例台账
 
 > **维护规范**：
-> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（41 个套件）与具体测试用例（651 个断言项）。
+> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（43 个套件）与具体测试用例（742 个断言项）。
 > 2. **铁律联动**：后续开发中，每次有新功能开发、重构或测试内容更新时，**必须同步在此台账中维护新增或修改的测试项**，保持与实际测试套件 100% 同步。
 
 ## 1. 测试套件概览看板
@@ -13,21 +13,21 @@
 | 3 | `src/test/chat-dispatch.test.tsx` | Task 3 | 用户输入管理与消息派发提交行为 | 4 | ✅ 通过 |
 | 4 | `src/test/mock-engine.test.tsx` | Task 4 | Mock 响应引擎延时回复与思考态交互流转 | 3 | ✅ 通过 |
 | 5 | `src/test/task5-interactions.test.tsx` | Task 5 | 体验细节（ADR-005不可变ID / IME防误发 / 清空会话 / 触底滚动） | 7 | ✅ 通过 |
-| 6 | `src/test/chat-adapter-contract.test.ts` | Task 6 / 10 | ChatAdapter 通用契约测试套件（Mock & Gemini send/stream） | 14 | ✅ 通过 |
+| 6 | `src/test/chat-adapter-contract.test.ts` | Task 6 / 10 | ChatAdapter 通用契约测试套件（Mock & Gemini send/stream） | 16 | ✅ 通过 |
 | 7 | `src/test/gemini-adapter.test.ts` | Task 7 / 10 | GeminiChatAdapter send & stream 单测（网络全Mock/错误转译/用量提取） | 42 | ✅ 通过 |
 | 8 | `src/test/settings-storage.test.ts` | Phase 3 收尾 Step 2A | 旧直连配置迁移至后端模式并清除浏览器密钥 | 8 | ✅ 通过 |
 | 9 | `src/test/settings.test.tsx` | Phase 3 收尾 Step 2B | 后端连接信息面板与旧设置迁移 | 4 | ✅ 通过 |
-| 10 | `src/hooks/useChat.test.ts` | Task 3 / 9 / 10 | useChat Hook 领域逻辑状态机（流式驱动/中断/重试/生命周期） | 15 | ✅ 通过 |
+| 10 | `src/hooks/useChat.test.ts` | Task 3 / 9 / 10 | useChat Hook 领域逻辑状态机（流式驱动/中断/重试/生命周期） | 21 | ✅ 通过 |
 | 11 | `src/test/error-and-usage-components.test.tsx` | Task 9 / Phase 3 收尾 Step 2B | TokenUsageBadge 与服务端错误指引组件测试 | 16 | ✅ 通过 |
 | 12 | `src/test/error-and-usage-integration.test.tsx` | Task 9 / Phase 3 收尾 Step 2B | 错误横幅展示/重试及 Token 徽章集成测试 | 5 | ✅ 通过 |
-| 13 | `src/test/streaming-ui.test.tsx` | Task 10 | 流式打字机光标动效、停止生成按钮、顶栏联动禁用与 Smart Sticky Bottom 触底滚动守卫 | 8 | ✅ 通过 |
+| 13 | `src/test/streaming-ui.test.tsx` | Task 10 | 流式打字机光标动效、停止生成按钮、顶栏联动禁用与 Smart Sticky Bottom 触底滚动守卫 | 10 | ✅ 通过 |
 | 14 | `server/test/server-skeleton.test.ts` | Task 11 | Express 服务端骨架、双环境运行、根路径与健康检查响应 | 4 | ✅ 通过 |
 | 15 | `core/test/sse-contract.test.ts` | Task 11 | 共享 SSE 事件、错误载荷与 sessionId 演进契约 | 8 | ✅ 通过 |
 | 16 | `server/test/cors.test.ts` | Task 11 | CORS 白名单解析、允许/拒绝策略与预检链路 | 5 | ✅ 通过 |
 | 17 | `server/test/chat-stream.test.ts` | Task 12 | SSE 流式管道、心跳、续传声明与中断级联 | 28 | ✅ 通过 |
 | 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 / Task 17 Step 1 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 65 | ✅ 通过 |
-| 19 | `src/test/remote-chat-adapter.test.ts` | Task 13 / Task 14 Step 3 | RemoteChatAdapter 的 SSE 消费、错误映射、AbortSignal 与 sessionId 模式 | 15 | ✅ 通过 |
-| 20 | `src/test/app-remote-integration.test.tsx` | Task 13 Step 3 / Task 14 Step 3 / Phase 3 收尾 | App 的后端 SSE 装配、会话恢复、归档清空与旧配置迁移 | 7 | ✅ 通过 |
+| 19 | `src/test/remote-chat-adapter.test.ts` | Task 13 / Task 14 Step 3 | RemoteChatAdapter 的 SSE 消费、错误映射、AbortSignal 与 sessionId 模式 | 21 | ✅ 通过 |
+| 20 | `src/test/app-remote-integration.test.tsx` | Task 13 Step 3 / Task 14 Step 3 / Phase 3 收尾 | App 的后端 SSE 装配、会话恢复、归档清空与旧配置迁移 | 19 | ✅ 通过 |
 | 21 | `server/test/json-session-storage.test.ts` | Task 14 Step 1 / Task 16 Step 2 | JSON 会话、频道关联、重启恢复与严格追加 | 22 | ✅ 通过 |
 | 22 | `server/test/session-api.test.ts` | Task 14 Step 2 / Task 16 Step 2 | 会话 API、频道上下文、归档与来源隔离 | 31 | ✅ 通过 |
 | 23 | `server/test/discord-demo.test.ts` | Task 15 Step 2 | 配置、测试频道回显、连接事件、日志脱敏与退出清理（网络 Mock） | 14 | ✅ 通过 |
@@ -45,11 +45,13 @@
 | 35 | `server/test/chat-error-safety.test.ts` | P1-3 | 存储错误分类、上游脱敏、固定提示与白名单日志 | 34 | ✅ 通过 |
 | 36 | `server/test/source-budget.test.ts` | P1-7 | 持久化来源防伪、Web保留额度、总守卫与计数 / 生成暂停 | 8 | ✅ 通过 |
 | 37 | `server/test/search-adapter.test.ts` | Task 20 Step 1 | 固定端点、原生HTTP、限读、取消与离线Mock | 28 | ✅ 通过 |
-| 38 | `server/test/search-context.test.ts` | Task 20 Step 1 | 来源过滤、Unicode上限、资料隔离与URL不入模型 | 33 | ✅ 通过 |
+| 38 | `server/test/search-context.test.ts` | Task 20 Step 1 | 来源过滤、Unicode上限、资料隔离与URL不入模型 | 35 | ✅ 通过 |
 | 39 | `server/test/search-budget.test.ts` | Task 20 Step 2 | 配置、原子多守卫、故障关闭、并发与429隔离 | 17 | ✅ 通过 |
 | 40 | `server/test/search-ledger.test.ts` | Task 20 Step 2 | UTC日账本、原子写、重启 / 换日与N4 | 10 | ✅ 通过 |
 | 41 | `server/test/search-timeout.test.ts` | Task 20 Step 2 | 单调期限、取消、迟到结果与剩余预算 | 7 | ✅ 通过 |
-| **合计** | **41 个测试文件** | **Phase 1–5 / 审计修复** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **651** | **✅ 100% 通过** |
+| 42 | `src/test/search-metadata.test.ts` | Task 21 Step 1 | 客户端搜索结构与URL独立校验 | 45 | ✅ 通过 |
+| 43 | `src/test/search-sources.test.tsx` | Task 21 Step 1 | 来源纯文本、安全链接与降级展示 | 16 | ✅ 通过 |
+| **合计** | **43 个测试文件** | **Phase 1–5 / 审计修复** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **742** | **✅ 100% 通过** |
 
 ---
 
@@ -122,7 +124,7 @@
 - [x] **消息列表容器应具备 role="log" 和 aria-live="polite"**
 - [x] **发送消息后调用滚动触底 scrollTo**
 
-### 2.6 `src/test/chat-adapter-contract.test.ts` (14 项)
+### 2.6 `src/test/chat-adapter-contract.test.ts` (16 项)
 > **任务对应**：Task 6 / 10 · ChatAdapter 通用契约测试套件（Mock & Gemini send/stream）
 
 
@@ -243,7 +245,7 @@
 - [x] **关闭按钮、Esc 与遮罩均可关闭面板**
 - [x] **面板保留对话框语义和标题关联**
 
-### 2.10 `src/hooks/useChat.test.ts` (15 项)
+### 2.10 `src/hooks/useChat.test.ts` (21 项)
 > **任务对应**：Task 3 / 9 / 10 · useChat Hook 领域逻辑状态机（流式驱动/中断/重试/生命周期）
 
 
@@ -311,7 +313,7 @@
 - [x] **横幅显示服务端 UNKNOWN 固定文案 会话读取或保存失败，请稍后重试。**
 
 
-### 2.13 `src/test/streaming-ui.test.tsx` (8 项)
+### 2.13 `src/test/streaming-ui.test.tsx` (10 项)
 > **任务对应**：Task 10 · 流式打字机光标动效、停止生成按钮、顶栏联动禁用与 Smart Sticky Bottom 触底滚动守卫
 
 
@@ -533,7 +535,7 @@
 - [x] **Step3: 供应商角色指令只留在用户资料且模型输出不能触发额外能力**：真实Tavily适配器配Mock fetch，固定system规则、单用户资料块、不注入URL、无tools、模型伪工具命令只保存为正文，回放不重搜。
 - [x] **Step3: 取消真实适配器的%s不生成不写盘且迟到响应仅清理**（2项）：fetch挂起 / 读取挂起，客户端取消、响应体清理、锁释放、零事件与空消息日志。
 
-### 2.19 `src/test/remote-chat-adapter.test.ts` (15 项)
+### 2.19 `src/test/remote-chat-adapter.test.ts` (21 项)
 > **任务对应**：Task 13 Step 1 / Task 14 Step 3 · RemoteChatAdapter 实现、会话模式与契约测试
 
 #### Task 13 Step 1: RemoteChatAdapter 的 SSE 消费与错误映射
@@ -561,7 +563,7 @@
 - [x] **读取响应流失败不泄露浏览器异常原文**
 
 
-### 2.20 `src/test/app-remote-integration.test.tsx` (7 项)
+### 2.20 `src/test/app-remote-integration.test.tsx` (19 项)
 > **任务对应**：Task 16 Step 2 / Task 13 Step 3 / Task 14 Step 3 · App 远端 SSE 装配、会话恢复与归档清空
 
 #### Task 13 Step 3 / Task 14 Step 3: App 服务端会话装配
@@ -1114,7 +1116,7 @@
 - [x] **拒绝异常results结构：%j**（6项）：null、数组、空对象、results为null / 对象 / 字符串。
 - [x] 既有固定端点用例追加精确Content-Type与Authorization头断言，不增加用例数。
 
-### 2.38 `server/test/search-context.test.ts` (33 项)
+### 2.38 `server/test/search-context.test.ts` (35 项)
 
 > **任务对应**：Task 20 Step 1 · 全Mock，不调用真实供应商。
 
@@ -1257,3 +1259,254 @@
 ### 验证边界
 
 仅注入Mock fetch / 模型、临时JSON / 账本及本机HTTP；不调用真实Tavily / Gemini / Discord，不访问VPS、真实Key或会话，不改部署与生产搜索装配。Task 21安全渲染 / S2 / S3、Task 22许可 / 真实网络与延迟、P1-4 / R3、Q4保持原授权边界，N3未解除。
+
+
+## Task 21 Step 1：Web来源展示与V1（2026-10-19）
+
+本步新增91项（651→742），8个测试文件扩展或新增，其中新增2个文件。以下为本步逐项清单；概览及既有详细章节计数同步到最终JSON，历史验证记录保持原样。
+
+### `server/test/search-context.test.ts`（本步新增2项，文件共35项）
+
+- [x] Task 21 V1: Unicode 行与段分隔符 清除标题摘要中的分隔符 \u2028 并保持持久化不变量
+- [x] Task 21 V1: Unicode 行与段分隔符 清除标题摘要中的分隔符 \u2029 并保持持久化不变量
+
+### `src/hooks/useChat.test.ts`（本步新增6项，文件共21项）
+
+- [x] Task 21: 逐轮模式与最终搜索来源 仅在done附着来源，单done回放也附着来源
+- [x] Task 21: 逐轮模式与最终搜索来源 失败重试沿用原模式及原UUID
+- [x] Task 21: 逐轮模式与最终搜索来源 搜索超500码点不发请求、不追加输入、不截断问题
+- [x] Task 21: 逐轮模式与最终搜索来源 忽略chunk伪造来源且中途失败不附着成功来源
+- [x] Task 21: 取消与迟到最终事件 停止后忽略不合作adapter迟到的done及成功来源，保留原片段
+- [x] Task 21: chunk与最终done隔离 流式过程中不展示来源，done后才挂载，正文与元数据保持分离
+
+### `src/test/app-remote-integration.test.tsx`（本步新增12项，文件共19项）
+
+- [x] Task 21: Web联网搜索全流程（Mock） 默认关闭并告知外发与保存，开启发送后复位，下一轮不带search
+- [x] Task 21: Web联网搜索全流程（Mock） 501码点被拦截且开关不复位，500个emoji可完整发送
+- [x] Task 21: Web联网搜索全流程（Mock） 失败重试不随当前开关改变原模式 true 且复用UUID，单done回放来源
+- [x] Task 21: Web联网搜索全流程（Mock） 失败重试不随当前开关改变原模式 false 且复用UUID，单done回放来源
+- [x] Task 21: Web联网搜索全流程（Mock） 篡改done和持久化来源均不产生危险链接 javascript:alert(1)
+- [x] Task 21: Web联网搜索全流程（Mock） 篡改done和持久化来源均不产生危险链接 data:text/html,evil
+- [x] Task 21: Web联网搜索全流程（Mock） 篡改done和持久化来源均不产生危险链接 vbscript:evil
+- [x] Task 21: Web联网搜索全流程（Mock） 篡改done和持久化来源均不产生危险链接 //evil.example
+- [x] Task 21: Web联网搜索全流程（Mock） 篡改done和持久化来源均不产生危险链接 https://u:p@real.example
+- [x] Task 21: Web联网搜索全流程（Mock） 篡改done和持久化来源均不产生危险链接 https://real.example/a\u000ab
+- [x] Task 21: Web联网搜索全流程（Mock） 篡改done和持久化来源均不产生危险链接 https://real.example/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+- [x] Task 21: Web联网搜索全流程（Mock） 刷新还原成功和降级展示，坏搜索字段与旧会话正常显示正文
+
+### `src/test/chat-adapter-contract.test.ts`（本步新增2项，文件共16项）
+
+- [x] ChatAdapter Contract: MockChatAdapter stream (流式契约) 搜索最终元数据为可选，普通模型流保持旧契约
+- [x] ChatAdapter Contract: GeminiChatAdapter stream (流式契约) 搜索最终元数据为可选，普通模型流保持旧契约
+
+### `src/test/remote-chat-adapter.test.ts`（本步新增6项，文件共21项）
+
+- [x] Task 21: 搜索请求与最终元数据 只在原输入请求搜索时发送search:true（true）
+- [x] Task 21: 搜索请求与最终元数据 只在原输入请求搜索时发送search:true（false）
+- [x] Task 21: 搜索请求与最终元数据 chunk不携带来源，只有最终done携带来源
+- [x] Task 21: 搜索请求与最终元数据 坏done.search不影响正文也不泄露原文 {"status":"degraded","reason":"SECRET","notice":"SECRET","sources":[]}
+- [x] Task 21: 搜索请求与最终元数据 坏done.search不影响正文也不泄露原文 null
+- [x] Task 21: 搜索请求与最终元数据 坏done.search不影响正文也不泄露原文 {"status":"succeeded","sources":[]}
+
+### `src/test/search-metadata.test.ts`（本步新增45项，文件共45项）
+
+- [x] Task 21: 客户端搜索元数据边界 接受成功来源并复制已知字段，不修改输入
+- [x] Task 21: 客户端搜索元数据边界 接受共享降级原因 unavailable 并固定文案
+- [x] Task 21: 客户端搜索元数据边界 接受共享降级原因 missing_identity 并固定文案
+- [x] Task 21: 客户端搜索元数据边界 接受共享降级原因 admission_denied 并固定文案
+- [x] Task 21: 客户端搜索元数据边界 接受共享降级原因 ledger_unavailable 并固定文案
+- [x] Task 21: 客户端搜索元数据边界 接受共享降级原因 no_results 并固定文案
+- [x] Task 21: 客户端搜索元数据边界 接受共享降级原因 provider_failure 并固定文案
+- [x] Task 21: 客户端搜索元数据边界 接受共享降级原因 context_limit 并固定文案
+- [x] Task 21: 客户端搜索元数据边界 无效结构按无来源处理：undefined
+- [x] Task 21: 客户端搜索元数据边界 无效结构按无来源处理：null
+- [x] Task 21: 客户端搜索元数据边界 无效结构按无来源处理：undefined
+- [x] Task 21: 客户端搜索元数据边界 无效结构按无来源处理：{}
+- [x] Task 21: 客户端搜索元数据边界 无效结构按无来源处理：{"status":"unknown","sources":[]}
+- [x] Task 21: 客户端搜索元数据边界 无效结构按无来源处理：{"status":"succeeded","sources":[]}
+- [x] Task 21: 客户端搜索元数据边界 无效结构按无来源处理：{"status":"succeeded","sources":[{"provider":"tavily","retrievedAt":123,"index":1,"title":"标题","domain":"forged.example","url":"https://real.example/path","summary":"摘要"},{"provider":"tavily","retrievedAt":123,"index":1,"title":"标题","domain":"forged.example","url":"https://real.example/path","summary":"摘要"},{"provider":"tavily","retrievedAt":123,"index":1,"title":"标题","domain":"forged.example","url":"https://real.example/path","summary":"摘要"},{"provider":"tavily","retrievedAt":123,"index":1,"title":"标题","domain":"forged.example","url":"https://real.example/path","summary":"摘要"}]}
+- [x] Task 21: 客户端搜索元数据边界 无效结构按无来源处理：{"status":"succeeded","sources":[{"provider":"tavily","retrievedAt":123,"index":2,"title":"标题","domain":"forged.example","url":"https://real.example/path","summary":"摘要"}]}
+- [x] Task 21: 客户端搜索元数据边界 无效结构按无来源处理：{"status":"succeeded","sources":[{"provider":"tavily","retrievedAt":-1,"index":1,"title":"标题","domain":"forged.example","url":"https://real.example/path","summary":"摘要"}]}
+- [x] Task 21: 客户端搜索元数据边界 无效结构按无来源处理：{"status":"succeeded","sources":[{"provider":"evil","retrievedAt":123,"index":1,"title":"标题","domain":"forged.example","url":"https://real.example/path","summary":"摘要"}]}
+- [x] Task 21: 客户端搜索元数据边界 无效结构按无来源处理：{"status":"succeeded","sources":[{"provider":"tavily","retrievedAt":123,"index":1,"title":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","domain":"forged.example","url":"https://real.example/path","summary":"摘要"}]}
+- [x] Task 21: 客户端搜索元数据边界 无效结构按无来源处理：{"status":"succeeded","sources":[{"provider":"tavily","retrievedAt":123,"index":1,"title":"标题","domain":"forged.example","url":"https://real.example/path","summary":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]}
+- [x] Task 21: 客户端搜索元数据边界 无效结构按无来源处理：{"status":"succeeded","sources":[{"provider":"tavily","retrievedAt":123,"index":1,"title":"标题","domain":"forged.example","url":null,"summary":"摘要"}]}
+- [x] Task 21: 客户端搜索元数据边界 无效结构按无来源处理：{"status":"succeeded","sources":[{"provider":"tavily","retrievedAt":123,"index":1,"title":"标题","domain":"forged.example","url":"https://real.example/path","summary":"摘要"}],"raw":"private detail"}
+- [x] Task 21: 客户端搜索元数据边界 无效结构按无来源处理：{"status":"degraded","sources":[],"reason":"private detail","notice":"本轮未完成联网检索，以下回复未使用实时搜索。"}
+- [x] Task 21: 客户端搜索元数据边界 无效结构按无来源处理：{"status":"degraded","sources":[],"reason":"unavailable","notice":"private detail"}
+- [x] Task 21: 客户端搜索元数据边界 无效结构按无来源处理：{"status":"not_requested","sources":[{"provider":"tavily","retrievedAt":123,"index":1,"title":"标题","domain":"forged.example","url":"https://real.example/path","summary":"摘要"}]}
+- [x] Task 21: 客户端搜索元数据边界 未请求保持兼容
+- [x] Task 21: 客户端搜索元数据边界 危险URL保留文本来源但不能点击：javascript:alert(1)
+- [x] Task 21: 客户端搜索元数据边界 危险URL保留文本来源但不能点击：data:text/html,evil
+- [x] Task 21: 客户端搜索元数据边界 危险URL保留文本来源但不能点击：vbscript:evil
+- [x] Task 21: 客户端搜索元数据边界 危险URL保留文本来源但不能点击：//example.com/path
+- [x] Task 21: 客户端搜索元数据边界 危险URL保留文本来源但不能点击：https://user:secret@example.com/
+- [x] Task 21: 客户端搜索元数据边界 危险URL保留文本来源但不能点击：https://example.com/a\u000ab
+- [x] Task 21: 客户端搜索元数据边界 危险URL保留文本来源但不能点击：https://example.com/a\u0009b
+- [x] Task 21: 客户端搜索元数据边界 危险URL保留文本来源但不能点击：https://example.com/a\u0000b
+- [x] Task 21: 客户端搜索元数据边界 危险URL保留文本来源但不能点击：https://example.com/a\u007fb
+- [x] Task 21: 客户端搜索元数据边界 危险URL保留文本来源但不能点击：https://example.com/a\u0085b
+- [x] Task 21: 客户端搜索元数据边界 危险URL保留文本来源但不能点击：https://example.com/a\u2028b
+- [x] Task 21: 客户端搜索元数据边界 危险URL保留文本来源但不能点击：https://example.com/a\u2029b
+- [x] Task 21: 客户端搜索元数据边界 危险URL保留文本来源但不能点击：https://example.com/a\u202eb
+- [x] Task 21: 客户端搜索元数据边界 危险URL保留文本来源但不能点击：https://example.com/a b
+- [x] Task 21: 客户端搜索元数据边界 危险URL保留文本来源但不能点击：https://example.com/a b
+- [x] Task 21: 客户端搜索元数据边界 危险URL保留文本来源但不能点击：https://example.com/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+- [x] Task 21: 客户端搜索元数据边界 域名来自URL解析 https://例子.测试:8443/path
+- [x] Task 21: 客户端搜索元数据边界 域名来自URL解析 http://real.example/path
+- [x] Task 21: 客户端搜索元数据边界 无效地址不信任持久化域名
+
+### `src/test/search-sources.test.tsx`（本步新增16项，文件共16项）
+
+- [x] Task 21: 来源纯文本与安全链接 按编号展示标题摘要和解析域名，安全新窗口属性齐全
+- [x] Task 21: 来源纯文本与安全链接 不渲染危险链接 javascript:alert(1)
+- [x] Task 21: 来源纯文本与安全链接 不渲染危险链接 data:text/html,evil
+- [x] Task 21: 来源纯文本与安全链接 不渲染危险链接 vbscript:evil
+- [x] Task 21: 来源纯文本与安全链接 不渲染危险链接 //evil.example
+- [x] Task 21: 来源纯文本与安全链接 不渲染危险链接 https://u:p@real.example
+- [x] Task 21: 来源纯文本与安全链接 不渲染危险链接 https://real.example/a\u000ab
+- [x] Task 21: 来源纯文本与安全链接 不渲染危险链接 https://real.example/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+- [x] Task 21: 来源纯文本与安全链接 标题摘要作为原样文本节点 <script>alert(1)</script>
+- [x] Task 21: 来源纯文本与安全链接 标题摘要作为原样文本节点 <img src=x onerror="alert(1)">
+- [x] Task 21: 来源纯文本与安全链接 标题摘要作为原样文本节点 [点击](javascript:evil)
+- [x] Task 21: 来源纯文本与安全链接 标题摘要作为原样文本节点 @everyone
+- [x] Task 21: 来源纯文本与安全链接 标题摘要作为原样文本节点 \u202e反向\u202c
+- [x] Task 21: 来源纯文本与安全链接 降级固定提示独立展示，不显示枚举或原文
+- [x] Task 21: 来源纯文本与安全链接 旧消息和未请求不展示搜索内容 undefined
+- [x] Task 21: 来源纯文本与安全链接 旧消息和未请求不展示搜索内容 {"status":"not_requested","sources":[]}
+
+### `src/test/streaming-ui.test.tsx`（本步新增2项，文件共10项）
+
+- [x] Task 21: 最终来源滚动 最终来源加入时遵守触底守卫 true，流中途无来源
+- [x] Task 21: 最终来源滚动 最终来源加入时遵守触底守卫 false，流中途无来源
+
+### TDD、全量与构建证据
+
+- V1先红：`Task 21 V1: Unicode 行与段分隔符 > 清除标题摘要中的分隔符 %s 并保持持久化不变量`两项失败，预期标题 / 摘要为普通空格，实际保留U+2028 / U+2029。仅扩展CONTROL后35/35通过，规范化 / 资料块不含分隔符且持久化校验与幂等成立。原始输出：`/private/tmp/task21-v1-red.log`、`task21-v1-green.log`。
+- Web先红：新增校验 / 组件测试因模块未实现失败；请求、Hook、App三文件17项行为断言失败（`/private/tmp/task21-web-red.log`、`task21-flow-red.log`），实现后首轮6/6文件155/155通过。新增滚动及可选契约 / 取消 / 最终事件隔离随后通过。
+- 提示词复核补测：7项危险链接回退追加“无摘要”断言先红（预期不存在摘要、实际仍展示），改为无效URL只显示标题与解析域名后16/16通过，见`/private/tmp/task21-invalid-link-red.log`、`task21-invalid-link-green.log`；之后重跑最终版本三轮全量。
+- 根目录及Web / server / core / bot类型检查通过，Web / Express / Bot三项构建通过。服务端esbuild 1.8mb包体大小标记为既有提示，无新增类型或编译诊断；git diff --check通过。
+
+| 全量轮次 | 文件通过 | 用例通过 | 结果 |
+| :--- | :--- | :--- | :--- |
+| 1（沙箱） | 37/43 | 662/742 | 本机端口listen EPERM及关联超时，环境失败 |
+| 2（获准沙箱外） | 43/43 | 742/742 | 通过 |
+| 3（获准沙箱外） | 43/43 | 742/742 | 通过 |
+| 4（获准沙箱外） | 43/43 | 742/742 | 通过；无效链接展示收紧前 |
+| 5（最终版本） | 43/43 | 742/742 | 连续通过1/3 |
+| 6（最终版本） | 43/43 | 742/742 | 连续通过2/3 |
+| 7（最终版本） | 43/43 | 742/742 | 连续通过3/3 |
+
+每轮完整日志及机器结果位于`/private/tmp/task21-full-<N>.log`及对应`.json`。沙箱外仅为本机临时HTTP端口解限，所有外部上游仍Mock；未放宽断言或改动部署测试。沙箱失败后单跑server-skeleton也复现3项listen EPERM，见`/private/tmp/task21-listen-check.log`。这与既有deployment-validation第96行eligible_24h偶发断言失败不同；本步不调查或宣称解决该偶发失败。
+
+### 安全与验收映射
+
+- 客户端结构校验：SSE、会话恢复及来源组件共用parseSearchMetadata；状态 / 原因枚举与core对齐，坏字段丢弃且不影响正文。URL单独重新new URL解析，HTTP(S)白名单、凭据 / 控制字符 / 空白 / 2048字符上限，域名始终取解析hostname（含IDN），不用供应商domain或标题作为目标文本。
+- 危险协议、协议相对、凭据、控制字符和超长URL：单元及组件验证，App将篡改数据分别放入done和持久化会话，断言无危险可点击链接；无效URL只保留标题 / 域名，无法解析显示固定“域名无效”。
+- `<script>`、`<img onerror>`、Markdown、@everyone、双向控制夹具按React文本节点展示；断言无script / img DOM节点，链接仅来自来源URL。安全链接target=_blank并带rel=noopener noreferrer；不加载来源预览。
+- 审计第7节复核命令：`rg -n 'dangerouslySetInnerHTML|\binnerHTML\b|\beval\s*\(' src core --glob '!**/*.test.*'`，结果0匹配（rg退出1代表无匹配）；源码使用React文本节点加受校验href，本步未引入HTML执行入口或危险协议链接。结论仅针对应用渲染边界，不保证外部网页安全或来源事实正确。
+- 开关默认关闭，已接受的新发送立即关闭；搜索超500 Unicode码点本地提示缩短、不截断，500个emoji完整发送；原user.searchRequested与原UUID保留，重试不读取当前开关。普通轮次不发送search字段。
+- ChatChunk新增可选search，只有done消费；单done回放及刷新恢复相同展示，来源与固定SEARCH_DEGRADED_NOTICE均不拼进正文。Mock / Gemini无需生成元数据，兼容回归通过。
+- D12既有差异：停止 / 超时 / 中途失败仍保留已上屏片段，末条assistant时旧重试守卫拒绝重试；保留user但不符合D12目标“移除临时回复、保留重试入口”。本步按指示只记录，不实施P1-4 / R3；新增来源仅随done附着，停止后迟到done被忽略，失败片段不附成功来源。
+- 生产装配仍无搜索网络，未配置searchAdapter时unavailable降级为预期；无真实Tavily / Gemini / Discord / VPS / Key或会话访问，无依赖 / 部署改动。Step 2（含S2 / S3）、Task 22及N3许可 / 性能门槛保留。
+
+### 沙箱全量失败用例明细（80项，非产品回归）
+
+
+`server/test/chat-stream.test.ts`
+
+- Task 12 Step 1: 服务端 SSE 流式管道与生命周期管理 应返回 SSE 响应头并依次输出 chunk 与 done 事件：listen EPERM: operation not permitted 127.0.0.1。
+- Task 12 Step 1: 服务端 SSE 流式管道与生命周期管理 流保持打开时应定期输出 SSE 心跳注释行：listen EPERM: operation not permitted 127.0.0.1。
+- Task 12 Step 1: 服务端 SSE 流式管道与生命周期管理 携带 Last-Event-ID 的断点续传请求应被明确拒绝：listen EPERM: operation not permitted 127.0.0.1。
+- Task 12 Step 1: 服务端 SSE 流式管道与生命周期管理 请求体不符合共享契约时应返回 400：listen EPERM: operation not permitted 127.0.0.1。
+- Task 12 Step 1: 服务端 SSE 流式管道与生命周期管理 尚未注入流源时应返回 503：listen EPERM: operation not permitted 127.0.0.1。
+- Task 12 Step 1: 服务端 SSE 流式管道与生命周期管理 上游异常应转换为标准 UNKNOWN error 事件且不泄漏内部错误：listen EPERM: operation not permitted 127.0.0.1。
+- Task 12 Step 1: 服务端 SSE 流式管道与生命周期管理 生成超时 SSE 错误保留固定安全文案：listen EPERM: operation not permitted 127.0.0.1。
+- Task 12 Step 1: 服务端 SSE 流式管道与生命周期管理 客户端断开连接时应中止上游 AbortSignal：Test timed out in 5000ms（端口环境受限的关联失败）。
+- P1-1: HTTP 会话输入边界 无请求标识也拒绝伪造角色历史和空输入且不调用流源：listen EPERM: operation not permitted 127.0.0.1。
+- P1-1: HTTP 会话输入边界 默认拒绝缺失空白或非字符串会话且请求体不能开启无状态模式：listen EPERM: operation not permitted 127.0.0.1。
+- P1-1: HTTP 会话输入边界 显式测试注入允许无状态历史但仍拒绝会话角色注入：listen EPERM: operation not permitted 127.0.0.1。
+- P0-2: 幂等请求校验 带标识请求要求严格 UUID 会话和单条非空 user 输入：listen EPERM: operation not permitted 127.0.0.1。
+- P1-3: HTTP SSE 错误安全 真实模型流源的敏感 500 错误只序列化固定文案与安全日志：listen EPERM: operation not permitted 127.0.0.1。
+- P1-3: HTTP SSE 错误安全 流源意外抛错的兜底日志仅记录白名单且保持现有 UNKNOWN 文案：listen EPERM: operation not permitted 127.0.0.1。
+- Task 20 Step 1: 搜索HTTP输入 非loopback连接203.0.113.10不信任身份或伪造转发头：listen EPERM: operation not permitted 127.0.0.1。
+- Task 20 Step 1: 搜索HTTP输入 非loopback连接10.0.0.2不信任身份或伪造转发头：listen EPERM: operation not permitted 127.0.0.1。
+- Task 20 Step 1: 搜索HTTP输入 非loopback连接::ffff:192.168.1.2不信任身份或伪造转发头：listen EPERM: operation not permitted 127.0.0.1。
+- Task 20 Step 1: 搜索HTTP输入 非loopback连接2001:db8::1不信任身份或伪造转发头：listen EPERM: operation not permitted 127.0.0.1。
+- Task 20 Step 1: 搜索HTTP输入 非法Discord身份""按缺失处理：listen EPERM: operation not permitted 127.0.0.1。
+- Task 20 Step 1: 搜索HTTP输入 非法Discord身份"1111111111111111"按缺失处理：listen EPERM: operation not permitted 127.0.0.1。
+- Task 20 Step 1: 搜索HTTP输入 非法Discord身份"111111111111111111111"按缺失处理：listen EPERM: operation not permitted 127.0.0.1。
+- Task 20 Step 1: 搜索HTTP输入 非法Discord身份"１２３４５６７８９０１２３４５６７８"按缺失处理：listen EPERM: operation not permitted 127.0.0.1。
+- Task 20 Step 1: 搜索HTTP输入 非法Discord身份"333333333333333333\n"按缺失处理：listen EPERM: operation not permitted 127.0.0.1。
+- Task 20 Step 1: 搜索HTTP输入 非法Discord身份333333333333333300按缺失处理：listen EPERM: operation not permitted 127.0.0.1。
+- Task 20 Step 1: 搜索HTTP输入 非法Discord身份null按缺失处理：listen EPERM: operation not permitted 127.0.0.1。
+- Task 20 Step 1: 搜索HTTP输入 非法Discord身份{}按缺失处理：listen EPERM: operation not permitted 127.0.0.1。
+- Task 20 Step 1: 搜索HTTP输入 拒绝非布尔搜索字段以及无状态搜索请求：listen EPERM: operation not permitted 127.0.0.1。
+- Task 20 Step 1: 搜索HTTP输入 只有无Origin本机请求可提供可信Discord身份且请求体的可信字段被忽略：listen EPERM: operation not permitted 127.0.0.1。
+
+`server/test/cors.test.ts`
+
+- Task 11 Step 3: CORS 白名单与环境隔离 无 Origin 的服务间请求应正常通过且不返回跨域许可头：listen EPERM: operation not permitted 127.0.0.1。
+- Task 11 Step 3: CORS 白名单与环境隔离 白名单内来源应通过并返回精确的跨域许可头：listen EPERM: operation not permitted 127.0.0.1。
+- Task 11 Step 3: CORS 白名单与环境隔离 白名单外来源应被拒绝并返回 403：listen EPERM: operation not permitted 127.0.0.1。
+- Task 11 Step 3: CORS 白名单与环境隔离 白名单内来源的 OPTIONS 预检应返回 204 与允许的方法和请求头：listen EPERM: operation not permitted 127.0.0.1。
+
+`server/test/deployment-validation.test.ts`
+
+- Task 18 Step 2: online validation records real health and gateway metadata without raw logs or secrets：Test timed out in 5000ms（端口环境受限的关联失败）。
+- Task 18 Step 2: online validation does not pass when HTTP health is unavailable：Test timed out in 5000ms（端口环境受限的关联失败）。
+- Task 18 Step 2: online validation does not pass when the process is inactive or metadata collection fails：Test timed out in 5000ms（端口环境受限的关联失败）。
+- Task 18 Step 2: online validation accepts brief automatic recovery and records its measured duration：Test timed out in 5000ms（端口环境受限的关联失败）。
+- Task 18 Step 2: online validation does not reuse gateway readiness from an old process：Test timed out in 5000ms（端口环境受限的关联失败）。
+- Task 18 Step 2: online validation requires a complete real 24-hour span with fresh records：Test timed out in 5000ms（端口环境受限的关联失败）。
+- Task 18 Step 2: online validation resets the window after a failed sample, missing interval or process restart：Test timed out in 5000ms（端口环境受限的关联失败）。
+- Task 18 Step 2: online validation rejects stale records, changed host boot and malformed evidence：Test timed out in 5000ms（端口环境受限的关联失败）。
+- Task 18 Step 2: online validation rejects slow recovery and errors even if the gateway subsequently resumes：Test timed out in 5000ms（端口环境受限的关联失败）。
+- Task 18 Step 2: online validation reevaluates old samples only with matching measured journal evidence without rewriting them：Test timed out in 5000ms（端口环境受限的关联失败）。
+- Task 18 Step 2: online validation keeps old interruption samples failed when journal evidence is missing：Test timed out in 5000ms（端口环境受限的关联失败）。
+
+`server/test/deployment.test.ts`
+
+- Task 18 Step 1: 私有生产部署 同源首页、静态资源与页面回退正常提供：listen EPERM: operation not permitted 127.0.0.1。
+- Task 18 Step 1: 私有生产部署 API 与 SSE 不被静态回退覆盖且隧道 Origin 可访问：listen EPERM: operation not permitted 127.0.0.1。
+- Task 18 Step 1: 私有生产部署 不提供点文件、目录穿越或 Web 目录外的服务端产物：listen EPERM: operation not permitted 127.0.0.1。
+
+`server/test/server-skeleton.test.ts`
+
+- Task 11: 服务端 Express 骨架与契约基建 GET / 应返回 200 状态码并输出服务信息与 @core 版本号：listen EPERM: operation not permitted 127.0.0.1。
+- Task 11: 服务端 Express 骨架与契约基建 Step 2: 健康检查接口 GET /api/health 应返回 200 状态码与共享健康状态结构：listen EPERM: operation not permitted 127.0.0.1。
+- Task 11: 服务端 Express 骨架与契约基建 访问不存在的路由应当返回 404：listen EPERM: operation not permitted 127.0.0.1。
+
+`server/test/session-api.test.ts`
+
+- Task 20 Step 3: 篡改元数据的HTTP边界 危险协议不能经刷新或重启回放下发：listen EPERM: operation not permitted 127.0.0.1。
+- Task 20 Step 3: 篡改元数据的HTTP边界 超过三条不能经刷新或重启回放下发：listen EPERM: operation not permitted 127.0.0.1。
+- Task 20 Step 3: 篡改元数据的HTTP边界 超长URL不能经刷新或重启回放下发：listen EPERM: operation not permitted 127.0.0.1。
+- Task 20 Step 3: 篡改元数据的HTTP边界 多余字段不能经刷新或重启回放下发：listen EPERM: operation not permitted 127.0.0.1。
+- Task 14 Step 2: 会话 API 与多轮上下文 模型缺少结束事件不保存半截助手回复且后续请求恢复：listen EPERM: operation not permitted 127.0.0.1。
+- Task 14 Step 2: 会话 API 与多轮上下文 模型中途抛错不保存半截助手回复且后续请求恢复：listen EPERM: operation not permitted 127.0.0.1。
+- Task 14 Step 2: 会话 API 与多轮上下文 Bot 经真实 HTTP/SSE 多轮对话并按频道复用持久化上下文：Test timed out in 5000ms（端口环境受限的关联失败）。
+- Task 14 Step 2: 会话 API 与多轮上下文 解析 API 归档后切换会话，并显式区分 Web 来源：listen EPERM: operation not permitted 127.0.0.1。
+- Task 14 Step 2: 会话 API 与多轮上下文 解析 API 拒绝无效频道和浏览器 Origin 请求：listen EPERM: operation not permitted 127.0.0.1。
+- Task 14 Step 2: 会话 API 与多轮上下文 创建、读取并归档会话；归档仅写标记而保留消息日志：listen EPERM: operation not permitted 127.0.0.1。
+- Task 14 Step 2: 会话 API 与多轮上下文 按 sessionId 加载全量历史，并严格追加本轮输入与最终回复：listen EPERM: operation not permitted 127.0.0.1。
+- Task 14 Step 2: 会话 API 与多轮上下文 归档后保留可读取日志，但拒绝继续追加会话轮次：listen EPERM: operation not permitted 127.0.0.1。
+- Task 14 Step 2: 会话 API 与多轮上下文 未携带 sessionId 时拒绝无状态请求且不调用模型：listen EPERM: operation not permitted 127.0.0.1。
+- P1-1: HTTP 持久化输入防护 有无请求标识的角色注入和伪造历史均不改变已有日志：listen EPERM: operation not permitted 127.0.0.1。
+- P1-1: HTTP 持久化输入防护 共享生产装配在 Mock 降级时也拒绝无状态伪造历史：listen EPERM: operation not permitted 127.0.0.1。
+- P0-2: HTTP 持久化重试 失败重试和服务重建回放不重复写入且刷新日志保持唯一输入：listen EPERM: operation not permitted 127.0.0.1。
+- P0-1: HTTP 有限上下文 模型仅接收最近轮次但 GET 保留全部日志超限新输入不落盘：listen EPERM: operation not permitted 127.0.0.1。
+- P0-1 Step 2: 频道重置与归档锁 重置归档旧日志重复目标不归档新会话其他频道和重启关联不变：listen EPERM: operation not permitted 127.0.0.1。
+- P0-1 Step 2: 频道重置与归档锁 拒绝浏览器来源非法目标和跨频道目标且不改日志：listen EPERM: operation not permitted 127.0.0.1。
+- P0-1 Step 2: 频道重置与归档锁 生成期间 Web归档和频道重置返回409回复完成后可正常归档：listen EPERM: operation not permitted 127.0.0.1。
+- P0-1 Step 2: 频道重置与归档锁 重置归档写入期间生成和第二个重置也立即冲突：Test timed out in 5000ms（端口环境受限的关联失败）。
+- P0-1 Step 2: 频道重置与归档锁 归档失败保持旧会话且释放锁允许随后重置：listen EPERM: operation not permitted 127.0.0.1。
+- P0-1 Step 2: 频道重置与归档锁 归档成功而新关联解析失败不宣称成功下一次解析自然恢复：listen EPERM: operation not permitted 127.0.0.1。
+- P0-1 Step 2: 频道重置与归档锁 Bot经真实本机HTTP重置后下一条聊天只包含新会话输入：Test timed out in 5000ms（端口环境受限的关联失败）。
+- Task 20 Step 1: 搜索来源HTTP生命周期 SSE与刷新及重新装配后的回放保留相同来源且不重新搜索：listen EPERM: operation not permitted 127.0.0.1。
+- Task 20 Step 1: 搜索来源HTTP生命周期 持久化Discord来源不接受浏览器伪造身份绕过降级：listen EPERM: operation not permitted 127.0.0.1。
+- S1: 截断边界来源保存与回放 title截断点为空白仍保存成功且重启回放不重搜：listen EPERM: operation not permitted 127.0.0.1。
+- S1: 截断边界来源保存与回放 summary截断点为空白仍保存成功且重启回放不重搜：listen EPERM: operation not permitted 127.0.0.1。
+- Task 20 Step 2: 账本与会话生命周期 进程重装和reset不清Discord日额度且预算拒绝仍普通生成：listen EPERM: operation not permitted 127.0.0.1。
+- T3: 账本故障原因持久化与回放 坏账本使用ledger_unavailable且刷新重启回放保持一致：listen EPERM: operation not permitted 127.0.0.1。
+- T3: 账本故障原因持久化与回放 写入失败使用ledger_unavailable且刷新重启回放保持一致：listen EPERM: operation not permitted 127.0.0.1。

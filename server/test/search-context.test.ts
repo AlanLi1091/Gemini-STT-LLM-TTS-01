@@ -114,3 +114,16 @@ describe('T1: 最小资料必须服从预算', () => {
     expect(sources[0].summary.length).toBeGreaterThan(1);
   });
 });
+
+
+describe('Task 21 V1: Unicode 行与段分隔符', () => {
+  it.each(['\u2028', '\u2029'])('清除标题摘要中的分隔符 %s 并保持持久化不变量', separator => {
+    const sources = normalizeSearchSources([{ url: 'https://example.com', title: `标题${separator}余文`, content: `摘要${separator}余文` }], 123);
+    expect(sources).toHaveLength(1);
+    expect(sources[0]).toMatchObject({ title: '标题 余文', summary: '摘要 余文' });
+    expect(JSON.stringify(sources)).not.toContain(separator);
+    expect(buildSearchContext(sources)).not.toContain(separator);
+    expect(isSearchMetadata({ status: 'succeeded', sources })).toBe(true);
+    expect(normalizeSearchSources(sources, 123)).toEqual(sources);
+  });
+});

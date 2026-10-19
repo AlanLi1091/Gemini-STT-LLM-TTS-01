@@ -183,3 +183,32 @@ describe('P1-3: 浏览器错误固定文案', () => {
     await expect(new RemoteChatAdapter().send(messages)).rejects.toMatchObject({ code: 'UNKNOWN', message: '服务暂时不可用，请稍后重试。' });
   });
 });
+
+describe('Task 21: 搜索请求与最终元数据', () => {
+  const search = { status: 'succeeded', sources: [{ provider: 'tavily', retrievedAt: 1, index: 1, title: '标题', domain: 'example.com', url: 'https://example.com/', summary: '摘要' }] };
+  it.each([true, false])('只在原输入请求搜索时发送search:true（%s）', async requested => {
+    const fetchMock = vi.fn().mockResolvedValue(sseResponse(`event: done\ndata: ${JSON.stringify({ content: '回复', search })}\n\n`));
+    vi.stubGlobal('fetch', fetchMock);
+    const chunks = [];
+    for await (const chunk of new RemoteChatAdapter({ sessionId: 's' }).stream([{ ...messages[0], searchRequested: requested }])) chunks.push(chunk);
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    if (requested) expect(body.search).toBe(true); else expect(body).not.toHaveProperty('search');
+    expect(chunks).toHaveLength(1); expect(chunks[0]).toMatchObject({ done: true, search });
+  });
+  it('chunk不携带来源，只有最终done携带来源', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(sseResponse(
+      `event: chunk\ndata: ${JSON.stringify({ delta: '回', accumulated: '回', search })}\n\n`,
+      `event: done\ndata: ${JSON.stringify({ content: '回复', search })}\n\n`,
+    )));
+    const chunks = [];
+    for await (const chunk of new RemoteChatAdapter().stream(messages)) chunks.push(chunk);
+    expect(chunks[0]).not.toHaveProperty('search'); expect(chunks[1]).toHaveProperty('search', search);
+  });
+  it.each([{ status: 'degraded', reason: 'SECRET', notice: 'SECRET', sources: [] }, null, { status: 'succeeded', sources: [] }])('坏done.search不影响正文也不泄露原文 %j', async search => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(sseResponse(`event: done\ndata: ${JSON.stringify({ content: '回复', search })}\n\n`)));
+    const chunks = [];
+    for await (const chunk of new RemoteChatAdapter().stream(messages)) chunks.push(chunk);
+    expect(chunks[0]).toMatchObject({ accumulated: '回复', done: true });
+    expect(chunks[0].search).toBeUndefined();
+  });
+});
