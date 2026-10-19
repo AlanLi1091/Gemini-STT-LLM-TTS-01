@@ -451,3 +451,30 @@ describe('Task 20 Step 2: 账本与会话生命周期', () => {
     expect((await new JsonSearchLedger(config.ledgerPath).read())?.discord.attempts).toBe(1);
   });
 });
+
+describe('T3: 账本故障原因持久化与回放', () => {
+  it.each(['坏账本', '写入失败'])('%s使用ledger_unavailable且刷新重启回放保持一致', async failure => {
+    const c = await createTestContext(); const { writeFile } = await import('node:fs/promises');
+    const { MockSearchAdapter } = await import('../search-adapter'); const { SearchBudget } = await import('../search-budget');
+    const { JsonSearchLedger } = await import('../storage/search-ledger');
+    const config = readSearchConfig({ SEARCH_LEDGER_PATH: join(c.dataDirectory, 'search-ledger.json') });
+    const ledger = new JsonSearchLedger(config.ledgerPath);
+    if (failure === '坏账本') await writeFile(config.ledgerPath, '{corrupt');
+    else vi.spyOn(ledger, 'write').mockRejectedValue(new Error('private-ledger-key-path'));
+    const budget = new SearchBudget(config, ledger); const acquire = vi.spyOn(budget, 'acquire');
+    const search = new MockSearchAdapter(); const call = vi.spyOn(search, 'search');
+    const make = (service: SessionService) => createApp({ sessionService: service,
+      chatStreamSource: createSessionChatStreamSource(c.adapter, service, undefined, undefined, undefined, { adapter: search, config, budget }) });
+    const session = await c.sessionService.createSession();
+    const body = { sessionId: session.id, requestId: '66666666-6666-4666-8666-666666666666', search: true, messages: [{ role: 'user', content: '问题' }] };
+    const first = await request(make(c.sessionService)).post('/api/chat/stream').send(body).expect(200);
+    expect(first.text).toContain('event: done'); expect(first.text).toContain('ledger_unavailable');
+    expect(first.text).not.toContain('private-ledger-key-path');
+    const reloaded = make(new SessionService(new JsonSessionStorage(c.dataDirectory)));
+    const loaded = await request(reloaded).get(`/api/sessions/${session.id}`).expect(200);
+    expect(loaded.body.messages[1].search).toMatchObject({ status: 'degraded', reason: 'ledger_unavailable', sources: [] });
+    const replay = await request(reloaded).post('/api/chat/stream').send(body).expect(200);
+    expect(replay.text).toContain(JSON.stringify(loaded.body.messages[1].search)); expect(replay.text).not.toContain('event: chunk');
+    expect(acquire).toHaveBeenCalledOnce(); expect(call).not.toHaveBeenCalled(); expect(c.adapter.histories).toHaveLength(1);
+  });
+});

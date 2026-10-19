@@ -90,6 +90,7 @@ export class ContextWindow {
   private contentUnits(messages: readonly Message[]): number {
     return messages.reduce((n, message) => n + 32 + textUnits(message.content), 0);
   }
+  get safeInputTokens(): number { return this.config.inputTokens * SAFE_RATIO; }
   private activeFactor(search = false): number { return search ? Math.max(this.factor, this.searchFactor) : this.factor; }
   private systemReserve(extraSystem = '', factor = this.factor): number { return Math.ceil(this.base([], extraSystem) * factor); }
   estimate(messages: readonly Message[], extraSystem = '', search = false): number { return Math.ceil(this.base(messages, extraSystem) * this.activeFactor(search)); }
@@ -156,7 +157,7 @@ export class ContextWindow {
     const candidate = (turns: Message[][]) => [...turns.flat(), ...current];
     const payloadLimit = this.config.inputTokens * COUNT_PAYLOAD_BYTES_PER_TOKEN;
     const payloadFits = (messages: Message[]) => messages.reduce((n, m) => n + Buffer.byteLength(m.content, 'utf8'), 0) <= payloadLimit;
-    const safe = this.config.inputTokens * SAFE_RATIO;
+    const safe = this.safeInputTokens;
     const full = candidate(allTurns);
     if (estimate(full) <= safe && payloadFits(full)) return full;
     // Bound the first probe, but retain all eligible history for expansion.

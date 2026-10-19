@@ -67,12 +67,11 @@ describe('Task 20 Step 2: 搜索资料子预算', () => {
   });
 });
 
-describe('Task 20 Step 2: 优先收缩资料保留历史', () => {
-  it('历史较长时先缩资料但保留最小来源供后续历史窗口裁剪', async () => {
+describe('T1: 最小资料必须服从预算', () => {
+  it('最小来源仍超限时清空而不保留一字摘要绕过阈值', async () => {
     const { fitSearchSources } = await import('../search-context');
     const sources = normalizeSearchSources([{ title: 'title', url: 'https://example.com', content: 'English summary '.repeat(7) }], 123);
-    const reduced = fitSearchSources(sources, block => 99999 + block.length, 8192, true);
-    expect(reduced).toHaveLength(1); expect(Array.from(reduced[0].summary)).toHaveLength(1);
+    expect(fitSearchSources(sources, block => 99999 + block.length, 8192)).toEqual([]);
     expect(sources[0].summary.length).toBeGreaterThan(1);
   });
 });

@@ -888,11 +888,11 @@ describe('Task 20 Step 2: 搜索预算期限与校准编排', () => {
     expect(await collect(c.make(), c.req)).toMatchObject([{ event: 'done', data: { search: { reason: 'provider_failure' } } }]);
     expect(await collect(c.make(), { ...c.req, requestId: undefined })).toMatchObject([{ event: 'done', data: { search: { reason: 'admission_denied' } } }]);
     expect(c.search.search).toHaveBeenCalledOnce(); expect(pause).not.toHaveBeenCalled();
-    expect(await c.budget.acquire({ source: 'discord', userId: '111111111111111111', channelId: '222222222222222222' })).toBe(false);
+    expect(await c.budget.acquire({ source: 'discord', userId: '111111111111111111', channelId: '222222222222222222' })).toEqual({ allowed: false, reason: 'admission_denied' });
   }));
   it('坏账本不中断普通生成、不清零且不调用供应商', async () => fixture(async c => {
     const { writeFile, readFile } = await import('node:fs/promises'); await writeFile(c.config.ledgerPath, '{corrupt');
-    expect(await collect(c.make(), c.req)).toMatchObject([{ event: 'done', data: { search: { reason: 'admission_denied' } } }]);
+    expect(await collect(c.make(), c.req)).toMatchObject([{ event: 'done', data: { search: { reason: 'ledger_unavailable' } } }]);
     expect(c.search.search).not.toHaveBeenCalled(); expect(await readFile(c.config.ledgerPath, 'utf8')).toBe('{corrupt');
   }));
   it('搜索超时本地降级不等待迟到结果且不重搜重扣', async () => fixture(async c => {
@@ -928,5 +928,49 @@ describe('Task 20 Step 2: 搜索预算期限与校准编排', () => {
     expect((await collect(c.make(), { ...c.req, messages: [{ role: 'user', content: 'x'.repeat(501) }] }))[0].event).toBe('error');
     c.generation.pause(); expect((await collect(c.make(), c.req))[0].event).toBe('error');
     expect(acquire).not.toHaveBeenCalled();
+  }));
+
+  it.each([100, 200, 400])('T1: 默认20轮历史回复%d字时保留3条100字资料并裁最旧历史', async length => fixture(async c => {
+    const { MockSearchAdapter } = await import('../search-adapter'); const { buildSearchContext } = await import('../search-context');
+    const mock = new MockSearchAdapter(Array.from({ length: 3 }, (_, i) => ({ title: `来源${i + 1}`, url: `https://example.com/${i}`, content: '资'.repeat(100) })));
+    vi.mocked(c.search.search).mockImplementation(mock.search.bind(mock));
+    for (let i = 0; i < 20; i++) {
+      await c.service.appendTurnInputs(c.req.sessionId!, [{ role: 'user', content: `历史问题${i}` + '问'.repeat(20) }]);
+      await c.service.appendAssistantResponse(c.req.sessionId!, '答'.repeat(length));
+    }
+    const acquire = vi.spyOn(c.generation, 'acquire'); const events = await collect(c.make(), c.req);
+    const done = events.at(-1); expect(done?.event).toBe('done'); if (done?.event !== 'done') throw new Error('missing done');
+    expect(done.data.search?.status).toBe('succeeded'); expect(done.data.search?.sources).toHaveLength(3);
+    expect(done.data.search?.sources.map(s => s.summary)).toEqual(Array(3).fill('资'.repeat(100)));
+    const sent = vi.mocked(c.adapter.stream).mock.calls[0][0]; const contents = sent.filter(m => m.role !== 'system');
+    expect(contents.length).toBeLessThan(41); expect(contents[0].role).toBe('user');
+    expect(contents.map(m => m.content)).not.toContain('历史问题0' + '问'.repeat(20));
+    expect(contents.at(-1)?.content).toContain(buildSearchContext(done.data.search!.sources));
+    const saved = (await c.storage.getSession(c.req.sessionId!))!.messages;
+    expect(saved).toHaveLength(42); expect(saved.at(-1)?.search).toEqual(done.data.search);
+    expect(acquire).toHaveBeenCalledOnce(); expect(c.search.search).toHaveBeenCalledOnce();
+  }));
+  it('T1: 无历史的最小输入略超安全阈值时缩资料后成功而非整轮降级', async () => fixture(async c => {
+    const { MockSearchAdapter } = await import('../search-adapter'); const { buildSearchContext, SEARCH_SYSTEM_RULE } = await import('../search-context');
+    const mock = new MockSearchAdapter(Array.from({ length: 3 }, (_, i) => ({ title: `来源${i}`, url: `https://example.com/${i}`, content: '资'.repeat(100) })));
+    const sources = await mock.search('question', { signal: new AbortController().signal });
+    const current = [{ id: 'pending', role: 'user' as const, createdAt: 0, content: c.req.messages[0].content + '\n\n' + buildSearchContext(sources) }];
+    const estimate = c.window.estimate(current, SEARCH_SYSTEM_RULE, true); c.window.config.inputTokens = Math.ceil(estimate / 0.9);
+    expect(estimate).toBeGreaterThan(c.window.config.inputTokens * 0.8); expect(estimate).toBeLessThan(c.window.config.inputTokens);
+    vi.mocked(c.search.search).mockImplementation(mock.search.bind(mock));
+    c.adapter.stream = vi.fn(async function* () { yield { delta: '', accumulated: 'ok', done: true }; });
+    const done = (await collect(c.make(), c.req)).at(-1); expect(done).toMatchObject({ event: 'done', data: { search: { status: 'succeeded' } } });
+    if (done?.event !== 'done') throw new Error('missing done');
+    expect(done.data.search!.sources.reduce((n, s) => n + Array.from(s.summary).length, 0)).toBeLessThan(300);
+    const sent = vi.mocked(c.adapter.stream).mock.calls[0][0];
+    expect(c.window.estimate(sent.filter(m => m.role !== 'system'), SEARCH_SYSTEM_RULE, true)).toBeLessThanOrEqual(c.window.config.inputTokens * 0.8);
+  }));
+  it('T3: 账本写失败使用独立原因并继续普通生成且不调用搜索', async () => fixture(async c => {
+    const { SearchBudget } = await import('../search-budget');
+    const broken = new SearchBudget(c.config, { read: async () => undefined, write: async () => { throw new Error('private ledger write'); } });
+    const { createSessionChatStreamSource } = await import('../chat-adapter-stream-source');
+    const source = createSessionChatStreamSource(c.adapter, c.service, c.generation, c.window, undefined, { adapter: c.search, budget: broken, config: c.config });
+    expect(await collect(source, c.req)).toMatchObject([{ event: 'done', data: { search: { reason: 'ledger_unavailable' } } }]);
+    expect(c.search.search).not.toHaveBeenCalled();
   }));
 });

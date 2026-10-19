@@ -63,7 +63,7 @@ export function isSearchMetadata(value: unknown): value is SearchMetadata {
 }
 
 /** Shrink summaries before dropping a tail source; never mutate persisted history or caller inputs. */
-export function fitSearchSources(sources: readonly SearchSource[], estimate: (block: string) => number, limit = 2048, keepMinimumSource = false): SearchSource[] {
+export function fitSearchSources(sources: readonly SearchSource[], estimate: (block: string) => number, limit = 2048): SearchSource[] {
   let result = sources.map(s => ({ ...s }));
   while (result.length && estimate(buildSearchContext(result)) > limit) {
     const lengths = result.map(s => Array.from(s.summary).length);
@@ -72,10 +72,7 @@ export function fitSearchSources(sources: readonly SearchSource[], estimate: (bl
       const i = lengths.indexOf(longest);
       result[i].summary = Array.from(result[i].summary).slice(0, longest - 1).join('').trim();
       if (!result[i].summary) result.splice(i, 1);
-    } else {
-      if (keepMinimumSource && result.length === 1) break;
-      result.pop();
-    }
+    } else result.pop();
     result = result.map((s, i) => ({ ...s, index: i + 1 }));
   }
   return result;

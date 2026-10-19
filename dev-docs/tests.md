@@ -1,7 +1,7 @@
 # 测试套件与测试用例台账
 
 > **维护规范**：
-> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（41 个套件）与具体测试用例（559 个断言项）。
+> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（41 个套件）与具体测试用例（568 个断言项）。
 > 2. **铁律联动**：后续开发中，每次有新功能开发、重构或测试内容更新时，**必须同步在此台账中维护新增或修改的测试项**，保持与实际测试套件 100% 同步。
 
 ## 1. 测试套件概览看板
@@ -25,11 +25,11 @@
 | 15 | `core/test/sse-contract.test.ts` | Task 11 | 共享 SSE 事件、错误载荷与 sessionId 演进契约 | 8 | ✅ 通过 |
 | 16 | `server/test/cors.test.ts` | Task 11 | CORS 白名单解析、允许/拒绝策略与预检链路 | 5 | ✅ 通过 |
 | 17 | `server/test/chat-stream.test.ts` | Task 12 | SSE 流式管道、心跳、续传声明与中断级联 | 16 | ✅ 通过 |
-| 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 / Task 17 Step 1 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 57 | ✅ 通过 |
+| 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 / Task 17 Step 1 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 62 | ✅ 通过 |
 | 19 | `src/test/remote-chat-adapter.test.ts` | Task 13 / Task 14 Step 3 | RemoteChatAdapter 的 SSE 消费、错误映射、AbortSignal 与 sessionId 模式 | 15 | ✅ 通过 |
 | 20 | `src/test/app-remote-integration.test.tsx` | Task 13 Step 3 / Task 14 Step 3 / Phase 3 收尾 | App 的后端 SSE 装配、会话恢复、归档清空与旧配置迁移 | 7 | ✅ 通过 |
 | 21 | `server/test/json-session-storage.test.ts` | Task 14 Step 1 / Task 16 Step 2 | JSON 会话、频道关联、重启恢复与严格追加 | 15 | ✅ 通过 |
-| 22 | `server/test/session-api.test.ts` | Task 14 Step 2 / Task 16 Step 2 | 会话 API、频道上下文、归档与来源隔离 | 25 | ✅ 通过 |
+| 22 | `server/test/session-api.test.ts` | Task 14 Step 2 / Task 16 Step 2 | 会话 API、频道上下文、归档与来源隔离 | 27 | ✅ 通过 |
 | 23 | `server/test/discord-demo.test.ts` | Task 15 Step 2 | 配置、测试频道回显、连接事件、日志脱敏与退出清理（网络 Mock） | 14 | ✅ 通过 |
 | 24 | `bot/test/gateway.test.ts` | Task 16 / Task 17 Step 1–3 | 正式网关、typing、错误、重连、长时模拟与资源清理（网络 Mock） | 50 | ✅ 通过 |
 | 25 | `bot/test/message-entry.test.ts` | Task 16 Step 1 | 指定频道直接 @Bot、提及清理与消息过滤 | 14 | ✅ 通过 |
@@ -46,10 +46,10 @@
 | 36 | `server/test/source-budget.test.ts` | P1-7 | 持久化来源防伪、Web保留额度、总守卫与计数 / 生成暂停 | 8 | ✅ 通过 |
 | 37 | `server/test/search-adapter.test.ts` | Task 20 Step 1 | 固定端点、原生HTTP、限读、取消与离线Mock | 6 | ✅ 通过 |
 | 38 | `server/test/search-context.test.ts` | Task 20 Step 1 | 来源过滤、Unicode上限、资料隔离与URL不入模型 | 12 | ✅ 通过 |
-| 39 | `server/test/search-budget.test.ts` | Task 20 Step 2 | 配置、原子多守卫、故障关闭、并发与429隔离 | 15 | ✅ 通过 |
+| 39 | `server/test/search-budget.test.ts` | Task 20 Step 2 | 配置、原子多守卫、故障关闭、并发与429隔离 | 17 | ✅ 通过 |
 | 40 | `server/test/search-ledger.test.ts` | Task 20 Step 2 | UTC日账本、原子写、重启 / 换日与N4 | 10 | ✅ 通过 |
 | 41 | `server/test/search-timeout.test.ts` | Task 20 Step 2 | 单调期限、取消、迟到结果与剩余预算 | 4 | ✅ 通过 |
-| **合计** | **41 个测试文件** | **Phase 1–5 / 审计修复** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **559** | **✅ 100% 通过** |
+| **合计** | **41 个测试文件** | **Phase 1–5 / 审计修复** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **568** | **✅ 100% 通过** |
 
 ---
 
@@ -412,7 +412,7 @@
 - [x] **拒绝非布尔搜索字段以及无状态搜索请求**
 - [x] **只有无Origin本机请求可提供可信Discord身份且请求体的可信字段被忽略**
 
-### 2.18 `server/test/chat-adapter-stream-source.test.ts` (57 项)
+### 2.18 `server/test/chat-adapter-stream-source.test.ts` (62 项)
 > **任务对应**：Task 17 Step 2 / Task 12 Step 2–3 · 服务端 Adapter 承载、自动降级与错误透传
 
 #### Task 12 Step 3: Adapter 自动选择与统一错误透传
@@ -515,6 +515,14 @@
 - [x] **长URL只保留元数据且搜索用量不污染普通系数，空正文不校准**
 - [x] **问题不合法、生成拒绝与缺可信身份均不扣搜索额度**
 
+
+#### T1–T3修复（2026-10-18，Mock）
+- [x] **T1: 默认20轮历史回复100字时保留3条100字资料并裁最旧历史**
+- [x] **T1: 默认20轮历史回复200字时保留3条100字资料并裁最旧历史**
+- [x] **T1: 默认20轮历史回复400字时保留3条100字资料并裁最旧历史**
+- [x] **T1: 无历史的最小输入略超安全阈值时缩资料后成功而非整轮降级**
+- [x] **T3: 账本写失败使用独立原因并继续普通生成且不调用搜索**
+
 ### 2.19 `src/test/remote-chat-adapter.test.ts` (15 项)
 > **任务对应**：Task 13 Step 1 / Task 14 Step 3 · RemoteChatAdapter 实现、会话模式与契约测试
 
@@ -588,7 +596,7 @@
 - [x] **来源元数据重启恢复且返回对象与内部来源深拷贝隔离**
 - [x] **拒绝不合法来源状态角色与不安全URL且日志不变**
 
-### 2.22 `server/test/session-api.test.ts` (25 项)
+### 2.22 `server/test/session-api.test.ts` (27 项)
 > **任务对应**：Task 17 Step 2 / Task 16 Step 2 / Task 14 Step 2 · 会话 API、多轮全量上下文与归档语义
 
 #### Task 14 Step 2: 会话 API 与多轮上下文
@@ -644,6 +652,11 @@
 
 #### Task 20 Step 2（2026-10-18，Mock）
 - [x] **进程重装和reset不清Discord日额度且预算拒绝仍普通生成**
+
+
+#### T1–T3修复（2026-10-18，Mock）
+- [x] **坏账本使用ledger_unavailable且刷新重启回放保持一致**
+- [x] **写入失败使用ledger_unavailable且刷新重启回放保持一致**
 
 ### 2.23 `server/test/discord-demo.test.ts` (14 项)
 > **任务对应**：Task 15 Step 2 · 最小网关 Demo（Task 16 Step 1 实现移至 bot/demo.ts，测试路径保留）；所有 Discord 网络调用均 Mock，不能替代真实网关验收。
@@ -1093,9 +1106,9 @@
 #### Task 20 Step 2（2026-10-18，Mock）
 - [x] **按实际隔离块估算先缩摘要后减来源且展示摘要与注入保持一致**
 - [x] **最小资料仍超预算返回空来源并保持连续编号**
-- [x] **历史较长时先缩资料但保留最小来源供后续历史窗口裁剪**
+- [x] **最小来源仍超限时清空而不保留一字摘要绕过阈值**
 
-### 2.39 `server/test/search-budget.test.ts` (15 项)
+### 2.39 `server/test/search-budget.test.ts` (17 项)
 
 > **任务对应**：Task 20 Step 2 · 上游Mock / 隔离临时账本。
 
@@ -1109,11 +1122,16 @@
 - [x] **429只暂停搜索所有来源60秒且日计数不退款**
 - [x] **缺身份与预先取消均不写账本**
 - [x] **账本读写失败关闭搜索且不自动恢复或清零**
-- [x] **写入挂起时取消结束本地等待且迟到写入不退款不发请求**
+- [x] **写入期间取消仍等待串行落账，后续请求保留预留并正常准入**
 - [x] **已存在账本丢失或被改写时关闭搜索而不从空状态恢复**
-- [x] **读操作挂起可取消并使后续请求直接降级**
+- [x] **读操作期间取消不写入，后续请求重读后正常准入**
 - [x] **单独频道日上限拒绝不消耗用户或全局额度**
 - [x] **落账期间收到429或跨UTC日时不再发起该次搜索**
+
+
+#### T1–T3修复（2026-10-18，Mock）
+- [x] **read期间取消后其他请求等待同一串行任务并正常准入**
+- [x] **write期间取消后其他请求等待同一串行任务并正常准入**
 
 ### 2.40 `server/test/search-ledger.test.ts` (10 项)
 
@@ -1149,3 +1167,11 @@
 | §5 2048资料预算 / 优先缩资料 / N1与完整输入 / K1 | server/test/search-context.test.ts；server/test/context-window.test.ts；server/test/chat-adapter-stream-source.test.ts |
 
 本轮新增48项，全量41/41文件559/559用例；旧511项保持通过（既有生成配置上边界断言按新增搜索预留关系更新）。生产未装配搜索网络、不加载搜索Key；无真实搜索 / 模型 / Discord / VPS访问。
+
+## Task 20 Step 2 T1–T3修复映射（2026-10-18）
+
+- T1：chat-adapter-stream-source.test.ts新增默认20轮×100 / 200 / 400字历史及3×100字资料回归，以及无历史略超安全阈值的收缩成功回归；search-context.test.ts修订错误的保留最小来源预期，既有无资料可用的context_limit降级 / 计数≤2测试保持。
+- T2：search-budget.test.ts新增read / write期间取消后另一请求等待队列、正确恢复和日计数回归；同时修订两项“取消永久关闭”的错误预期，实际读写故障仍关闭的N4回归保留。
+- T3：流源新增写失败原因回归，session-api.test.ts新增坏账本 / 写失败的原因持久化、刷新及重启回放回归；原额度不足 / 冷却仍断言admission_denied，ledger测试按判别联合适配。
+
+本轮新增9项，全量41/41文件568/568用例通过；准入返回值改为判别联合，旧布尔断言按允许 / 额度拒绝 / 账本故障分别更新。无真实上游调用、VPS或部署。

@@ -19,7 +19,7 @@ import { isChatStreamRequest, type ChatStreamSource } from './chat-stream';
 import { SessionService } from './session-service';
 import { SessionRequestConflictError, type SessionStorage } from './storage/session-storage';
 import { guardStreamSource, RequestBudget, SourceRequestBudget, readSourceBudgetConfig } from './request-budget';
-import { ContextWindow, historyTurns, readContextConfig } from './context-window';
+import { ContextWindow, readContextConfig } from './context-window';
 import { logChatFailure, safeStreamError, type ErrorStage } from './chat-errors';
 import {
   DEFAULT_GENERATION_TIMEOUT_CONFIG,
@@ -193,8 +193,10 @@ export function createSessionChatStreamSource(
         else if (!searchOptions.adapter) search = degradedSearch('unavailable');
         else {
           try {
-            if (!(searchOptions.admit?.(identity) ?? true) ||
-              !await deadline.run(phaseSignal => searchBudget.acquire(identity, phaseSignal), signal)) search = degradedSearch('admission_denied');
+            const admission = (searchOptions.admit?.(identity) ?? true)
+              ? await deadline.run(phaseSignal => searchBudget.acquire(identity, phaseSignal), signal)
+              : { allowed: false as const, reason: 'admission_denied' as const };
+            if (!admission.allowed) search = degradedSearch(admission.reason);
             else {
               const raw = await searchWithTimeout(searchOptions.adapter, question, signal, searchConfig.timeoutMs, deadline);
               const sources = normalizeSearchSources(raw);
@@ -216,16 +218,11 @@ export function createSessionChatStreamSource(
           const withData = (block: string) => inputs.map((input, index) => index === inputs.length - 1
             ? { ...input, content: `${input.content}\n\n${block}` } : input);
           // Fit minimum current input before removing any complete history turn.
-          sources = fitSearchSources(sources, block => contextWindow.estimate(withData(block), SEARCH_SYSTEM_RULE, true), contextWindow.config.inputTokens);
+          sources = fitSearchSources(sources, block => contextWindow.estimate(withData(block), SEARCH_SYSTEM_RULE, true), contextWindow.safeInputTokens);
           if (!sources.length) {
             search = degradedSearch('context_limit');
             selected = await contextWindow.select(history, inputs, adapter, signal, source, { countAllowance, deadline });
           } else {
-            const eligible = contextWindow.config.historyTurns === 0 ? [] : historyTurns(history).slice(-contextWindow.config.historyTurns).flat();
-            // When full history is tight, shrink data before select() removes old whole turns.
-            // Keep one minimal source here: history removal must precede dropping data entirely.
-            sources = fitSearchSources(sources,
-              block => contextWindow.estimate([...eligible, ...withData(block)], SEARCH_SYSTEM_RULE, true), contextWindow.config.inputTokens * 0.8, true);
             search = { status: 'succeeded', sources };
             try {
               selected = await contextWindow.select(history, withData(buildSearchContext(sources)), adapter, signal, source,
