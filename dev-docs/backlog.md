@@ -206,6 +206,9 @@ Claude Task 21 Step 2 复核遗留（2026-10-19，详见 history）：Task 21 �
 **用户决定（2026-10-19）**：X1 在 Task 21 收尾人工验收前修复（提示词见 [prompts/task21-x1-fix-gpt.md](prompts/task21-x1-fix-gpt.md)）；D12 差异暂不单独授权，人工验收按现行为验收并作为已知差异记录。
 
 - **Y1（低，Step 2 遗留，Claude X1 复核发现）**：`discord.js` 的 `escapeMarkdown` 对偶数长度的连续 `*` / `_` 会漏转义末尾一个（如 `****`→`\*\*\**`、`______`→`\_\_\_\_\__`），`bot/search-sources.ts` 的 `prose()` 因此可能残留单个未转义符号，与他处配对形成斜体。仅影响显示格式，不能产生提及 / 链接 / 代码块；建议在 `prose()` 转义后补一道对残余未转义 `*` / `_` 的转义并补回归。不阻塞 Task 21 收尾人工验收，待用户安排。
+- **Task 21 收尾人工验收方案（2026-10-19，用户选择方案 A）**：生产入口未接入任何搜索适配器，运行中的应用里搜索恒降级为 unavailable，成功来源路径无法人工验收；用户决定先由 GPT 实现仅本地显式启用的 `SEARCH_PROVIDER=mock` 离线开关（提示词 [prompts/task21-mock-search-switch-gpt.md](prompts/task21-mock-search-switch-gpt.md)），经 Claude 复核后按 [acceptance/task21-mock-checklist.md](acceptance/task21-mock-checklist.md) 执行人工验收。
+- **Z1（低，仅开发模式，Claude 发现）**：`vite.config.ts` 的 `/api` 代理删除 `Origin` 头，开发模式下浏览器请求被服务端视为“本机且无 Origin”，可在请求体声明 `discordUserId` 并访问 Discord 会话接口（ADR-014 起已存在）；生产由 Express 提供页面不受影响。人工验收须用生产方式；修复待用户安排。
+- **Z2（低，Claude 发现）**：`deploy/server.env.example` 与 `deploy/README.md` 缺少 Task 20 新增的 `SEARCH_*` 配置说明；已并入 Mock 开关提示词一并补齐。
 
 ### Task 22：Part 1 验收与结项（以 ADR-015 裁决为准）
 
