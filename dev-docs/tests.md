@@ -1,7 +1,7 @@
 # 测试套件与测试用例台账
 
 > **维护规范**：
-> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（44 个套件）与具体测试用例（807 个断言项）。
+> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（44 个套件）与具体测试用例（818 个断言项）。
 > 2. **铁律联动**：后续开发中，每次有新功能开发、重构或测试内容更新时，**必须同步在此台账中维护新增或修改的测试项**，保持与实际测试套件 100% 同步。
 
 ## 1. 测试套件概览看板
@@ -51,8 +51,8 @@
 | 41 | `server/test/search-timeout.test.ts` | Task 20 Step 2 | 单调期限、取消、迟到结果与剩余预算 | 7 | ✅ 通过 |
 | 42 | `src/test/search-metadata.test.ts` | Task 21 Step 1 | 客户端搜索结构与URL独立校验 | 45 | ✅ 通过 |
 | 43 | `src/test/search-sources.test.tsx` | Task 21 Step 1 | 来源纯文本、安全链接与降级展示 | 16 | ✅ 通过 |
-| 44 | `bot/test/search-sources.test.ts` | Task 21 Step 2 | Discord来源转义、独立URL验证与1900单位上限 | 32 | ✅ 通过 |
-| **合计** | **44 个测试文件** | **Phase 1–5 / 审计修复** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **807** | **✅ 100% 通过** |
+| 44 | `bot/test/search-sources.test.ts` | Task 21 Step 2 | Discord来源转义、独立URL验证与1900单位上限 | 43 | ✅ 通过 |
+| **合计** | **44 个测试文件** | **Phase 1–5 / 审计修复** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **818** | **✅ 100% 通过** |
 
 ---
 
@@ -1561,23 +1561,23 @@
 - [x] Task 21 Step 2: Discord来源格式与边界 转义或消除文本结构 \u202e伪装\u202c\u000a新行
 - [x] Task 21 Step 2: Discord来源格式与边界 Markdown特殊字符实际按文本转义
 - [x] Task 21 Step 2: Discord来源格式与边界 标题先按80码点截断，emoji不拆分且转义后计整段UTF16长度
-- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 javascript:alert(1)
-- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 data:text/html,evil
-- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 vbscript:evil
-- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 //evil.example
-- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://u:p@real.example
-- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://real.example/a b
-- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://real.example/a\u0009b
-- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://real.example/a\u000ab
-- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://real.example/a\u0000b
-- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://real.example/a\u007fb
-- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://real.example/a\u0085b
-- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://real.example/a\u2028b
-- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://real.example/a\u202eb
-- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://real.example/>evil
-- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://real.example/\`evil
-- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://real.example/\evil
-- [x] Task 21 Step 2: Discord来源格式与边界 无效URL仅显示域名和固定说明 https://real.example/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 javascript:alert(1)
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 data:text/html,evil
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 vbscript:evil
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 //evil.example
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://u:p@real.example
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://real.example/a b
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://real.example/a\u0009b
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://real.example/a\u000ab
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://real.example/a\u0000b
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://real.example/a\u007fb
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://real.example/a\u0085b
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://real.example/a\u2028b
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://real.example/a\u202eb
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://real.example/>evil
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://real.example/\`evil
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://real.example/\evil
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://real.example/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 - [x] Task 21 Step 2: Discord来源格式与边界 符合原URL上限但整段超过1900时不发送截断链接
 - [x] Task 21 Step 2: Discord来源格式与边界 URL使整段恰好1900时保留，超过一个单位时回退
 - [x] Task 21 Step 2: Discord来源格式与边界 IDN真实域名使用URL解析后的punycode
@@ -1674,3 +1674,96 @@ real.example
 - `dev-docs/status.md`
 
 D12既有Web停止 / 失败残留片段与末条assistant无法重试属P1-4 / R3，本步未实施；须在Task21收尾人工验收前由用户决定是否单独授权。Task22真实网络 / 双入口 / 延迟验收与上线仍受N3许可门槛约束；当前Mock不证明真实Discord渲染 / 性能、供应商许可或来源事实正确。既有.zcodeignore保留不提交。
+
+
+## Task 21 X1：Discord来源回退修复（2026-10-19）
+
+仅修改bot/search-sources.ts与既有测试及4份交付文档，不新增文件。bot/test/search-sources.test.ts新增11项、修改19项（17个危险URL夹具及整段超长 / 超长hostname各1项），文件32→43项，全量807→818项，仍为44个测试文件；此前Step2的原交付证据保留，本节为回退行为的新验收要求。
+
+### 修改的19项
+
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 javascript:alert(1)
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 data:text/html,evil
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 vbscript:evil
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 //evil.example
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://u:p@real.example
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://real.example/a b
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://real.example/a\u0009b
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://real.example/a\u000ab
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://real.example/a\u0000b
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://real.example/a\u007fb
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://real.example/a\u0085b
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://real.example/a\u2028b
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://real.example/a\u202eb
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://real.example/>evil
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://real.example/\`evil
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://real.example/\evil
+- [x] Task 21 Step 2: Discord来源格式与边界 无效URL保留转义标题摘要并显示无效说明 https://real.example/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+- [x] Task 21 Step 2: Discord来源格式与边界 符合原URL上限但整段超过1900时不发送截断链接
+- [x] Task 21 Step 2: 异常长域名边界 超长hostname不会使无效URL回退消息突破1900单位
+
+### 新增的11项
+
+- [x] Task 21 X1: 回退文本和收缩 恶意标题摘要在回退时仍安全转义 https://u:p@real.example/path
+- [x] Task 21 X1: 回退文本和收缩 恶意标题摘要在回退时仍安全转义 https://real.example/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+- [x] Task 21 X1: 回退文本和收缩 超长host与最长合格标题摘要组合仍保留文本且无伪造域名
+- [x] Task 21 X1: 回退文本和收缩 先缩摘要，足够时保留全部标题且完整转义
+- [x] Task 21 X1: 回退文本和收缩 摘要清空后才缩标题，不拆emoji代理对
+- [x] Task 21 X1: 回退文本和收缩 收缩后重新转义，不留下半个反斜线序列或Markdown链接
+- [x] Task 21 X1: 回退文本和收缩 固定说明和域名刚好占满预算时允许清空标题摘要
+- [x] Task 21 X1: 回退文本和收缩 预算不足固定字段时明确拒绝，不截断域名或说明
+- [x] Task 21 X1: 回退文本和收缩 测试预算不能提高生产1900上限
+- [x] Task 21 X1: URL原长度与消息长度分离 URL原长2048时按校验与消息预算分别分类
+- [x] Task 21 X1: URL原长度与消息长度分离 URL原长2049时按校验与消息预算分别分类
+
+### 实现与验证边界
+
+- 回退使用同样的转义标题（最多80码点）、解析真实域名与转义摘要（最多100码点），只替换末尾URL行。URL通过校验但使完整消息超1900 UTF16时显示“链接过长未展示”；URL校验失败（包括原长度超过2048、非法协议 / 凭据 / 空白控制 / host等）显示“链接无效未展示”，无法解析或非法host仍为“域名无效”。2048原长URL与2049原长URL分别证明消息预算回退与URL无效的分类。
+- fitSearchFallback在原始码点数组上先减少摘要，再减少标题，每次重新转义并计算完整UTF16长度，避免切断转义序列 / emoji代理对；固定域名与说明不截断。测试预算可下调、不可突破生产1900上限，固定字段无法容纳时明确抛RangeError，不返回超限文本。生产调用不传测试预算；253字符hostname上限等既有校验未放宽，正常输入的短回退通常无需收缩，较小预算的纯函数测试专门覆盖收缩顺序、精确边界和完整转义。
+- 正常路径的文本清理 / 截断 / 转义表达式保持等价，合法可容纳链接仍按原格式。无Gateway、Web、服务端或共享契约修改；SuppressEmbeds、空allowedMentions、最多3条及独立消息由既有全量回归验证，不修改发送方式、D12或部署。
+
+### TDD与开发期记录
+
+- 初始失败：先改19项旧断言并加9项回归，41项中28失败 / 13通过；URL无效仍实际返回“链接过长未展示”且缺少标题摘要，整段超长 / 超长host仍丢弃文本，fitSearchFallback尚未实现。原始完整输出`/private/tmp/task21-x1-red.log`。
+- 实现后38/41通过，三项夹具预期有误：`符合原URL上限但整段超过1900时不发送截断链接`、`超长host与最长合格标题摘要组合仍保留文本且无伪造域名`、`先缩摘要，足够时保留全部标题且完整转义`，均假定连续星号被discord.js逐个转义，而既有escapeMarkdown对连续星号有组合处理。保持生产转义规则不变，改用每个方括号都显式转义的等长夹具，精确断言保留100个 / 收缩到10个完整转义单元；随后41/41通过。原始失败输出`/private/tmp/task21-x1-green.log`，校正后`task21-x1-targeted.log`。
+- 再新增2048 / 2049原URL分类两项，并强化大测试预算不能突破1900的断言，最终定向43/43通过，见`/private/tmp/task21-x1-targeted-final.log`。最终全量无失败，未放宽断言或调查既有deployment-validation偶发问题。
+
+| 全量轮次 | 文件通过 | 用例通过 | 结果 |
+| :--- | :--- | :--- | :--- |
+| 1 | 44/44 | 816/816 | 通过；补原URL长度边界两项前 |
+| 2 | 44/44 | 818/818 | 最终版本连续通过1/3 |
+| 3 | 44/44 | 818/818 | 最终版本连续通过2/3 |
+| 4 | 44/44 | 818/818 | 最终版本连续通过3/3 |
+
+完整机器报告及日志`/private/tmp/task21-x1-full-<N>.json`与`.log`不入Git；均获准沙箱外仅供本机临时HTTP测试端口使用，真实外部上游全部Mock。根 / Web / server / core / bot类型检查、Web / Express / Bot三构建及diff检查通过，Express既有1.8mb大小标记保留，Bot约33.3kb，无新增编译诊断。台账44文件逐文件用例数与最终JSON一致。
+
+### 每种原因的实际Mock输出
+
+以下由离线调用formatSearchSources生成，原文件`/private/tmp/task21-x1-examples.txt`；第一例输入带凭据URL，第二例输入URL合法且<=2048字符、加入整条来源消息后超过1900。反斜线为实际发送的Markdown转义，危险或超长原链接均未输出。
+
+```text
+无效：
+本轮检索来源
+1. \*标题\*
+real.example
+\[摘要\]
+链接无效未展示
+
+过长：
+本轮检索来源
+1. \*标题\*
+real.example
+\[摘要\]
+链接过长未展示
+```
+
+### 六文件交付与保留范围
+
+- bot/search-sources.ts
+- bot/test/search-sources.test.ts
+- dev-docs/backlog.md
+- dev-docs/tests.md
+- dev-docs/history.md
+- dev-docs/status.md（收尾）
+
+仅Mock，无真实Discord / Tavily / Gemini / VPS / Key或会话访问，无依赖、部署或版本变更，不合main；D12差异保持未授权，按用户决定在人工验收按现行为记录，P1-4 / R3与Task22仍未授权，N3门槛保留；既有.zcodeignore不提交。
