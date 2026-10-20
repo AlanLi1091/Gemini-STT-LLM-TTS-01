@@ -2,9 +2,11 @@
 
 ## 当前阶段
 
-Phase 1–4已结项；Phase 5 Part 1 Task19 / 20、Task21双入口及X1已复核通过。Task21本地离线Mock搜索开关与Z2已实现交付，待Claude复核；复核通过后人工验收仍须另行指派，结果尚未填写。D12按现行为验收、Y1 / Z1待安排，P1-4 / R3与Task22未授权。生产保持v002-6f81048，搜索代码未部署；Tavily用途许可 / 性能证据待补，N3真实验收与上线门槛未解除。
+Phase 1–4已结项；Phase 5 Part 1 Task19 / 20、Task21双入口及X1已复核通过。Task21本地离线Mock搜索开关与Z2已实现交付并经Claude复核通过；复核通过后人工验收仍须另行指派，结果尚未填写。D12按现行为验收、Y1 / Z1待安排，P1-4 / R3与Task22未授权。生产保持v002-6f81048，搜索代码未部署；Tavily用途许可 / 性能证据待补，N3真实验收与上线门槛未解除。
 
 ## 当前授权
+
+- **本轮授权已完成（2026-10-19）**：共享提交监控自动触发 Claude 复核 GPT Task 21 Mock 搜索开关与 Z2（`c2797dd` / `0ffe75b`），用户确认记录；复核通过，本机连续3次全量860/860用例、类型检查及三构建通过，并实际启动mock服务经HTTP验证default / hostile / empty场景、tavily拒绝启动与账本计数。顺带修正backlog中Task 21 Step 1 / Step 2仍写“待Claude复核”的遗留文字。仅文档；本状态收尾提交后按累计提交数创建annotated tag。Task 21收尾人工验收待用户执行，Task 22未授权。
 
 - **本轮授权已完成（2026-10-19）**：用户确认15文件计划并指派“请进行修复”，完成Task21本地离线Mock搜索开关及Z2。SEARCH_PROVIDER缺省 / none保持无搜索装配，mock显式启用五种固定场景，其他值含tavily固定错误、监听前拒绝；非mock忽略SEARCH_MOCK_SCENARIO。mock装配固定警告，数据经过正常normalizeSearchSources、准入 / 账本 / deadline / 上下文 / 保存 / done / 刷新与回放；slow3000ms可取消并清理定时器 / 监听器。hostile危险协议整条过滤，合法1950字符URL触发Discord超长回退；W-11 / D-10验收预期据此修订，人工结果全空。新增42项，最终连续三轮45/45文件860/860用例、根及四包类型检查与三构建通过；构建后本机Express警告及非法provider拒绝探针通过，台账逐文件映射一致。两轮沙箱listen EPERM及预期TDD失败如实登记tests.md，获准沙箱外定向166/166及三轮全量通过，未放宽断言或调查既有部署偶发失败。交付`c2797dd`（`feat: add explicit offline mock search scenarios`）已推送origin/test；本状态收尾后预期累计244，按实际累计数创建并推送annotated tag `V0.0.2-build.244`，最终远端核验见本会话汇报。15文件范围完成，无新依赖 / 版本变更 / main合并 / 部署；仅Mock、本机临时HTTP和隔离目录，无真实Tavily / Gemini / Discord / VPS / Key或会话访问。既有.zcodeignore保留不提交；Y1 / Z1 / D12 / P1-4 / R3 / Q4 / Task22未实施，N3保留。停止等待Claude复核，人工验收另行指派。
 
@@ -93,7 +95,7 @@ Phase 1–4已结项；Phase 5 Part 1 Task19 / 20、Task21双入口及X1已复�
 
 ## 下一步计划
 
-停止，等待Claude复核Task21本地离线Mock开关与Z2（交付c2797dd及本状态收尾）；复核通过后按清单开展人工验收须用户另行指派，不自动执行。W-11 / D-10按服务端过滤后的预期验收，结果尚未填写；D12按现行为记录，Y1 / Z1待用户安排。Task22真实验收 / 网络 / 延迟与VPS切版仍未授权，受N3用途许可门槛约束；P1-4 / R3、Q4、deployment-validation偶发失败及其余残余不纳入本步。
+Task21本地离线Mock开关与Z2已经Claude复核通过（2026-10-19）；下一个待办为用户按 `dev-docs/acceptance/task21-mock-checklist.md` 与 `deploy/README.md` 本地Mock一节执行Task 21收尾人工验收并填写结果。原记录：停止，等待Claude复核Task21本地离线Mock开关与Z2（交付c2797dd及本状态收尾）；复核通过后按清单开展人工验收须用户另行指派，不自动执行。W-11 / D-10按服务端过滤后的预期验收，结果尚未填写；D12按现行为记录，Y1 / Z1待用户安排。Task22真实验收 / 网络 / 延迟与VPS切版仍未授权，受N3用途许可门槛约束；P1-4 / R3、Q4、deployment-validation偶发失败及其余残余不纳入本步。
 
 ## 本轮验收与遗留
 
