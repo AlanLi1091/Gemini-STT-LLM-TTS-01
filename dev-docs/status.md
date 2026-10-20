@@ -2,9 +2,11 @@
 
 ## 当前阶段
 
-Phase 1–4已结项；Phase 5 Part 1 Task 19与Task 20已完成并复核通过，Task 21 Step 1（含V1）已通过Claude复核。Task 21 Step 2（Discord，含W1 / W2与S2 / S3）已交付，待Claude复核；Web与Bot均已接通显式搜索意图、最终来源和独立降级提示。Task 21收尾人工验收前的D12 / P1-4 / R3实施仍待用户另行决定，Task 22未授权。生产未装配搜索网络，Tavily用途许可 / 性能证据待补，N3真实验收与上线门槛未解除；K1及搜索代码未部署，现网保持v002-6f81048。
+Phase 1–4已结项；Phase 5 Part 1 Task 19与Task 20已完成并复核通过，Task 21 Step 1（含V1）已通过Claude复核。Task 21 Step 2（Discord，含W1 / W2与S2 / S3）已交付并经Claude复核通过（X1低风险登记）；Web与Bot均已接通显式搜索意图、最终来源和独立降级提示。Task 21收尾人工验收前的D12 / P1-4 / R3实施仍待用户另行决定，Task 22未授权。生产未装配搜索网络，Tavily用途许可 / 性能证据待补，N3真实验收与上线门槛未解除；K1及搜索代码未部署，现网保持v002-6f81048。
 
 ## 当前授权
+
+- **本轮授权已完成（2026-10-19）**：用户指派 Claude 复核 GPT Task 21 Step 2（`64b1223` / `b827a39`）并登记；复核通过，本机连续3次全量44/44文件807/807用例、类型检查及三构建通过，恶意来源渲染核验转义 / 提及 / 预览抑制有效。X1（低，来源回退文案不实并丢弃安全标题 / 摘要）与D12差异登记于backlog Task 22前，须用户在Task 21收尾人工验收前决定是否先处理。仅文档；本状态收尾提交后按累计提交数创建annotated tag。Task 22未授权。
 
 - **本轮授权已完成（2026-10-19）**：用户确认23文件计划后指派“请开始正式执行”，完成Task 21 Step 2及首个子步骤W1 / W2。W1固定降级文案校验后移至MessageList正文前、成功来源仍后置，W2无状态RemoteChatAdapter省略search:true；回归先红后绿。共享展示结构校验迁至core纯模块，Web重导出保持兼容，Bot只读取done合法元数据，坏字段按无来源处理。精确/reset优先 / 管理员规则保留，/search空白分隔提取当前问题，空命令本地用法与Tavily外发 / 频道可见 / Discord保存说明，超过500 Unicode码点本地固定拒绝且不截断、不请求后端；不新增FailureKind。共享请求加discordUserId，Bot仅搜索带作者身份，服务端无Origin / loopback校验未改，本机临时HTTP以Mock上游验证身份和来源持久化一致。BotReply携正文及可选search；降级提示独立首条，正文沿用原分段器，再发最多三条来源，每条含编号 / Markdown转义标题80码点 / 摘要100码点 / 解析真实域名 / 尖括号原URL，独立HTTP(S)、凭据、控制空白、长度 / 超长host检查，转义后<=1900 UTF16，危险或放不下URL不截断链接。来源附SuppressEmbeds和空allowedMentions，typing在开始回复前停止，来源失败仅一次固定反馈且不重发正文。新增65项，最终第2–4轮连续3次44/44文件807/807用例、根 / 四包类型检查和三构建通过；首轮806/806通过后补超长hostname先红后绿，全部全量无失败。完整TDD、台账、Mock实际消息和23文件清单见tests.md；收尾修正共享模块EOF空行，diff检查通过。Bot运行时窄引用避免带入模型SDK，最终约32.4kb，无新依赖。交付提交`64b1223`（`feat: add Discord search and safe source messages`）已推送origin/test；本状态收尾后按累计232创建并推送annotated tag `V0.0.2-build.232`，最终远端核验见主会话汇报。全部外部上游Mock，无真实Discord / Tavily / Gemini / VPS / Key或会话访问，无环境 / systemd / 部署 / 版本变更，不合main；生产仍无搜索网络，N3保留。既有.zcodeignore不提交，D12 / P1-4 / R3与既有部署偶发失败未实施或调查，Task 22及其他项未授权。完成后停止等待Claude复核。
 
@@ -81,9 +83,11 @@ Phase 1–4已结项；Phase 5 Part 1 Task 19与Task 20已完成并复核通过�
 
 ## 下一步计划
 
-停止，等待Claude复核Task 21 Step 2（交付64b1223及本状态收尾）。W1 / W2与S2 / S3已交付；Task21收尾人工验收前，用户仍须决定是否单独授权D12 / P1-4 / R3的Web片段移除与重试实施。Task22真实双入口 / 网络 / 延迟验收与上线仍受N3用途许可门槛约束，未授权，不真实验收、不部署；deployment-validation第96行偶发失败仍另行立项，M1 / VPS扫描、Q4及其余残余继续等待指派。
+Task 21 Step 2已经Claude复核通过（2026-10-19），Task 21两个Step均已交付；下一个待办为用户决定X1与D12差异是否在收尾人工验收前处理，再安排Task 21收尾人工验收（Mock）。原记录：停止，等待Claude复核Task 21 Step 2（交付64b1223及本状态收尾）。W1 / W2与S2 / S3已交付；Task21收尾人工验收前，用户仍须决定是否单独授权D12 / P1-4 / R3的Web片段移除与重试实施。Task22真实双入口 / 网络 / 延迟验收与上线仍受N3用途许可门槛约束，未授权，不真实验收、不部署；deployment-validation第96行偶发失败仍另行立项，M1 / VPS扫描、Q4及其余残余继续等待指派。
 
 ## 本轮验收与遗留
+
+- **Claude Task 21 Step 2 复核（2026-10-19）**：复核通过，X1与D12差异登记于backlog待用户决定。仅修改backlog / history / status，测试台账不变；既有未跟踪 `.zcodeignore` 保留。
 
 - **Task 21 Step 2 / W1 / W2（2026-10-19，待Claude复核）**：23文件，新增65项，44/44文件807/807用例最终连续3轮通过；类型 / 三构建 / 台账 / 范围 / diff核验通过。Bot命令与身份、共享校验、最终来源 / 独立降级提示、安全转义和长度、抑制提及 / 预览、typing / 一次反馈均有Mock及本机HTTP证据，实际消息输出见tests.md。本轮全量无失败；D12 / P1-4 / R3、N3 / Task22与既有部署偶发问题仍保留，.zcodeignore不提交。
 
