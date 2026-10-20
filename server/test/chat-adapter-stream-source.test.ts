@@ -12,6 +12,38 @@ import { join } from 'node:path';
 
 const mockGenerateContentStream = vi.fn();
 
+describe('Task 21: environment search assembly', () => {
+  it.each(['tavily', 'secret-provider', ''])('rejects provider %s before constructing a model', provider => {
+    const before = vi.mocked(GoogleGenAI).mock.calls.length;
+    expect(() => createChatStreamSourceFromEnv({ SEARCH_PROVIDER: provider, GEMINI_API_KEY: 'fake' })).toThrow(/^Invalid search provider configuration\.$/);
+    expect(vi.mocked(GoogleGenAI).mock.calls.length).toBe(before);
+  });
+  it('rejects invalid scenario even with a code-injected search adapter', () => {
+    expect(() => createChatStreamSourceFromEnv({ SEARCH_PROVIDER: 'mock', SEARCH_MOCK_SCENARIO: 'secret' }, {
+      searchAdapter: { search: async () => [] },
+    })).toThrow(/^Invalid mock search scenario configuration\.$/);
+  });
+  it.each([undefined, 'none', 'mock'])('assembles provider %s with exactly the expected warning and sources', async provider => {
+    const directory = await mkdtemp(join(tmpdir(), 'task21-assembly-'));
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const fetcher = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('network forbidden'));
+    try {
+      const storage = new JsonSessionStorage(directory); const session = await storage.createSession();
+      const source = createChatStreamSourceFromEnv({ SEARCH_PROVIDER: provider, SESSION_DATA_DIR: directory }, {
+        sessionStorage: storage, mockAdapterOptions: { delayMs: 0, streamChunkDelayMs: 0 },
+      });
+      const events = [];
+      for await (const event of source({ sessionId: session.id, search: true, messages: [{ role: 'user', content: '问题' }] }, { signal: new AbortController().signal })) events.push(event);
+      const last = events.at(-1);
+      expect(last).toMatchObject({ event: 'done', data: { search: provider === 'mock'
+        ? { status: 'succeeded', sources: expect.any(Array) } : { status: 'degraded', reason: 'unavailable' } } });
+      if (provider === 'mock') expect(warning.mock.calls).toEqual([['[server] search provider=mock (offline fixtures, not for production)']]);
+      else expect(warning).not.toHaveBeenCalled();
+      expect(fetcher).not.toHaveBeenCalled();
+    } finally { warning.mockRestore(); fetcher.mockRestore(); await rm(directory, { recursive: true }); }
+  });
+});
+
 afterEach(() => vi.useRealTimers());
 
 vi.mock('@google/genai', () => ({

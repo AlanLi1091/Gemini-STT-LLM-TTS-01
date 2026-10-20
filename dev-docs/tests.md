@@ -1,7 +1,7 @@
 # 测试套件与测试用例台账
 
 > **维护规范**：
-> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（44 个套件）与具体测试用例（818 个断言项）。
+> 1. 本文档是本项目的自动化测试全景台账，完整记录所有测试文件（45 个套件）与具体测试用例（860 个断言项）。
 > 2. **铁律联动**：后续开发中，每次有新功能开发、重构或测试内容更新时，**必须同步在此台账中维护新增或修改的测试项**，保持与实际测试套件 100% 同步。
 
 ## 1. 测试套件概览看板
@@ -25,11 +25,11 @@
 | 15 | `core/test/sse-contract.test.ts` | Task 11 | 共享 SSE 事件、错误载荷与 sessionId 演进契约 | 9 | ✅ 通过 |
 | 16 | `server/test/cors.test.ts` | Task 11 | CORS 白名单解析、允许/拒绝策略与预检链路 | 5 | ✅ 通过 |
 | 17 | `server/test/chat-stream.test.ts` | Task 12 | SSE 流式管道、心跳、续传声明与中断级联 | 28 | ✅ 通过 |
-| 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 / Task 17 Step 1 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 65 | ✅ 通过 |
+| 18 | `server/test/chat-adapter-stream-source.test.ts` | Task 12 / Task 17 Step 1 | Adapter 自动选择、Mock 降级与标准错误 SSE 透传 | 72 | ✅ 通过 |
 | 19 | `src/test/remote-chat-adapter.test.ts` | Task 13 / Task 14 Step 3 | RemoteChatAdapter 的 SSE 消费、错误映射、AbortSignal 与 sessionId 模式 | 22 | ✅ 通过 |
 | 20 | `src/test/app-remote-integration.test.tsx` | Task 13 Step 3 / Task 14 Step 3 / Phase 3 收尾 | App 的后端 SSE 装配、会话恢复、归档清空与旧配置迁移 | 19 | ✅ 通过 |
 | 21 | `server/test/json-session-storage.test.ts` | Task 14 Step 1 / Task 16 Step 2 | JSON 会话、频道关联、重启恢复与严格追加 | 22 | ✅ 通过 |
-| 22 | `server/test/session-api.test.ts` | Task 14 Step 2 / Task 16 Step 2 | 会话 API、频道上下文、归档与来源隔离 | 32 | ✅ 通过 |
+| 22 | `server/test/session-api.test.ts` | Task 14 Step 2 / Task 16 Step 2 | 会话 API、频道上下文、归档与来源隔离 | 40 | ✅ 通过 |
 | 23 | `server/test/discord-demo.test.ts` | Task 15 Step 2 | 配置、测试频道回显、连接事件、日志脱敏与退出清理（网络 Mock） | 14 | ✅ 通过 |
 | 24 | `bot/test/gateway.test.ts` | Task 16 / Task 17 Step 1–3 | 正式网关、typing、错误、重连、长时模拟与资源清理（网络 Mock） | 69 | ✅ 通过 |
 | 25 | `bot/test/message-entry.test.ts` | Task 16 Step 1 | 指定频道直接 @Bot、提及清理与消息过滤 | 14 | ✅ 通过 |
@@ -44,7 +44,7 @@
 | 34 | `server/test/generation-timeout.test.ts` | P1-2 / R2 | 首包 / 总期限、取消、迭代等待与清理边界、启动配置（假时钟 / Mock） | 7 | ✅ 通过 |
 | 35 | `server/test/chat-error-safety.test.ts` | P1-3 | 存储错误分类、上游脱敏、固定提示与白名单日志 | 34 | ✅ 通过 |
 | 36 | `server/test/source-budget.test.ts` | P1-7 | 持久化来源防伪、Web保留额度、总守卫与计数 / 生成暂停 | 8 | ✅ 通过 |
-| 37 | `server/test/search-adapter.test.ts` | Task 20 Step 1 | 固定端点、原生HTTP、限读、取消与离线Mock | 28 | ✅ 通过 |
+| 37 | `server/test/search-adapter.test.ts` | Task 20 Step 1 | 固定端点、原生HTTP、限读、取消与离线Mock | 38 | ✅ 通过 |
 | 38 | `server/test/search-context.test.ts` | Task 20 Step 1 | 来源过滤、Unicode上限、资料隔离与URL不入模型 | 35 | ✅ 通过 |
 | 39 | `server/test/search-budget.test.ts` | Task 20 Step 2 | 配置、原子多守卫、故障关闭、并发与429隔离 | 17 | ✅ 通过 |
 | 40 | `server/test/search-ledger.test.ts` | Task 20 Step 2 | UTC日账本、原子写、重启 / 换日与N4 | 10 | ✅ 通过 |
@@ -52,7 +52,8 @@
 | 42 | `src/test/search-metadata.test.ts` | Task 21 Step 1 | 客户端搜索结构与URL独立校验 | 45 | ✅ 通过 |
 | 43 | `src/test/search-sources.test.tsx` | Task 21 Step 1 | 来源纯文本、安全链接与降级展示 | 16 | ✅ 通过 |
 | 44 | `bot/test/search-sources.test.ts` | Task 21 Step 2 | Discord来源转义、独立URL验证与1900单位上限 | 43 | ✅ 通过 |
-| **合计** | **44 个测试文件** | **Phase 1–5 / 审计修复** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **818** | **✅ 100% 通过** |
+| 45 | `server/test/search-config.test.ts` | Task 21 Mock | 显式 provider / 场景配置、固定错误与非 mock 忽略 | 17 | ✅ 通过 |
+| **合计** | **45 个测试文件** | **Phase 1–5 / 审计修复** | **全链路领域内核、共享适配器、UI 交互、服务端流式管道与会话持久化** | **860** | **✅ 100% 通过** |
 
 ---
 
@@ -420,7 +421,7 @@
 - [x] **非loopback连接%s不信任身份或伪造转发头**（4项）：公网IPv4、私网IPv4、IPv4映射IPv6、IPv6连接，X-Forwarded-For与请求体可信字段均不放行。
 - [x] **非法Discord身份%j按缺失处理**（8项）：空串、16 / 21位、全角数字、末尾换行、数值、null、对象。
 
-### 2.18 `server/test/chat-adapter-stream-source.test.ts` (65 项)
+### 2.18 `server/test/chat-adapter-stream-source.test.ts` (72 项)
 > **任务对应**：Task 17 Step 2 / Task 12 Step 2–3 · 服务端 Adapter 承载、自动降级与错误透传
 
 #### Task 12 Step 3: Adapter 自动选择与统一错误透传
@@ -613,7 +614,7 @@
 
 - [x] **读取时拒绝磁盘篡改：%s**（7项）：危险协议、超过三条、超长URL、超长摘要、来源多余字段、元数据多余字段、伪造域名；isSearchMetadata及当前 / 新存储实例均拒绝，原文件不改写。
 
-### 2.22 `server/test/session-api.test.ts` (32 项)
+### 2.22 `server/test/session-api.test.ts` (40 项)
 > **任务对应**：Task 17 Step 2 / Task 16 Step 2 / Task 14 Step 2 · 会话 API、多轮全量上下文与归档语义
 
 #### Task 14 Step 2: 会话 API 与多轮上下文
@@ -1099,7 +1100,7 @@
 - Linux复用现网lockfile，独立新发行目录运行全部Mock测试，不访问现网会话数据；生产依赖审计0漏洞。真实上线冒烟为Web回复“P1部署成功”及刷新恢复、用户直接@Bot确认Discord正常；服务端metadata证明旧消息保留、新增两条消息、两服务无重启。
 - 无sessionId的HTTP400与非法ID ../x的固定UNKNOWN文案探针通过，不消耗真实模型额度或追加输入；真实超时 / 429未强制触发，相关异常仅Mock回归。完整证据与备份校验见phase3-deployment.md第12节，不宣称新版本已完成24小时观察。
 
-### 2.37 `server/test/search-adapter.test.ts` (28 项)
+### 2.37 `server/test/search-adapter.test.ts` (38 项)
 
 > **任务对应**：Task 20 Step 1 · 全Mock，不调用真实供应商。
 
@@ -1767,3 +1768,139 @@ real.example
 - dev-docs/status.md（收尾）
 
 仅Mock，无真实Discord / Tavily / Gemini / VPS / Key或会话访问，无依赖、部署或版本变更，不合main；D12差异保持未授权，按用户决定在人工验收按现行为记录，P1-4 / R3与Task22仍未授权，N3门槛保留；既有.zcodeignore不提交。
+
+## Task 21 本地离线 Mock 开关与 Z2（2026-10-19，待 Claude 复核）
+
+用户确认15文件方案并指派“请进行修复”；本步新增42项，45/45文件、860/860用例。未调用真实模型 / 搜索 / Discord / VPS，未访问真实会话或环境文件。新配置套件17项；适配器28→38，环境装配65→72，HTTP会话32→40。其余41个测试文件用例数不变；本节补充以下完整映射，旧阶段记录按历史保留。
+
+### 新增用例逐项映射（42项）
+
+- `server/test/chat-adapter-stream-source.test.ts`：Task 21: environment search assembly rejects provider tavily before constructing a model
+- `server/test/chat-adapter-stream-source.test.ts`：Task 21: environment search assembly rejects provider secret-provider before constructing a model
+- `server/test/chat-adapter-stream-source.test.ts`：Task 21: environment search assembly rejects provider  before constructing a model
+- `server/test/chat-adapter-stream-source.test.ts`：Task 21: environment search assembly rejects invalid scenario even with a code-injected search adapter
+- `server/test/chat-adapter-stream-source.test.ts`：Task 21: environment search assembly assembles provider undefined with exactly the expected warning and sources
+- `server/test/chat-adapter-stream-source.test.ts`：Task 21: environment search assembly assembles provider none with exactly the expected warning and sources
+- `server/test/chat-adapter-stream-source.test.ts`：Task 21: environment search assembly assembles provider mock with exactly the expected warning and sources
+- `server/test/search-adapter.test.ts`：Task 21: offline scenarios default returns three normalized sources including parsed IDN without fetch
+- `server/test/search-adapter.test.ts`：Task 21: offline scenarios hostile drops javascript, retains prose and a valid 1950-character URL
+- `server/test/search-adapter.test.ts`：Task 21: offline scenarios empty returns no sources and fail throws a fixed local failure
+- `server/test/search-adapter.test.ts`：Task 21: offline scenarios slow returns default after 3000ms and releases timer and listener
+- `server/test/search-adapter.test.ts`：Task 21: offline scenarios default respects pre-aborted signal
+- `server/test/search-adapter.test.ts`：Task 21: offline scenarios hostile respects pre-aborted signal
+- `server/test/search-adapter.test.ts`：Task 21: offline scenarios empty respects pre-aborted signal
+- `server/test/search-adapter.test.ts`：Task 21: offline scenarios fail respects pre-aborted signal
+- `server/test/search-adapter.test.ts`：Task 21: offline scenarios slow respects pre-aborted signal
+- `server/test/search-adapter.test.ts`：Task 21: offline scenarios slow abort promptly rejects and clears its own pending timer
+- `server/test/search-config.test.ts`：Task 21: explicit offline search configuration provider undefined disables environment search and ignores scenario
+- `server/test/search-config.test.ts`：Task 21: explicit offline search configuration provider none disables environment search and ignores scenario
+- `server/test/search-config.test.ts`：Task 21: explicit offline search configuration mock defaults to default
+- `server/test/search-config.test.ts`：Task 21: explicit offline search configuration accepts mock scenario default
+- `server/test/search-config.test.ts`：Task 21: explicit offline search configuration accepts mock scenario hostile
+- `server/test/search-config.test.ts`：Task 21: explicit offline search configuration accepts mock scenario empty
+- `server/test/search-config.test.ts`：Task 21: explicit offline search configuration accepts mock scenario fail
+- `server/test/search-config.test.ts`：Task 21: explicit offline search configuration accepts mock scenario slow
+- `server/test/search-config.test.ts`：Task 21: explicit offline search configuration rejects provider  without echoing it
+- `server/test/search-config.test.ts`：Task 21: explicit offline search configuration rejects provider tavily without echoing it
+- `server/test/search-config.test.ts`：Task 21: explicit offline search configuration rejects provider MOCK without echoing it
+- `server/test/search-config.test.ts`：Task 21: explicit offline search configuration rejects provider  mock  without echoing it
+- `server/test/search-config.test.ts`：Task 21: explicit offline search configuration rejects provider secret-provider without echoing it
+- `server/test/search-config.test.ts`：Task 21: explicit offline search configuration rejects mock scenario  with fixed error
+- `server/test/search-config.test.ts`：Task 21: explicit offline search configuration rejects mock scenario DEFAULT with fixed error
+- `server/test/search-config.test.ts`：Task 21: explicit offline search configuration rejects mock scenario  slow  with fixed error
+- `server/test/search-config.test.ts`：Task 21: explicit offline search configuration rejects mock scenario secret-scenario with fixed error
+- `server/test/session-api.test.ts`：Task 21: environment mock HTTP lifecycle default saves three sources and ledger once; refresh/restart replay is identical and fetch-free
+- `server/test/session-api.test.ts`：Task 21: environment mock HTTP lifecycle hostile uses normal filtering, persistence and Bot length fallback
+- `server/test/session-api.test.ts`：Task 21: environment mock HTTP lifecycle empty persists the fixed no_results degradation and consumes one reservation
+- `server/test/session-api.test.ts`：Task 21: environment mock HTTP lifecycle fail persists the fixed provider_failure degradation and consumes one reservation
+- `server/test/session-api.test.ts`：Task 21: environment mock HTTP lifecycle slow times out through the normal deadline, aborts adapter and saves only degraded sources
+- `server/test/session-api.test.ts`：Task 21: environment mock HTTP lifecycle HTTP disconnect during slow search aborts it, unlocks and saves no assistant or sources
+- `server/test/session-api.test.ts`：Task 21: environment mock HTTP lifecycle environment mock still denies exhausted quotas and fails closed on a damaged ledger
+- `server/test/session-api.test.ts`：Task 21: environment mock HTTP lifecycle environment mock cannot bypass persisted Discord identity and request conflict checks
+
+### TDD 与环境失败记录
+
+先写四文件测试，后实现。首轮 `/private/tmp/task21-mock-red.log`：4文件失败，61用例失败 / 67通过，另有1个未处理listen EPERM；适配器套件因新增场景模块尚不存在而导入失败，配置解析尚未导出，非法provider / scenario未抛错，mock仍unavailable，均为预期红灯。此轮混有沙箱HTTP监听失败，不能视为完整功能验证。
+
+实现后首轮沙箱 `/private/tmp/task21-mock-target.log`：3/4文件通过、127/166用例通过、39项因listen EPERM / 关联超时失败，另有1个未处理EPERM。获准沙箱外后 `/private/tmp/task21-mock-target-unrestricted.log` 定向4/4文件、166/166用例通过。随后补一项环境装配下Discord身份 / 模式冲突 / 不写账本回归，最终全量增加至860项。未改部署证据测试或放宽断言；既有deployment-validation偶发问题未调查，本次三轮未复现。
+
+两轮失败的用例名合并去重如下；错误分类为上述缺少导出 / 模块、未抛配置错误、unavailable断言，以及沙箱listen EPERM与关联超时，完整错误及栈在对应临时日志中：
+
+- FAIL  server/test/search-adapter.test.ts [ server/test/search-adapter.test.ts ]
+- FAIL  server/test/chat-adapter-stream-source.test.ts > Task 21: environment search assembly > rejects provider tavily before constructing a model
+- FAIL  server/test/chat-adapter-stream-source.test.ts > Task 21: environment search assembly > rejects provider secret-provider before constructing a model
+- FAIL  server/test/chat-adapter-stream-source.test.ts > Task 21: environment search assembly > rejects provider  before constructing a model
+- FAIL  server/test/chat-adapter-stream-source.test.ts > Task 21: environment search assembly > rejects invalid scenario even with a code-injected search adapter
+- FAIL  server/test/chat-adapter-stream-source.test.ts > Task 21: environment search assembly > assembles provider mock with exactly the expected warning and sources
+- FAIL  server/test/search-config.test.ts > Task 21: explicit offline search configuration > provider undefined disables environment search and ignores scenario
+- FAIL  server/test/search-config.test.ts > Task 21: explicit offline search configuration > provider none disables environment search and ignores scenario
+- FAIL  server/test/search-config.test.ts > Task 21: explicit offline search configuration > mock defaults to default
+- FAIL  server/test/search-config.test.ts > Task 21: explicit offline search configuration > accepts mock scenario default
+- FAIL  server/test/search-config.test.ts > Task 21: explicit offline search configuration > accepts mock scenario hostile
+- FAIL  server/test/search-config.test.ts > Task 21: explicit offline search configuration > accepts mock scenario empty
+- FAIL  server/test/search-config.test.ts > Task 21: explicit offline search configuration > accepts mock scenario fail
+- FAIL  server/test/search-config.test.ts > Task 21: explicit offline search configuration > accepts mock scenario slow
+- FAIL  server/test/search-config.test.ts > Task 21: explicit offline search configuration > rejects provider  without echoing it
+- FAIL  server/test/search-config.test.ts > Task 21: explicit offline search configuration > rejects provider tavily without echoing it
+- FAIL  server/test/search-config.test.ts > Task 21: explicit offline search configuration > rejects provider MOCK without echoing it
+- FAIL  server/test/search-config.test.ts > Task 21: explicit offline search configuration > rejects provider  mock  without echoing it
+- FAIL  server/test/search-config.test.ts > Task 21: explicit offline search configuration > rejects provider secret-provider without echoing it
+- FAIL  server/test/search-config.test.ts > Task 21: explicit offline search configuration > rejects mock scenario  with fixed error
+- FAIL  server/test/search-config.test.ts > Task 21: explicit offline search configuration > rejects mock scenario DEFAULT with fixed error
+- FAIL  server/test/search-config.test.ts > Task 21: explicit offline search configuration > rejects mock scenario  slow  with fixed error
+- FAIL  server/test/search-config.test.ts > Task 21: explicit offline search configuration > rejects mock scenario secret-scenario with fixed error
+- FAIL  server/test/session-api.test.ts > Task 21: environment mock HTTP lifecycle > default saves three sources and ledger once; refresh/restart replay is identical and fetch-free
+- FAIL  server/test/session-api.test.ts > Task 21: environment mock HTTP lifecycle > hostile uses normal filtering, persistence and Bot length fallback
+- FAIL  server/test/session-api.test.ts > Task 21: environment mock HTTP lifecycle > empty persists the fixed no_results degradation and consumes one reservation
+- FAIL  server/test/session-api.test.ts > Task 21: environment mock HTTP lifecycle > fail persists the fixed provider_failure degradation and consumes one reservation
+- FAIL  server/test/session-api.test.ts > Task 21: environment mock HTTP lifecycle > slow times out through the normal deadline, aborts adapter and saves only degraded sources
+- FAIL  server/test/session-api.test.ts > Task 21: environment mock HTTP lifecycle > environment mock still denies exhausted quotas and fails closed on a damaged ledger
+- FAIL  server/test/session-api.test.ts > Task 20 Step 3: 篡改元数据的HTTP边界 > 危险协议不能经刷新或重启回放下发
+- FAIL  server/test/session-api.test.ts > Task 20 Step 3: 篡改元数据的HTTP边界 > 超过三条不能经刷新或重启回放下发
+- FAIL  server/test/session-api.test.ts > Task 20 Step 3: 篡改元数据的HTTP边界 > 超长URL不能经刷新或重启回放下发
+- FAIL  server/test/session-api.test.ts > Task 20 Step 3: 篡改元数据的HTTP边界 > 多余字段不能经刷新或重启回放下发
+- FAIL  server/test/session-api.test.ts > Task 14 Step 2: 会话 API 与多轮上下文 > 模型缺少结束事件不保存半截助手回复且后续请求恢复
+- FAIL  server/test/session-api.test.ts > Task 14 Step 2: 会话 API 与多轮上下文 > 模型中途抛错不保存半截助手回复且后续请求恢复
+- FAIL  server/test/session-api.test.ts > Task 14 Step 2: 会话 API 与多轮上下文 > 解析 API 归档后切换会话，并显式区分 Web 来源
+- FAIL  server/test/session-api.test.ts > Task 14 Step 2: 会话 API 与多轮上下文 > 解析 API 拒绝无效频道和浏览器 Origin 请求
+- FAIL  server/test/session-api.test.ts > Task 14 Step 2: 会话 API 与多轮上下文 > 创建、读取并归档会话；归档仅写标记而保留消息日志
+- FAIL  server/test/session-api.test.ts > Task 14 Step 2: 会话 API 与多轮上下文 > 按 sessionId 加载全量历史，并严格追加本轮输入与最终回复
+- FAIL  server/test/session-api.test.ts > Task 14 Step 2: 会话 API 与多轮上下文 > 归档后保留可读取日志，但拒绝继续追加会话轮次
+- FAIL  server/test/session-api.test.ts > Task 14 Step 2: 会话 API 与多轮上下文 > 未携带 sessionId 时拒绝无状态请求且不调用模型
+- FAIL  server/test/session-api.test.ts > P1-1: HTTP 持久化输入防护 > 有无请求标识的角色注入和伪造历史均不改变已有日志
+- FAIL  server/test/session-api.test.ts > P1-1: HTTP 持久化输入防护 > 共享生产装配在 Mock 降级时也拒绝无状态伪造历史
+- FAIL  server/test/session-api.test.ts > P0-2: HTTP 持久化重试 > 失败重试和服务重建回放不重复写入且刷新日志保持唯一输入
+- FAIL  server/test/session-api.test.ts > P0-1: HTTP 有限上下文 > 模型仅接收最近轮次但 GET 保留全部日志超限新输入不落盘
+- FAIL  server/test/session-api.test.ts > P0-1 Step 2: 频道重置与归档锁 > 重置归档旧日志重复目标不归档新会话其他频道和重启关联不变
+- FAIL  server/test/session-api.test.ts > P0-1 Step 2: 频道重置与归档锁 > 拒绝浏览器来源非法目标和跨频道目标且不改日志
+- FAIL  server/test/session-api.test.ts > P0-1 Step 2: 频道重置与归档锁 > 生成期间 Web归档和频道重置返回409回复完成后可正常归档
+- FAIL  server/test/session-api.test.ts > P0-1 Step 2: 频道重置与归档锁 > 归档失败保持旧会话且释放锁允许随后重置
+- FAIL  server/test/session-api.test.ts > P0-1 Step 2: 频道重置与归档锁 > 归档成功而新关联解析失败不宣称成功下一次解析自然恢复
+- FAIL  server/test/session-api.test.ts > Task 20 Step 1: 搜索来源HTTP生命周期 > SSE与刷新及重新装配后的回放保留相同来源且不重新搜索
+- FAIL  server/test/session-api.test.ts > Task 20 Step 1: 搜索来源HTTP生命周期 > 持久化Discord来源不接受浏览器伪造身份绕过降级
+- FAIL  server/test/session-api.test.ts > S1: 截断边界来源保存与回放 > title截断点为空白仍保存成功且重启回放不重搜
+- FAIL  server/test/session-api.test.ts > S1: 截断边界来源保存与回放 > summary截断点为空白仍保存成功且重启回放不重搜
+- FAIL  server/test/session-api.test.ts > Task 20 Step 2: 账本与会话生命周期 > 进程重装和reset不清Discord日额度且预算拒绝仍普通生成
+- FAIL  server/test/session-api.test.ts > T3: 账本故障原因持久化与回放 > 坏账本使用ledger_unavailable且刷新重启回放保持一致
+- FAIL  server/test/session-api.test.ts > T3: 账本故障原因持久化与回放 > 写入失败使用ledger_unavailable且刷新重启回放保持一致
+- FAIL  server/test/session-api.test.ts > Task 21: environment mock HTTP lifecycle > HTTP disconnect during slow search aborts it, unlocks and saves no assistant or sources
+- FAIL  server/test/session-api.test.ts > Task 14 Step 2: 会话 API 与多轮上下文 > Bot 经真实 HTTP/SSE 多轮对话并按频道复用持久化上下文
+- FAIL  server/test/session-api.test.ts > P0-1 Step 2: 频道重置与归档锁 > 重置归档写入期间生成和第二个重置也立即冲突
+- FAIL  server/test/session-api.test.ts > P0-1 Step 2: 频道重置与归档锁 > Bot经真实本机HTTP重置后下一条聊天只包含新会话输入
+- FAIL  server/test/session-api.test.ts > Task 21 Step 2: Bot搜索本机HTTP贯通 > 真实本机HTTP传作者身份并返回来源，普通轮次无搜索字段且不重搜
+
+### 最终验证
+
+| 轮次 | 文件 | 用例 | 结果 |
+| :--- | :--- | :--- | :--- |
+| 全量1 | 45/45 | 860/860 | 通过 |
+| 全量2 | 45/45 | 860/860 | 通过 |
+| 全量3 | 45/45 | 860/860 | 通过 |
+
+三轮JSON / 日志：`/private/tmp/task21-mock-full-<N>.json`与`.log`，不入Git。JSON的testResults为45文件（numTotalTestSuites含describe分组，不用作文件数）。根 / Web / server / core / bot类型检查全部通过，Web / Express CJS / Bot三构建通过；Express既有1.8mb大小标记保留，无新增类型或编译诊断。日志为`/private/tmp/task21-mock-lint.log`及`/private/tmp/task21-mock-build-{web,server,bot}.log`。
+
+构建后本机临时Express启动 / 关闭及非法provider拒绝探针通过，显式空GEMINI_API_KEY、临时目录，无外部服务调用；实际固定警告为 `[server] search provider=mock (offline fixtures, not for production)`，完整输出`/private/tmp/task21-mock-startup.log`。tavily / 未知provider非零退出、监听前失败且不回显原值。正常HTTP生命周期测试使用fetch拒绝计数桩，装配、生成、搜索、刷新和回放的fetch次数为零。
+
+场景数据与启动示例见deploy/README.md与server/search-mock-scenarios.ts。hostile原始4条经正常normalizeSearchSources过滤后3条，javascript来源不进入SSE / 持久化；合法URL长1950，实际Bot格式化包含“链接过长未展示”并<=1900 UTF16。slow假时钟3000ms成功、预取消 / 中途取消清理定时器和监听器；HTTP断连使适配器信号中止、会话锁释放、无assistant / 来源保存、账本预留保留。短搜索期限正常降级provider_failure。默认三来源保存 / 刷新 / 重启单done回放一致，日账本只加一次；额度耗尽及坏账本分别admission_denied / ledger_unavailable，均不改写原账本；Discord缺身份及模式冲突不调用搜索、不初始化账本。
+
+W-11 / D-10只修订验收预期，所有人工结果栏空白；Y1 / Z1 / D12 / P1-4 / R3 / Q4、Task22与N3门槛保留，不部署、不合main、不变版本；既有.zcodeignore不提交。交付后停止等待Claude复核，人工验收另行指派。

@@ -1,9 +1,64 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import { TavilySearchAdapter, MockSearchAdapter } from '../search-adapter';
+import { createMockSearchAdapter } from '../search-mock-scenarios';
 
 const query = '当前问题';
 const response = () => Response.json({ results: [{ title: '标题', url: 'https://example.com/a', content: '摘要' }] });
+describe('Task 21: offline scenarios', () => {
+  it('default returns three normalized sources including parsed IDN without fetch', async () => {
+    const fetcher = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('network forbidden'));
+    try {
+      const result = await createMockSearchAdapter('default').search(query, { signal: new AbortController().signal });
+      expect(result).toHaveLength(3);
+      expect(result.map(s => s.index)).toEqual([1, 2, 3]);
+      expect(result[2].domain).toBe(new URL('https://例子.测试/资料').hostname);
+      expect(result.every(s => s.provider === 'tavily' && s.url.startsWith('https:'))).toBe(true);
+      expect(fetcher).not.toHaveBeenCalled();
+    } finally { fetcher.mockRestore(); }
+  });
+  it('hostile drops javascript, retains prose and a valid 1950-character URL', async () => {
+    const result = await createMockSearchAdapter('hostile').search(query, { signal: new AbortController().signal });
+    expect(result).toHaveLength(3);
+    expect(JSON.stringify(result)).not.toContain('javascript:');
+    expect(result[0].title).toContain('<script>');
+    for (const text of ['[文字](链接)', '@everyone', '<@123456789012345678>', '`代码`', '****']) {
+      expect(result[0].title + result[0].summary).toContain(text);
+    }
+    expect(result[1].url).toHaveLength(1950);
+    expect(result.map(s => s.index)).toEqual([1, 2, 3]);
+  });
+  it('empty returns no sources and fail throws a fixed local failure', async () => {
+    const options = { signal: new AbortController().signal };
+    expect(await createMockSearchAdapter('empty').search(query, options)).toEqual([]);
+    await expect(createMockSearchAdapter('fail').search(query, options)).rejects.toThrow('离线 Mock 搜索失败。');
+  });
+  it('slow returns default after 3000ms and releases timer and listener', async () => {
+    vi.useFakeTimers();
+    const controller = new AbortController(); const remove = vi.spyOn(controller.signal, 'removeEventListener');
+    try {
+      let completed = false;
+      const pending = createMockSearchAdapter('slow').search(query, { signal: controller.signal }).then(s => { completed = true; return s; });
+      await vi.advanceTimersByTimeAsync(2999); expect(completed).toBe(false);
+      await vi.advanceTimersByTimeAsync(1); expect(await pending).toHaveLength(3);
+      expect(vi.getTimerCount()).toBe(0); expect(remove).toHaveBeenCalledWith('abort', expect.any(Function));
+    } finally { vi.useRealTimers(); }
+  });
+  it.each(['default', 'hostile', 'empty', 'fail', 'slow'] as const)('%s respects pre-aborted signal', async scenario => {
+    const controller = new AbortController(); controller.abort();
+    await expect(createMockSearchAdapter(scenario).search(query, { signal: controller.signal })).rejects.toMatchObject({ code: 'ABORTED' });
+  });
+  it('slow abort promptly rejects and clears its own pending timer', async () => {
+    vi.useFakeTimers();
+    const controller = new AbortController(); const remove = vi.spyOn(controller.signal, 'removeEventListener');
+    try {
+      const pending = createMockSearchAdapter('slow').search(query, { signal: controller.signal });
+      const rejected = expect(pending).rejects.toMatchObject({ code: 'ABORTED' });
+      await vi.advanceTimersByTimeAsync(100); controller.abort(); await rejected;
+      expect(vi.getTimerCount()).toBe(0); expect(remove).toHaveBeenCalledWith('abort', expect.any(Function));
+    } finally { vi.useRealTimers(); }
+  });
+});
 describe('Task 20 Step 1: 搜索适配器（全Mock）', () => {
   it('只向固定端点发送当前问题且禁用答案全文与重定向', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(response());

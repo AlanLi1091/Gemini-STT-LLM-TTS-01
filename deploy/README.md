@@ -59,6 +59,52 @@
 
 超时主动中止传给 adapter 的合并信号，并打断本地迭代等待，使用固定 `MODEL_ERROR` 文案“模型生成超时，请稍后重试。”结束本轮；客户端主动中止仍静默结束。即使 adapter 忽略 abort 或清理挂起，流源也能进入 finally 释放会话锁，迟到结果不会发送或写入。中止上游是尽力操作，无法保证远端已停止计算或计费。超时不保存部分 assistant，已追加 user 保留；同一 requestId 重试按 ADR-012 复用输入，仍受正常频率预算约束，不自动重发，也不触发429预算暂停。
 
+## 搜索配置与本地离线 Mock（Task 21 / Z2）
+
+生产必须不设置 `SEARCH_PROVIDER` 或设置为 `none`，不装配搜索适配器、不启用搜索网络；`mock` 仅供显式本地验收使用。`tavily`、空字符串和其他值均在监听前以固定错误拒绝启动，不回显原配置值。N3 未解除：本功能不授权真实 Tavily / Gemini 调用、真实 Discord 验收或 VPS 部署。
+
+| 配置 | 默认值 | 含义 |
+| :--- | :--- | :--- |
+| SEARCH_PROVIDER | none | 仅允许 none / mock，精确匹配 |
+| SEARCH_MOCK_SCENARIO | default | 仅 mock 生效，允许 default / hostile / empty / fail / slow；非 mock 忽略 |
+| SEARCH_REQUESTS_PER_MINUTE | 4 | 全局搜索分钟额度 |
+| SEARCH_WEB_RESERVED_REQUESTS_PER_MINUTE | 2 | Web 保留，Discord 使用全局减保留，Web 可用全局 |
+| SEARCH_REQUESTS_PER_DAY | 30 | 全局 UTC 日额度 |
+| SEARCH_DISCORD_REQUESTS_PER_DAY | 10 | Discord 总日额度 |
+| SEARCH_DISCORD_USER_REQUESTS_PER_MINUTE | 1 | 单用户分钟额度 |
+| SEARCH_DISCORD_USER_REQUESTS_PER_DAY | 5 | 单用户日额度 |
+| SEARCH_DISCORD_CHANNEL_REQUESTS_PER_MINUTE | 2 | 单频道分钟额度 |
+| SEARCH_DISCORD_CHANNEL_REQUESTS_PER_DAY | 10 | 单频道日额度 |
+| SEARCH_TIMEOUT_MS | 8000 | 搜索等待与解析期限（毫秒） |
+| SEARCH_LEDGER_PATH | SESSION_DATA_DIR/search-ledger.json | 省略时跟随会话目录；目录未设置时为工作目录下 data |
+
+保留现有配置层级校验：额度为正安全整数，Web 保留可为零且不超过全局分钟额；Discord 日额不超过全局，用户 / 频道日额不超过 Discord；Discord 分钟份额非零时用户 / 频道分钟额不得超过该份额。期限还须满足 `SEARCH_TIMEOUT_MS + CHAT_GENERATION_TOTAL_TIMEOUT_MS + 2 * CHAT_COUNT_TIMEOUT_MS <= 115000`，默认 8000 + 90000 + 6000 = 104000ms；此关系也适用于 Mock。账本路径不允许空值、NUL 或会话目录本身，相对路径按工作目录解析；样例不依赖 dotenv 变量展开。
+
+本地验收按 [Task 21 Mock 清单](../dev-docs/acceptance/task21-mock-checklist.md) 执行，须先经 Claude 复核并另行指派。以下命令为届时操作示例，在仓库根目录使用；不使用 Vite 开发代理（Z1），由 Express 提供构建页面。
+
+```sh
+npm run build -- --outDir dist/web
+TASK21_MOCK_DATA_DIR="$(mktemp -d /private/tmp/task21-mock.XXXXXX)"
+GEMINI_API_KEY='' HOST=127.0.0.1 PORT=3001 \
+  SESSION_DATA_DIR="$TASK21_MOCK_DATA_DIR" SEARCH_LEDGER_PATH="$TASK21_MOCK_DATA_DIR/search-ledger.json" \
+  STATIC_DIRECTORY="$PWD/dist/web" ALLOWED_ORIGINS=http://127.0.0.1:3001 \
+  SEARCH_PROVIDER=mock SEARCH_MOCK_SCENARIO=default \
+  ./node_modules/.bin/tsx server/index.ts
+```
+
+打开 `http://127.0.0.1:3001`。显式空 `GEMINI_API_KEY` 防止 dotenv 从已有 `.env` 加载真实 Key；不得加载生产 env。启动固定警告为 `[server] search provider=mock (offline fixtures, not for production)`。仅给搜索选择 Mock 不会强制模型离线，故不能省略空 Key。场景改变需停止该本地进程后重新启动；沿用同一临时目录保留额度记录，不通过删除账本规避额度。默认分钟 / 日额可能导致 `admission_denied`，等待窗口或在明确的离线验收配置内调整成合法额度；`/reset` 不清零日额。
+
+场景数据全部在 `server/search-mock-scenarios.ts`，不读取文件或网络：default 为三条中文来源（含 IDN）；hostile 的 `javascript:` 来源整条过滤，其余恶意文本正常过滤保存，1950 字符合法 HTTPS URL 在 Discord 触发“链接过长未展示”；empty / fail 分别降级 no_results / provider_failure；slow 等待 3000ms 后返回 default，响应取消。默认期限允许 slow 成功，设置 `SEARCH_TIMEOUT_MS=1000` 可验超时降级；取消不继续生成或保存成功来源。现有 SearchSource 契约的 provider 仍为 tavily，Mock 夹具使用该值不表示发生了真实搜索。
+
+另一个终端的 Bot 启动示例仅供之后获指派的真实 Discord 测试频道验收使用，**会连接真实 Discord 网关**；本步自动化全部使用 Mock，不执行该命令。Token 只通过既有本地受保护环境配置提供，不放命令、文档或聊天中。
+
+```sh
+# 先在本地受保护环境配置中准备测试 Bot Token 和自己的测试频道 ID。
+DISCORD_BACKEND_URL=http://127.0.0.1:3001 npm run bot:dev
+```
+
+`SEARCH_*` 只配置在 Express，无需注入 Bot。生产环境文件和 systemd 单元不启用 mock；本节不表示已经部署或完成任何人工验收。坏账本继续 fail-closed，恢复遵循 [ADR-015 N4](../dev-docs/adr/0015-external-search-architecture.md)，不要删除 / 改名账本后清零。
+
 ## 使用 Playground
 
 在 Mac Terminal 执行以下运维命令，保持窗口打开：

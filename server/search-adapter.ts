@@ -68,9 +68,23 @@ export class TavilySearchAdapter implements SearchAdapter {
   }
 }
 export class MockSearchAdapter implements SearchAdapter {
-  constructor(private readonly results: unknown = [{ title: '离线 Mock 来源', url: 'https://example.com/mock', content: '仅用于离线链路验证，不代表真实联网检索。' }]) {}
+  constructor(
+    private readonly results: unknown = [{ title: '离线 Mock 来源', url: 'https://example.com/mock', content: '仅用于离线链路验证，不代表真实联网检索。' }],
+    private readonly behavior: { delayMs?: number; fail?: boolean } = {},
+  ) {}
   async search(_query: string, { signal }: { signal: AbortSignal }): Promise<SearchSource[]> {
     if (signal.aborted) throw new ChatError('本次请求已取消。', 'ABORTED');
+    if (this.behavior.delayMs) {
+      await new Promise<void>((resolve, reject) => {
+        const cleanup = () => { clearTimeout(timer); signal.removeEventListener('abort', abort); };
+        const abort = () => { cleanup(); reject(new ChatError('本次请求已取消。', 'ABORTED')); };
+        const timer = setTimeout(() => { cleanup(); resolve(); }, this.behavior.delayMs);
+        signal.addEventListener('abort', abort, { once: true });
+        if (signal.aborted) abort();
+      });
+    }
+    if (signal.aborted) throw new ChatError('本次请求已取消。', 'ABORTED');
+    if (this.behavior.fail) throw new Error('离线 Mock 搜索失败。');
     return normalizeSearchSources(this.results);
   }
 }

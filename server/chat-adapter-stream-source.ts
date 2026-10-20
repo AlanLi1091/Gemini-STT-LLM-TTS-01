@@ -1,4 +1,5 @@
-import { readSearchConfig, type SearchConfig, type SearchEnvironment } from './search-config';
+import { readSearchConfig, readSearchProviderConfig, type SearchConfig, type SearchEnvironment } from './search-config';
+import { createMockSearchAdapter } from './search-mock-scenarios';
 import { SearchBudget } from './search-budget';
 import { JsonSearchLedger } from './storage/search-ledger';
 import { SearchDeadline, searchWithTimeout } from './search-timeout';
@@ -50,7 +51,7 @@ export interface ServerChatStreamSourceOptions {
   /** Production routes and stream source must share this service / lock. */
   sessionService?: SessionService;
   requestBudget?: RequestBudget;
-  /** Step 1: code-only Mock injection. No production search network wiring. */
+  /** Code-only injection for tests; environment assembly never wires search networking. */
   searchAdapter?: SearchAdapter;
   searchBudget?: SearchBudget;
 }
@@ -295,6 +296,7 @@ export function createChatStreamSourceFromEnv(
   if (options.sessionService && options.sessionStorage) {
     throw new Error('Provide one shared sessionService or sessionStorage, not both.');
   }
+  const searchProvider = readSearchProviderConfig(environment);
   const contextConfig = readContextConfig(environment);
   // Validate even in Mock mode or when a test injects its own budget.
   const budgetConfig = readSourceBudgetConfig(environment);
@@ -315,7 +317,11 @@ export function createChatStreamSourceFromEnv(
   }) : undefined;
   if (options.sessionService || options.sessionStorage) {
     const service = options.sessionService ?? new SessionService(options.sessionStorage!);
-    return createSessionChatStreamSource(adapter, service, budget, contextWindow, generationTimeoutConfig, { adapter: options.searchAdapter, config: searchConfig, budget: options.searchBudget });
+    // Explicit mock environment selection takes precedence over code-only injection.
+    const searchAdapter = searchProvider.provider === 'mock' ? createMockSearchAdapter(searchProvider.scenario) : options.searchAdapter;
+    const source = createSessionChatStreamSource(adapter, service, budget, contextWindow, generationTimeoutConfig, { adapter: searchAdapter, config: searchConfig, budget: options.searchBudget });
+    if (searchProvider.provider === 'mock') console.warn('[server] search provider=mock (offline fixtures, not for production)');
+    return source;
   }
   const source = createAdapterStreamSource(adapter, contextWindow, generationTimeoutConfig);
   return budget ? guardStreamSource(source, budget) : source;

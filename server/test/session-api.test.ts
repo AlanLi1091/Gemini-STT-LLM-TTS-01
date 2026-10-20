@@ -11,8 +11,121 @@ import { createSessionChatStreamSource } from '../chat-adapter-stream-source';
 import { SessionService } from '../session-service';
 import { JsonSessionStorage } from '../storage/json-session-storage';
 import { BackendClient } from '../../bot/backend-client';
+import { createChatStreamSourceFromEnv } from '../chat-adapter-stream-source';
+import { MockSearchAdapter } from '../search-adapter';
+import { formatSearchSources } from '../../bot/search-sources';
 
 const temporaryDirectories: string[] = [];
+
+describe('Task 21: environment mock HTTP lifecycle', () => {
+  async function fixture(scenario = 'default', extra: Record<string, string> = {}) {
+    const directory = await mkdtemp(join(tmpdir(), 'task21-env-http-')); temporaryDirectories.push(directory);
+    const environment = { SEARCH_PROVIDER: 'mock', SEARCH_MOCK_SCENARIO: scenario, SESSION_DATA_DIR: directory, ...extra };
+    const service = new SessionService(new JsonSessionStorage(directory));
+    const makeApp = (sessionService = service) => createApp({ sessionService, chatStreamSource: createChatStreamSourceFromEnv(environment, {
+      sessionService, mockAdapterOptions: { delayMs: 0, streamChunkDelayMs: 0 },
+    }) });
+    const session = await service.createSession();
+    const body = { sessionId: session.id, requestId: '12121212-1212-4212-8212-121212121212', search: true, messages: [{ role: 'user', content: '问题' }] };
+    return { directory, environment, service, session, body, makeApp, app: makeApp() };
+  }
+  function done(text: string) {
+    const line = text.split('\n\n').find(event => event.startsWith('event: done\n'));
+    expect(line).toBeDefined(); return JSON.parse(line!.slice('event: done\ndata: '.length));
+  }
+  it('default saves three sources and ledger once; refresh/restart replay is identical and fetch-free', async () => {
+    const fetcher = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('network forbidden'));
+    const call = vi.spyOn(MockSearchAdapter.prototype, 'search');
+    try {
+      const c = await fixture();
+      const first = done((await request(c.app).post('/api/chat/stream').send(c.body).expect(200)).text);
+      expect(first.search).toMatchObject({ status: 'succeeded', sources: expect.any(Array) }); expect(first.search.sources).toHaveLength(3);
+      const loaded = await request(c.app).get(`/api/sessions/${c.session.id}`).expect(200);
+      expect(loaded.body.messages[1].search).toEqual(first.search);
+      const ledgerPath = join(c.directory, 'search-ledger.json'); const before = await readFile(ledgerPath, 'utf8');
+      expect(JSON.parse(before).total).toEqual({ attempts: 1, credits: 1 });
+      for (const app of [c.app, c.makeApp(new SessionService(new JsonSessionStorage(c.directory)))]) {
+        const replay = await request(app).post('/api/chat/stream').send(c.body).expect(200);
+        expect(done(replay.text)).toEqual(first); expect(replay.text).not.toContain('event: chunk');
+      }
+      expect(await readFile(ledgerPath, 'utf8')).toBe(before); expect(call).toHaveBeenCalledOnce(); expect(fetcher).not.toHaveBeenCalled();
+    } finally { fetcher.mockRestore(); call.mockRestore(); }
+  });
+  it('hostile uses normal filtering, persistence and Bot length fallback', async () => {
+    const c = await fixture('hostile'); const result = done((await request(c.app).post('/api/chat/stream').send(c.body).expect(200)).text);
+    expect(result.search.sources).toHaveLength(3); expect(JSON.stringify(result.search)).not.toContain('javascript:');
+    const formatted = formatSearchSources(result.search);
+    expect(formatted[0]).toContain('＜script＞'); expect(formatted[0]).not.toContain('<@');
+    expect(formatted[1]).toContain('超长链接来源'); expect(formatted[1]).toContain('链接过长未展示');
+    expect(formatted.every(text => text.length <= 1900)).toBe(true);
+    const loaded = await request(c.app).get(`/api/sessions/${c.session.id}`).expect(200);
+    expect(loaded.body.messages[1].search).toEqual(result.search);
+  });
+  it.each([['empty', 'no_results'], ['fail', 'provider_failure']])('%s persists the fixed %s degradation and consumes one reservation', async (scenario, reason) => {
+    const c = await fixture(scenario); const result = done((await request(c.app).post('/api/chat/stream').send(c.body).expect(200)).text);
+    expect(result.content.trim()).not.toBe(''); expect(result.search).toMatchObject({ status: 'degraded', reason, sources: [] });
+    const loaded = await request(c.app).get(`/api/sessions/${c.session.id}`).expect(200);
+    expect(loaded.body.messages[1].search).toEqual(result.search);
+    expect(JSON.parse(await readFile(join(c.directory, 'search-ledger.json'), 'utf8')).total.attempts).toBe(1);
+  });
+  it('slow times out through the normal deadline, aborts adapter and saves only degraded sources', async () => {
+    const c = await fixture('slow', { SEARCH_TIMEOUT_MS: '30' });
+    const spy = vi.spyOn(MockSearchAdapter.prototype, 'search');
+    try {
+      const result = done((await request(c.app).post('/api/chat/stream').send(c.body).expect(200)).text);
+      expect(result.search).toMatchObject({ status: 'degraded', reason: 'provider_failure', sources: [] });
+      expect(spy.mock.calls[0][1].signal.aborted).toBe(true);
+    } finally { spy.mockRestore(); }
+  });
+  it('HTTP disconnect during slow search aborts it, unlocks and saves no assistant or sources', async () => {
+    const c = await fixture('slow');
+    let started!: () => void; const ready = new Promise<void>(resolve => { started = resolve; });
+    let settled!: () => void; const stopped = new Promise<void>(resolve => { settled = resolve; });
+    const original = MockSearchAdapter.prototype.search;
+    const spy = vi.spyOn(MockSearchAdapter.prototype, 'search').mockImplementation(async function (this: MockSearchAdapter, query, options) {
+      started(); try { return await original.call(this, query, options); } finally { settled(); }
+    });
+    const server = c.app.listen(0, '127.0.0.1');
+    try {
+      const pending = request(server).post('/api/chat/stream').send(c.body); const completed = pending.then(() => {}, () => {});
+      await ready; pending.abort(); await stopped; await completed;
+      // Adapter has stopped; allow request finally to release the shared lock.
+      for (let i = 0; i < 20; i++) {
+        const release = c.service.tryAcquireRequest(c.session.id);
+        if (release) { release(); break; }
+        await new Promise(resolve => setTimeout(resolve, 5));
+      }
+      expect(spy.mock.calls[0][1].signal.aborted).toBe(true);
+      expect((await c.service.getSession(c.session.id))?.messages).toEqual([]);
+      expect(JSON.parse(await readFile(join(c.directory, 'search-ledger.json'), 'utf8')).total.attempts).toBe(1);
+      const release = c.service.tryAcquireRequest(c.session.id); expect(release).toBeTypeOf('function'); release?.();
+    } finally { spy.mockRestore(); await new Promise<void>(resolve => server.close(() => resolve())); }
+  });
+  it('environment mock still denies exhausted quotas and fails closed on a damaged ledger', async () => {
+    for (const damaged of [false, true]) {
+      const c = await fixture('default', { SEARCH_REQUESTS_PER_DAY: '1', SEARCH_DISCORD_REQUESTS_PER_DAY: '1', SEARCH_DISCORD_USER_REQUESTS_PER_DAY: '1', SEARCH_DISCORD_CHANNEL_REQUESTS_PER_DAY: '1' });
+      const path = join(c.directory, 'search-ledger.json');
+      if (damaged) await writeFile(path, 'broken-ledger');
+      else await request(c.app).post('/api/chat/stream').send(c.body).expect(200);
+      const before = await readFile(path, 'utf8');
+      const result = done((await request(c.app).post('/api/chat/stream').send({ ...c.body, requestId: '13131313-1313-4313-8313-131313131313', messages: [{ role: 'user', content: '第二问' }] }).expect(200)).text);
+      expect(result.search.reason).toBe(damaged ? 'ledger_unavailable' : 'admission_denied');
+      expect(await readFile(path, 'utf8')).toBe(before);
+    }
+  });
+  it('environment mock cannot bypass persisted Discord identity and request conflict checks', async () => {
+    const c = await fixture();
+    const discord = await c.service.resolveDiscordSession('111111111111111111', '222222222222222222');
+    const call = vi.spyOn(MockSearchAdapter.prototype, 'search');
+    try {
+      const result = done((await request(c.app).post('/api/chat/stream').send({ ...c.body, sessionId: discord.id }).expect(200)).text);
+      expect(result.search.reason).toBe('missing_identity'); expect(call).not.toHaveBeenCalled();
+      const conflict = await request(c.app).post('/api/chat/stream').send({ ...c.body, sessionId: discord.id, search: false }).expect(200);
+      expect(conflict.text).toContain('REQUEST_CONFLICT'); expect(call).not.toHaveBeenCalled();
+      await expect(readFile(join(c.directory, 'search-ledger.json'))).rejects.toMatchObject({ code: 'ENOENT' });
+    } finally { call.mockRestore(); }
+  });
+});
 
 class RecordingAdapter implements ChatAdapter {
   readonly id = 'recording';

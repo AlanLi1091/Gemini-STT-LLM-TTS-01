@@ -1,6 +1,8 @@
 import { resolve, join } from 'node:path';
 
 export interface SearchEnvironment {
+  SEARCH_PROVIDER?: string;
+  SEARCH_MOCK_SCENARIO?: string;
   SESSION_DATA_DIR?: string;
   SEARCH_REQUESTS_PER_MINUTE?: string;
   SEARCH_WEB_RESERVED_REQUESTS_PER_MINUTE?: string;
@@ -12,6 +14,19 @@ export interface SearchEnvironment {
   SEARCH_DISCORD_CHANNEL_REQUESTS_PER_DAY?: string;
   SEARCH_TIMEOUT_MS?: string;
   SEARCH_LEDGER_PATH?: string;
+}
+export const SEARCH_MOCK_SCENARIOS = ['default', 'hostile', 'empty', 'fail', 'slow'] as const;
+export type SearchMockScenario = typeof SEARCH_MOCK_SCENARIOS[number];
+export type SearchProviderConfig = { provider: 'none' } | { provider: 'mock'; scenario: SearchMockScenario };
+
+/** Exact opt-in; never interpret an unknown provider as permission to use a network. */
+export function readSearchProviderConfig(env: SearchEnvironment = {}): SearchProviderConfig {
+  const provider = env.SEARCH_PROVIDER ?? 'none';
+  if (provider === 'none') return { provider };
+  if (provider !== 'mock') throw new Error('Invalid search provider configuration.');
+  const scenario = env.SEARCH_MOCK_SCENARIO ?? 'default';
+  if (!SEARCH_MOCK_SCENARIOS.includes(scenario as SearchMockScenario)) throw new Error('Invalid mock search scenario configuration.');
+  return { provider, scenario: scenario as SearchMockScenario };
 }
 export interface SearchConfig {
   requestsPerMinute: number; webReservedRequestsPerMinute: number;

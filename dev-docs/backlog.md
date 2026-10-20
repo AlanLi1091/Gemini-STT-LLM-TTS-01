@@ -210,6 +210,8 @@ Claude Task 21 Step 2 复核遗留（2026-10-19，详见 history）：Task 21 �
 - **Z1（低，仅开发模式，Claude 发现）**：`vite.config.ts` 的 `/api` 代理删除 `Origin` 头，开发模式下浏览器请求被服务端视为“本机且无 Origin”，可在请求体声明 `discordUserId` 并访问 Discord 会话接口（ADR-014 起已存在）；生产由 Express 提供页面不受影响。人工验收须用生产方式；修复待用户安排。
 - **Z2（低，Claude 发现）**：`deploy/server.env.example` 与 `deploy/README.md` 缺少 Task 20 新增的 `SEARCH_*` 配置说明；已并入 Mock 开关提示词一并补齐。
 
+- [x] **Task 21 本地离线 Mock 开关与 Z2（2026-10-19，待Claude复核）**：用户确认15文件计划并指派实施；新增SEARCH_PROVIDER显式none / mock、五种固定离线场景与固定启动警告，其他provider（含tavily）启动拒绝，非mock忽略场景。全部沿用准入、账本、期限、来源过滤、保存及回放；slow3000ms响应取消。补齐全部搜索配置部署样例及本地启动说明，生产none；W-11 / D-10按javascript整条过滤修订预期，未填人工结果。新增42项，连续三轮45/45文件860/860用例、根及四包类型检查、三构建与构建后本机启动探针通过；失败记录及映射见tests.md。无真实服务 / VPS / 会话访问，无依赖、版本或部署变更，.zcodeignore不提交；完成交付后停止等待Claude复核，人工验收与Task22仍未授权，N3未解除。
+
 ### Task 22：Part 1 验收与结项（以 ADR-015 裁决为准）
 
 - [ ] **Step 1（真实双入口验收与全量回归）**：本机真实 Web + Discord 验收（真实搜索、来源展示、预算 / 超时行为、注入防护），全量测试回归。注入防护由 Mock / 夹具测试证明，真实验收只核对隔离标记与来源可追溯并记录边界；实测真实耗时，确认默认90秒生成总期限是否够用（F1）。按 N3，Tavily 频道共享与长期留存用途澄清前不得进行本 Step 的真实验收。
